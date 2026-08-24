@@ -1,0 +1,10 @@
+{
+  "name": "codit",
+  "private": true,
+  "scripts": {
+    "dev:ext": "pnpm --filter @codit/extension dev",
+    "build:ext": "pnpm --filter @codit/extension build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "packageManager": "pnpm@9.15.9"
+}
