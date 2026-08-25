@@ -35,3 +35,9 @@ Thumbs.db
 
 # Claude local settings
 .claude/settings.local.json
+/.metadata/
+
+# Eclipse / STS
+.project
+.classpath
+.settings/
