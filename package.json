@@ -4,7 +4,16 @@
   "scripts": {
     "dev:ext": "pnpm --filter @codit/extension dev",
     "build:ext": "pnpm --filter @codit/extension build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "prepare": "husky",
+    "test:e2e": "playwright test"
   },
-  "packageManager": "pnpm@9.15.9"
+  "packageManager": "pnpm@9.15.9",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@rolldown/binding-darwin-arm64": "1.2.5",
+    "@rolldown/binding-darwin-x64": "1.2.5",
+    "@rollup/rollup-darwin-arm64": "^4.63.1",
+    "husky": "^9.1.7"
+  }
 }
