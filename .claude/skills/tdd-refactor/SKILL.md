@@ -30,20 +30,33 @@ description: >
 ## 시작 전: 입력 확인
 
 - **이슈 번호**: `$ARGUMENTS`에서 추출. 없으면 질문한다.
+- **레이어 감지**: `docs/features/{feature명}/issue-{N}.md`의 시그니처 파일 경로를 읽어 판단한다.
+  - `apps/extension/` 경로 포함 → **프론트엔드**
+  - `backend/src/` 경로 포함 → **백엔드**
+  - 둘 다 포함 → **풀스택** (프론트엔드 기준으로 시작, 백엔드 파일도 포함)
 
 ---
 
 ## 1단계: 컨벤션 파악
 
-`CLAUDE.md`를 읽어 이 프로젝트의 네이밍 규칙, 컴포넌트 패턴, 스타일링 방식을 파악한다.
+`CLAUDE.md`가 있으면 읽어서 네이밍 규칙, 컴포넌트 패턴, 스타일링 방식을 파악한다.
+없으면 코드베이스의 기존 파일들에서 패턴을 직접 파악한다.
 리팩토링은 코드베이스 전체의 일관성을 높이는 방향이어야 한다. 기존 패턴과 멀어지는 리팩토링은 개선이 아니다.
 
 ---
 
 ## 2단계: 전체 테스트 통과 확인
 
+레이어에 따라 아래 명령어를 실행한다.
+
+**프론트엔드**
 ```bash
-npm test
+pnpm --filter @codit/extension test
+```
+
+**백엔드**
+```bash
+cd backend && ./gradlew test 2>&1
 ```
 
 실패 테스트가 있으면 중단하고 개발자에게 알린다. 리팩토링은 반드시 Green 상태에서 시작해야 한다.
@@ -52,13 +65,19 @@ npm test
 
 ## 3단계: 리팩토링 대상 파일 식별
 
-이번 이슈에서 변경된 `src/` 파일만 리팩토링 대상으로 삼는다. 범위를 벗어난 파일은 건드리지 않는다.
+이번 이슈에서 변경된 파일만 리팩토링 대상으로 삼는다. 범위를 벗어난 파일은 건드리지 않는다.
 
+**프론트엔드**
 ```bash
-git diff main...HEAD --name-only -- src/
+git diff develop...HEAD --name-only -- apps/extension/entrypoints/
 ```
-
 테스트 파일(`*.test.ts`, `*.test.tsx`)은 목록에서 제외한다.
+
+**백엔드**
+```bash
+git diff develop...HEAD --name-only -- backend/src/main/
+```
+테스트 파일(`*Test.java`)은 목록에서 제외한다.
 
 ---
 
@@ -81,7 +100,12 @@ git diff main...HEAD --name-only -- src/
 매직 넘버(설명 없이 등장하는 숫자·문자열), 3단계 이상 중첩된 조건문, 한 번만 쓰이는 추상화가 있는가? 코드를 처음 보는 사람이 멈추게 되는 지점이 어디인지 생각해본다.
 
 **5. CLAUDE.md 컨벤션 불일치**
-`export default` vs named export, Props 타입 선언 위치, 스타일 적용 방식이 프로젝트 패턴과 어긋나는가? 일관성 없는 패턴은 읽는 사람의 인지 부담을 높인다.
+
+*프론트엔드*: `export default` vs named export, Props 타입 선언 위치, Tailwind 적용 방식, React hook 규칙(`use` 접두사, 조건부 호출 금지)이 프로젝트 패턴과 어긋나는가?
+
+*백엔드*: Spring 어노테이션 누락 또는 잘못된 레이어 배치(`@Service`에 `@Transactional` 누락 등), Controller에 비즈니스 로직 혼입, Repository 메서드 네이밍 컨벤션(`findBy`, `existsBy` 등) 불일치, Java 네이밍 컨벤션(메서드 동사형, 클래스 명사형) 위반이 있는가?
+
+일관성 없는 패턴은 읽는 사람의 인지 부담을 높인다.
 
 ---
 
@@ -112,10 +136,16 @@ git diff main...HEAD --name-only -- src/
 
 승인된 항목을 **하나씩** 처리한다. 여러 개를 한꺼번에 수정하면 테스트가 깨졌을 때 원인을 추적하기 어렵다.
 
-각 변경 후:
+각 변경 후 레이어에 따라 테스트를 실행한다.
 
+**프론트엔드**
 ```bash
-npm test
+pnpm --filter @codit/extension test
+```
+
+**백엔드**
+```bash
+cd backend && ./gradlew test 2>&1
 ```
 
 ### 통과한 경우
@@ -129,6 +159,8 @@ npm test
 ```bash
 git checkout -- <파일경로>
 ```
+
+롤백 후 테스트를 다시 실행해 Green 상태가 복원됐는지 확인한다.
 
 롤백 후에도 테스트가 실패하면 개발자에게 보고하고 중단한다.
 

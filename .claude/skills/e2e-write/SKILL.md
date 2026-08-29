@@ -25,7 +25,10 @@ prd.md (사용자 스토리)
 
 ## 시작 전: 입력 확인
 
-- **기능명**: 인자에서 추출. 없으면 사용자에게 묻는다.
+- **기능명 또는 이슈번호**: 인자에서 추출한다.
+  - 숫자(이슈번호)인 경우: `find docs/features -name "issue-{N}.md"`로 기능 디렉터리를 자동 탐색한다.
+  - 기능명인 경우: 그대로 사용한다.
+  - 둘 다 없으면 사용자에게 묻는다.
 - **prd 파일**: `docs/features/{기능명}/prd.md` — 없으면 중단하고 알린다.
 - **best-practices**: `references/best-practices.md`를 읽어 셀렉터·대기·정리 패턴을 파악한다.
 
@@ -50,15 +53,57 @@ prd.md (사용자 스토리)
 
 `best-practices.md`의 "단위 테스트와의 경계" 표를 판단 기준으로 사용한다.
 
-### 1-3. Playwright 설정 파악
+### 1-3. 익스텐션 E2E 환경 파악
 
-`playwright.config.ts`(또는 `playwright.config.js`)를 읽어 다음을 파악한다:
+`playwright.config.ts`를 읽어 `testDir`과 E2E 실행 명령어를 파악한다.
 
-- `testDir`: E2E 테스트 파일을 저장할 위치
-- `baseURL`: 앱의 기본 URL (없으면 `page.goto('http://...')` 형태로 절대 경로 사용)
-- `webServer`: 테스트 전 서버 자동 실행 여부
+크롬 익스텐션은 `baseURL` / `webServer` 대신 아래 항목을 확인한다:
 
-`package.json`의 scripts도 읽어 E2E 실행 명령어를 파악한다.
+**빌드 아웃풋 경로 확인**
+
+WXT 빌드 결과물 위치를 확인한다. 기본값은 `apps/extension/.output/chrome-mv3/`이며,
+테스트 실행 전 빌드가 완료되어 있어야 한다:
+
+```bash
+pnpm --filter @codit/extension build
+```
+
+**Playwright 실행 옵션 (익스텐션 로드)**
+
+익스텐션 E2E는 `chromium.launch`에 아래 옵션이 필요하다. `playwright.config.ts`에
+이미 설정되어 있으면 그것을 사용하고, 없으면 fixture에서 직접 설정한다:
+
+```typescript
+const extensionPath = path.join(__dirname, '../apps/extension/.output/chrome-mv3');
+
+const context = await chromium.launchPersistentContext('', {
+  headless: false, // 익스텐션은 headless: false 필요
+  args: [
+    `--disable-extensions-except=${extensionPath}`,
+    `--load-extension=${extensionPath}`,
+  ],
+});
+```
+
+**익스텐션 ID 획득**
+
+익스텐션 ID는 로드 시마다 동적으로 생성된다. service worker에서 추출한다:
+
+```typescript
+let [background] = context.serviceWorkers();
+if (!background) {
+  background = await context.waitForEvent('serviceworker');
+}
+const extensionId = background.url().split('/')[2]; // chrome-extension://{id}/...
+```
+
+**진입점별 URL 패턴**
+
+| 진입점 | URL 패턴 |
+|---|---|
+| popup | `chrome-extension://${extensionId}/popup.html` |
+| sidepanel | `chrome-extension://${extensionId}/sidepanel.html` |
+| content script | 일반 웹 페이지 URL (익스텐션이 주입) |
 
 ---
 
@@ -102,6 +147,84 @@ prd.md (사용자 스토리)
 데이터를 직접 정리하는 경우, 테스트 데이터를 구분할 수 있는 고유 접두사나 필드를 사용하고
 `afterEach`에서 해당 데이터만 정리한다.
 
+### 익스텐션 E2E 코드 패턴
+
+#### Popup 테스트
+
+```typescript
+import { test, expect, chromium } from '@playwright/test';
+import path from 'path';
+
+test.describe('popup — 아이템 저장', () => {
+  let extensionId: string;
+  let context: BrowserContext;
+
+  test.beforeAll(async () => {
+    const extensionPath = path.join(__dirname, '../../apps/extension/.output/chrome-mv3');
+    context = await chromium.launchPersistentContext('', {
+      headless: false,
+      args: [
+        `--disable-extensions-except=${extensionPath}`,
+        `--load-extension=${extensionPath}`,
+      ],
+    });
+    let [background] = context.serviceWorkers();
+    if (!background) background = await context.waitForEvent('serviceworker');
+    extensionId = background.url().split('/')[2];
+  });
+
+  test.afterAll(async () => {
+    await context.close();
+  });
+
+  test.beforeEach(async () => {
+    // chrome.storage 초기화 — 테스트 간 데이터 간섭 방지
+    const page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/popup.html`);
+    await page.evaluate(() => chrome.storage.local.clear());
+    await page.close();
+  });
+
+  test('유효한 입력 저장 시 목록에 표시된다', async () => {
+    const page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/popup.html`);
+
+    await page.getByRole('textbox', { name: /item/i }).fill('test-item');
+    await page.getByRole('button', { name: /add/i }).click();
+
+    await expect(page.getByText('test-item')).toBeVisible();
+    await page.close();
+  });
+});
+```
+
+#### Content Script 테스트
+
+Content script는 익스텐션이 일반 웹 페이지에 주입하므로, 실제 페이지로 이동해서 테스트한다:
+
+```typescript
+test('페이지 방문 시 익스텐션 UI가 주입된다', async () => {
+  const page = await context.newPage();
+  await page.goto('https://example.com'); // content script 대상 도메인
+
+  // 익스텐션이 주입한 요소 확인
+  await expect(page.locator('[data-extension="codit"]')).toBeVisible();
+  await page.close();
+});
+```
+
+#### 백엔드 연동 테스트
+
+백엔드가 실제로 필요한 흐름(데이터 영속성)은 백엔드 서버를 직접 띄우거나 MSW로 mock한다.
+어느 전략을 쓸지 prd.md ADR을 확인한 뒤 결정한다:
+
+```typescript
+// 실제 백엔드 사용 시 — 테스트 전후 데이터 정리 필수
+test.afterEach(async ({ request }) => {
+  await request.delete('/api/test-data?prefix=e2e-');
+});
+```
+
 ---
 
 ## 4단계: 작성 후 체크리스트
@@ -110,8 +233,11 @@ prd.md (사용자 스토리)
 - [ ] `waitForTimeout` 없음
 - [ ] 셀렉터가 역할/텍스트 기반이다 (CSS 클래스 없음)
 - [ ] 각 테스트가 독립적으로 실행 가능하다
-- [ ] 테스트 데이터 정리 로직이 있다
+- [ ] 테스트 데이터 정리 로직이 있다 (백엔드 데이터 + chrome.storage 모두)
 - [ ] Out of Scope 항목이 포함되지 않았다
+- [ ] 익스텐션 ID를 하드코딩하지 않았다 (동적으로 획득)
+- [ ] `headless: false` 설정이 있다 (익스텐션은 headful 필요)
+- [ ] popup / content script 중 어느 진입점을 테스트하는지 명확하다
 
 ---
 
@@ -151,4 +277,7 @@ prd.md (사용자 스토리)
 - CSS 클래스 셀렉터 사용 금지
 - 단위 테스트가 다루는 검증 로직을 E2E에서 재검증하지 않는다
 - 테스트 데이터는 반드시 정리한다
-- 설정값(`baseURL`, `testDir`, 실행 명령어)은 직접 읽어서 파악하고, 임의로 가정하지 않는다
+- `testDir`과 실행 명령어는 직접 읽어서 파악하고, 임의로 가정하지 않는다
+- 익스텐션 ID를 하드코딩 금지 — service worker URL에서 동적으로 추출한다
+- `headless: true`로 익스텐션 E2E를 실행하지 않는다 — 크롬 익스텐션은 headful 모드 필수
+- content script 테스트 시 실제 접근 가능한 도메인을 사용한다 (manifest의 `host_permissions` 범위 내)

@@ -1,6 +1,6 @@
 ---
 name: tdd-loop
-description: GitHub 이슈 번호 하나를 받아 TDD 풀 사이클(사전 점검 → test-scenarios → tdd-red → tdd-green → ac-verifier → tdd-refactor → security-review → create-pr)을 순서대로 진행하는 오케스트레이터. "/tdd-loop N", "이슈 N번 TDD 풀 사이클 돌려줘", "이슈 N 전체 플로우 실행해줘" 같은 요청에 반드시 사용한다.
+description: GitHub 이슈 번호 하나를 받아 TDD 풀 사이클(사전 점검 → api-contract → fe-ui-design → test-scenarios → tdd-red → tdd-green → ac-verifier → tdd-refactor → security-review → create-pr)을 순서대로 진행하는 오케스트레이터. "/tdd-loop N", "이슈 N번 TDD 풀 사이클 돌려줘", "이슈 N 전체 플로우 실행해줘" 같은 요청에 반드시 사용한다.
 ---
 
 # tdd-loop
@@ -10,21 +10,27 @@ GitHub 이슈 하나를 끝까지 처리하는 TDD 풀 사이클 오케스트레
 이 스킬의 역할은 **순서 보장**뿐이다 — 추가 게이트를 만들지 않는다.
 
 ```
-0. 사전 점검
-   ↓
-1. /test-scenarios   (시그니처 + 시나리오 승인 게이트)
-   ↓
-2. /tdd-red          (실패 테스트 작성)
-   ↓
-3. /tdd-green        (최소 구현)
-   ↓
-4. @ac-verifier      (AC 독립 검증)
-   ↓
-5. /tdd-refactor     (구조 개선 승인 게이트)
-   ↓
-6. /security-review  (타입·보안 점검 승인 게이트)
-   ↓
-7. /create-pr        (PR 생성 승인 게이트)
+0.  사전 점검
+    ↓
+0.5 /api-contract    (API 계약 확인 — 없고 필요하면 실행, 있으면 통과)
+    ↓
+0.7 /fe-ui-design    (UI 설계 — FE UI 컴포넌트 포함 시만 실행, 없으면 스킵)
+    ↓
+1.  /test-scenarios  (시그니처 + 시나리오 승인 게이트)
+    ↓
+2.  /tdd-red         (실패 테스트 작성)
+    ↓
+3.  /tdd-green       (최소 구현)
+    ↓
+4.  @ac-verifier     (AC 독립 검증)
+    ↓
+5.  /tdd-refactor    (구조 개선 승인 게이트)
+    ↓
+6.  /security-review (타입·보안 점검 승인 게이트)
+    ↓
+6.5 /e2e-write       (E2E 테스트 작성 — UI 또는 API 연동 흐름이 있을 때)
+    ↓
+7.  /create-pr       (PR 생성 승인 게이트)
 ```
 
 ---
@@ -67,6 +73,77 @@ slug 생성 규칙: 이슈 제목을 소문자로 변환, 공백과 특수문자
    이슈: #$ARGUMENTS — {이슈 제목}
    브랜치: feat/<slug> (base: feature/<spec>)
 
+── 0.5단계: api-contract 확인 ──
+```
+
+---
+
+## 0.5단계: /api-contract 확인
+
+이슈 본문을 읽어 api-contract가 필요한지 판단한다.
+
+**실행 조건 — 다음 중 하나에 해당하면 실행:**
+- FE 이슈이고 BE API 연동이 필요한 경우 (서버 저장, REST API, 엔드포인트, DB 등 언급)
+- BE 이슈이고 새 엔드포인트를 추가하는 경우 (FE가 나중에 해당 엔드포인트를 사용할 예정)
+
+**스킵 조건 — 다음 중 하나에 해당하면 스킵:**
+- FE 이슈이고 chrome.storage 또는 로컬 전용 (BE 연동 없음)
+- BE 이슈이고 새 엔드포인트 없음 (Service/Repository 내부 로직만 변경)
+
+**api-contract.md가 이미 있는 경우:**
+
+```bash
+ls docs/features/*/api-contract.md 2>/dev/null
+```
+
+파일이 존재하면 아래 메시지 출력 후 1단계로 진행:
+
+```
+✅ api-contract.md 확인 완료 — {경로}
+── 1단계: test-scenarios 시작 ──
+```
+
+**api-contract.md가 없는 경우:**
+
+- 실행 조건에 해당하면: `/api-contract $ARGUMENTS` 실행. 완료 후 1단계로 진행.
+- 스킵 조건에 해당하면: 아래 메시지 출력 후 스킵.
+
+```
+⏭️  api-contract 스킵 — {스킵 이유}
+── 1단계: test-scenarios 시작 ──
+```
+
+---
+
+## 0.7단계: /fe-ui-design 확인
+
+이슈 본문(AC 포함)을 읽어 UI 컴포넌트가 포함되는지 판단한다.
+(issue-{N}.md는 1단계에서 생성되므로 아직 존재하지 않는다 — 이슈 본문만으로 판단한다.)
+
+**판단 기준 — fe-ui-design이 필요한 경우:**
+- AC 또는 이슈 본문에 화면, UI, 컴포넌트, 팝업, 사이드패널 등 언급
+- 이슈 레이블이 `FE` 또는 `frontend`
+
+**ui-design.md가 이미 있는 경우:**
+
+```bash
+ls docs/features/*/ui-design.md 2>/dev/null
+```
+
+파일이 존재하면 아래 메시지 출력 후 1단계로 진행:
+
+```
+✅ ui-design.md 확인 완료 — {경로}
+── 1단계: test-scenarios 시작 ──
+```
+
+**ui-design.md가 없는 경우:**
+
+- UI 컴포넌트가 포함된다고 판단되면: `/fe-ui-design $ARGUMENTS` 실행. 완료 후 1단계로 진행.
+- UI 컴포넌트가 없다고 판단되면 (훅/유틸리티/백엔드 전용 등): 아래 메시지 출력 후 스킵.
+
+```
+⏭️  fe-ui-design 스킵 — UI 컴포넌트 없음 (훅·유틸·백엔드 전용)
 ── 1단계: test-scenarios 시작 ──
 ```
 
@@ -150,8 +227,33 @@ AC 갭이 발견되면 사용자에게 보고하고 추가 시나리오 작성 �
 클린 상태 확인 후:
 
 ```
+── 6.5단계: e2e-write 시작 ──
+```
+
+---
+
+## 6.5단계: /e2e-write
+
+이슈 본문을 읽어 E2E 테스트 작성이 필요한지 판단한다.
+
+**실행 조건 — 다음 중 하나에 해당하면 실행:**
+- 여러 컴포넌트/계층이 함께 동작하는 사용자 흐름이 있다 (팝업 → 저장 → 목록 표시 등)
+- API 저장 후 데이터 영속성이 AC에 포함된다
+- FE UI가 있고 `api-contract.md`가 존재한다 (실제 연동 흐름 검증)
+
+**스킵 조건 — 다음 중 하나에 해당하면 스킵:**
+- 단위 테스트만으로 충분한 순수 유틸/훅 이슈
+- BE 내부 로직만 변경 (FE 연동 없음)
+- 이미 `e2e/{feature}/{feature}.spec.ts`가 존재하고 해당 기능을 커버한다
+
+스킵 시:
+
+```
+⏭️  e2e-write 스킵 — {스킵 이유}
 ── 7단계: create-pr 시작 ──
 ```
+
+실행 시: `/e2e-write $ARGUMENTS` 실행. 완료 후 7단계로 진행.
 
 ---
 
@@ -163,7 +265,6 @@ AC 갭이 발견되면 사용자에게 보고하고 추가 시나리오 작성 �
 
 - PR base 브랜치: `feature/<spec>`
 - PR body에 `Closes #$ARGUMENTS` 포함
-- commitlint 통과
 
 PR 생성 완료 후 해당 이슈에 PR 링크를 코멘트로 남긴다:
 

@@ -104,8 +104,23 @@ PR 초안
 
 ## 3단계: E2E 테스트 실행
 
+먼저 `test:e2e` 스크립트가 존재하는지 확인한다.
+
 ```bash
-npm run test:e2e
+grep -q '"test:e2e"' package.json 2>/dev/null
+```
+
+**스크립트 없음** → 아래 메시지 출력 후 4단계로 바로 진행.
+
+```
+⏭️ E2E 스킵 — test:e2e 스크립트 미설정
+   E2E 환경(Playwright) 설정 후 자동으로 활성화됩니다.
+```
+
+**스크립트 있음** → E2E 실행.
+
+```bash
+pnpm test:e2e
 ```
 
 ---
