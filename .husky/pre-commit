@@ -1,0 +1,2 @@
+pnpm --filter @codit/extension lint
+pnpm --filter @codit/extension typecheck
