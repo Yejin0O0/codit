@@ -36,9 +36,11 @@ export default defineContentScript({
         });
 
         // 3. Tailwind CSS 주입
+        // 컴파일된 CSS 의 :root 규칙(디자인 토큰 + Tailwind 테마 변수)을
+        // Shadow Root 스코프로 재배치한다. (ui-architecture 원칙 1)
         const style = document.createElement('style');
 
-        style.textContent = css;
+        style.textContent = css.replaceAll(':root', ':host');
 
         shadowRoot.appendChild(style);
 

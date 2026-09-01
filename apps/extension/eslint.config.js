@@ -106,6 +106,19 @@ export default tseslint.config(
     },
 
     /*
+     * shadcn/ui primitive — 라이브러리 복사 코드.
+     * variant 상수(buttonVariants 등)를 컴포넌트와 함께 export 하므로
+     * react-refresh 규칙을 완화한다.
+     */
+    {
+        files: ['components/ui/**/*.{ts,tsx}'],
+
+        rules: {
+            'react-refresh/only-export-components': 'off',
+        },
+    },
+
+    /*
      * Prettier와 ESLint 스타일 충돌 제거
      */
     prettierConfig,
