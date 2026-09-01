@@ -12,31 +12,25 @@
 
 ## 3. 기술 결정
 
-### ADR-1. `Problem`/`ProblemIdentification` 테이블 분리
+### ADR-1. `Problem` 단일 테이블, 사용자 식별 없음 (수정됨)
 
-**Context** — 문제 식별 시 저장할 데이터를 어떤 테이블 구조로 모델링할지 정해야 한다. 향후 태그·Attempt 기능이 "어떤 문제인가"를 참조해야 하므로, 지금 만드는 구조가 이후 확장에 영향을 준다.
+**Context** — 문제 식별 시 저장할 데이터를 어떤 구조로 모델링할지 정해야 한다. 최초에는 "누가 언제 이 문제를 봤는지"까지 남기려고 `Problem`(마스터)/`ProblemIdentification`(사용자별 방문 로그)로 분리하고 JWT 인증을 요구하는 설계를 세웠으나, `api-contract` 단계에서 팀 기존 스펙(담당: 지은, `POST /api/problems`)과 대조하며 재검토했다.
 
-**Decision** — `problem`(마스터: `contest_prob_id` unique, `url`)과 `problem_identification`(로그: `problem_id` FK, `user_id`, `identified_at`) 두 테이블로 분리한다. 식별 요청이 오면 `problem`에 해당 `contest_prob_id`가 없으면 생성(upsert)하고, `problem_identification`에 새 레코드를 남긴다.
+**Decision** — `Problem` 단일 테이블(`id`, `problem_id` unique — SWEA `contestProbId`, `url`, `created_at`)만 사용한다. 사용자별 방문/활동 기록은 이 이슈에서 다루지 않는다.
+
+**왜 사용자 식별을 뺐는가** — "본인 것만 보이는 UI"라서 필요 없다는 뜻이 아니다(DB에는 어차피 여러 사용자의 데이터가 섞여 쌓이므로 필터링을 위한 user_id는 필요하다). 다만 그 필요가 생기는 시점은 "문제 식별"(Problem 마스터 확보)이 아니라, 향후 만들 `Attempt`(실제 풀이 기록 — `shared-types`에 이미 정의됨, `submittedAt`/`result` 포함)다. "문제 식별"의 역할은 problem_id 참조점을 만드는 것뿐이고, 사용자별 연결은 그 참조점을 쓰는 이후 기능(Attempt)이 담당한다.
 
 **Alternatives**
-- 단일 테이블에 모두 저장(`problem_identification`에 url 등 전부 포함): 나중에 `title`·`difficulty`·태그 등 문제 마스터 데이터가 필요해지면 정규화 마이그레이션이 불가피해 거부.
-- `problem`에 사용자 식별 정보(user_id, identified_at)를 컬럼으로 직접 추가: 한 문제를 여러 사용자가 각자 식별하는 1:N 관계를 표현할 수 없어 거부.
+- `Problem`/`ProblemIdentification` 분리 + JWT 인증 (최초 설계): 이 이슈 시점에 실제로 소비하는 기능이 없는 로그를 미리 만드는 셈이고, 인증 의존성(#2/#3/#4)까지 이 이슈에 끌어들여 범위가 불필요하게 커짐 — 거부.
+- 단일 테이블에 `title`/`difficulty`까지 포함: `title`은 이번 이슈에서 파싱하지 않기로 확정(Out of Scope)해 거부.
 
-**Consequences** — 장점: 정규화된 구조로 이후 태그·Attempt가 `problem` FK를 그대로 참조 가능. 단점: 테이블이 2개라 조회 시 조인이 필요해지고, 현재 MVP 범위만 보면 다소 과해 보일 수 있음 — 다만 `shared-types`에 이미 `Problem`/`Attempt` 개념이 정의돼 있어 정당화됨.
+**Consequences** — 장점: 인증 의존성이 완전히 사라져 #2/#3/#4를 기다릴 필요가 없고, 구조가 단순해짐. 단점: "언제 방문했는지"에 대한 세밀한 로그는 이번 이슈에서 얻을 수 없음 — 필요해지면 별도 이슈로 다시 설계.
 
 ---
 
-### ADR-2. `CurrentUserProvider` 인터페이스로 사용자 식별 추상화
+### ADR-2. (제거됨 — `CurrentUserProvider` 불필요)
 
-**Context** — 인증(JWT 발급·검증) 담당 팀원의 작업(#2, #3, #4)이 아직 완료되지 않았다. 이 이슈는 그 작업을 기다리지 않고 진행해야 하며, 나중에 실제 인증이 붙을 때 재작업을 최소화해야 한다.
-
-**Decision** — `CurrentUserProvider` 인터페이스(`Long getCurrentUserId(HttpServletRequest request)`)를 정의한다. 지금은 `Authorization: Bearer <accessToken>` 헤더의 JWT를 서명 검증 없이 payload만 디코드해 `sub` 클레임(Long)을 반환하는 더미 구현체를 Spring Bean으로 등록해 사용한다. #2/#3/#4 완료 후에는 실제 서명 검증을 수행하는 구현체로 Bean만 교체한다.
-
-**Alternatives**
-- Spring Security를 이 이슈에서 함께 완전히 구현: 인증 담당 팀원의 작업 범위와 중복되고, `SecurityConfig`를 동시에 건드려 병합 충돌 위험이 커서 거부.
-- JWT 없이 평문 헤더로 user_id 직접 전달: `api-contract.md`에 이미 `Bearer` 토큰 방식이 확정돼 있어 계약 위반이므로 거부.
-
-**Consequences** — 장점: 인증 이슈 완료를 기다리지 않고 병렬 개발 가능, 교체 범위가 구현체 1개로 국한. 단점: 더미 구현체가 살아있는 동안은 서명 미검증 상태라 보안 취약 — PR과 이슈에 "#2/#3/#4 완료 후 구현체 교체 필요"를 명시하고, `security-review` 단계에서 반드시 이 사실을 알려진 위험으로 기록해야 한다.
+ADR-1 수정으로 인증 자체가 필요 없어져 이 결정은 더 이상 유효하지 않다. 사용자 식별이 필요한 시점(Attempt 이슈)이 오면 그때 다시 설계한다.
 
 ---
 
@@ -57,7 +51,7 @@
 - 문제 제목(`title`)·난이도(`difficulty`) 자동 수집
 - 태그 저장/선택 기능 (다음 이슈)
 - 대시보드 연동
-- 인증(JWT) 발급·검증 시스템 자체 구현 — 별도 이슈(#2 Google, #3 GitHub, #4 Refresh+로그아웃)에 의존. 이번 이슈는 서명 미검증 더미 `CurrentUserProvider`로 구현하고, 위 이슈 완료 후 구현체를 교체한다
+- 인증(JWT) 연동 — ADR-1 수정으로 이번 이슈는 인증이 필요 없어짐. 사용자별 활동 기록(누가 언제 풀었는지)은 향후 `Attempt` 이슈에서 다룬다
 - 응답 시간·데이터 크기 등 성능 기준 (추후 결정)
 - 백엔드 저장 자동 재시도(백그라운드 큐)
 
@@ -66,6 +60,6 @@
 | 용어 | 정의 |
 |---|---|
 | 문제 식별(Problem Identification) | SWEA 문제 페이지 URL의 `contestProbId` 쿼리 파라미터를 파싱해 사용자가 보고 있는 문제를 인식하는 동작 |
-| `contestProbId` | SWEA 문제 페이지 URL에 포함된 쿼리 파라미터. 문제를 고유하게 식별하는 값 |
+| `contestProbId` | SWEA 문제 페이지 URL에 포함된 쿼리 파라미터. 문제를 고유하게 식별하는 값. API 요청 필드명은 `problemId`로 통일한다(api-contract.md 기준) |
 | Attempt(진행 중) | 아직 제출되지 않은, 현재 풀이 중인 시도. `chrome.storage`에 `problem_id` 기준으로 임시 보관되며, 새로고침/재방문 시 중복 식별을 막는 데 쓰인다 |
 | 식별 시각(identifiedAt) | 문제가 식별되어 백엔드에 저장된 시점의 타임스탬프 |

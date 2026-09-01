@@ -6,43 +6,44 @@ FE/BE 역할 분리 워크플로우에 따라 2개 이슈로 나눈다. `api-con
 
 ## Issue 1: [문제 식별] 문제 식별 저장 API (백엔드)
 
+> api-contract 단계에서 팀 기존 스펙(담당: 지은, `POST /api/problems`)을 기준으로 재설계됨. 최초 설계(`ProblemIdentification` 로그 + JWT 인증)는 폐기하고, 사용자별 활동 기록은 향후 `Attempt` 이슈로 미룸. 자세한 내용은 `api-contract.md`, `prd.md` ADR-1 참고.
+
 ### 설명
 
-익스텐션이 파싱한 `contestProbId`를 받아 `Problem`(마스터, upsert) + `ProblemIdentification`(로그) 테이블에 저장하는 REST API를 구현한다. 인증은 아직 완료되지 않았으므로(#2, #3, #4 의존), `CurrentUserProvider` 인터페이스와 더미 구현체로 JWT `sub` 클레임에서 user_id를 추출한다.
+익스텐션이 파싱한 `problemId`(SWEA `contestProbId`)와 `url`을 받아 `Problem` 테이블에 upsert하는 REST API를 구현한다. `Problem`은 특정 사용자에 속하지 않는 공개 마스터 데이터이므로 인증이 필요 없다.
 
 신규 파일:
-- `Problem`, `ProblemIdentification` 엔티티
-- `ProblemRepository`, `ProblemIdentificationRepository`
-- `ProblemIdentificationService`
-- `ProblemIdentificationController`
-- `CurrentUserProvider` 인터페이스, 더미 구현체
+- `Problem` 엔티티
+- `ProblemRepository`
+- `ProblemService`
+- `ProblemController`
 
 ### 완료 조건 (Acceptance Criteria)
 
-- [ ] `contestProbId`로 요청하면 `Problem`이 없으면 생성되고, `ProblemIdentification` 로그가 저장된다
-- [ ] 이미 존재하는 `contestProbId`로 재요청해도 `Problem`은 중복 생성되지 않는다
-- [ ] `Authorization: Bearer <JWT>`의 `sub` 클레임에서 user_id(Long)를 추출해 `ProblemIdentification`에 함께 저장한다
-- [ ] `Authorization` 헤더가 없거나 형식이 잘못되면 `401 UNAUTHORIZED`(`{code, message}`)를 반환한다
+- [ ] `problemId`로 요청 시 해당 `Problem`이 없으면 새로 생성하고 `201 Created`를 반환한다
+- [ ] `problemId`로 요청 시 해당 `Problem`이 이미 있으면 기존 데이터를 `200 OK`로 반환한다 (중복 생성 안 됨)
+- [ ] `problemId` 또는 `url`이 없으면 `400 Bad Request`(`{code: "INVALID_REQUEST", message}`)를 반환한다
+- [ ] `Authorization` 헤더 없이도 정상 동작한다 (인증 불필요)
 
 ### 시나리오
 
-**시나리오 A — 신규 문제 식별 저장**
+**시나리오 A — 신규 문제 등록**
 
-**Given** 유효한 JWT를 가진 사용자이고, `Problem` 테이블에 해당 `contestProbId`가 없다
-**When** `contestProbId`와 함께 식별 저장 API를 호출한다
-**Then** 새 `Problem`이 생성되고, `ProblemIdentification` 로그가 저장되며 성공 응답을 받는다
+**Given** 요청한 `problemId`의 `Problem`이 존재하지 않는다
+**When** `problemId`, `url`과 함께 `POST /api/problems`를 호출한다
+**Then** 새 `Problem`이 생성되고 `201 Created`와 함께 `id`, `problemId`, `url`, `createdAt`을 반환한다
 
-**시나리오 B — 이미 존재하는 문제 재식별**
+**시나리오 B — 기존 문제 조회**
 
-**Given** 해당 `contestProbId`의 `Problem`이 이미 존재한다
-**When** 같은 `contestProbId`로 식별 저장 API를 다시 호출한다
-**Then** `Problem`은 중복 생성되지 않고, `ProblemIdentification` 로그만 새로 추가된다
+**Given** 요청한 `problemId`의 `Problem`이 이미 존재한다
+**When** 같은 `problemId`로 `POST /api/problems`를 다시 호출한다
+**Then** 기존 `Problem`을 `200 OK`로 반환하고, 중복 생성되지 않는다
 
-**시나리오 C — 인증 헤더 없음**
+**시나리오 C — 필수값 누락**
 
-**Given** `Authorization` 헤더가 없는 요청이다
-**When** 식별 저장 API를 호출한다
-**Then** `401 UNAUTHORIZED`와 `{code: "UNAUTHORIZED", message: "..."}` 응답을 받는다
+**Given** `problemId` 또는 `url`이 없는 요청이다
+**When** `POST /api/problems`를 호출한다
+**Then** `400 Bad Request`와 `{code: "INVALID_REQUEST", message: "..."}`를 반환한다
 
 ---
 
