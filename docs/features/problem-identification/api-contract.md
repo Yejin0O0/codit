@@ -30,12 +30,12 @@ Content-Type: application/json
 
 **Response** `200 OK` (이미 존재하는 문제)
 ```json
-{ "id": 12, "problemId": "7965", "url": "https://swea.skku.edu/..." }
+{ "id": 12, "problemId": "AZ8R8haaeYnHBITH", "url": "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=AZ8R8haaeYnHBITH" }
 ```
 
 **Response** `201 Created` (신규 생성)
 ```json
-{ "id": 13, "problemId": "7965", "url": "https://swea.skku.edu/...", "createdAt": "2026-08-26T10:00:00Z" }
+{ "id": 13, "problemId": "AZ8R8haaeYnHBITH", "url": "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=AZ8R8haaeYnHBITH", "createdAt": "2026-08-26T10:00:00Z" }
 ```
 
 **Error**
