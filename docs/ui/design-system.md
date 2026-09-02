@@ -40,6 +40,8 @@
 | 위젯 프레임 폭 | `320px` (고정) | 위젯 컨테이너 | timer |
 | 폰트 | 시스템 스택 (`-apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif`) | 위젯 전체. 위젯이 `font-family`·`font-size` 자체 확정 | timer |
 | 기본 폰트 크기 | `14px` | 위젯 전체 | timer |
+| Extension Page 컨테이너 max-width (auth) | `≈ 400px` (구현 시 확정) | Auth 카드 중앙 정렬 컨테이너 | auth |
+| Extension Page 컨테이너 max-width (history) | `≈ 720px` (구현 시 확정) | Problem List / Detail 중앙 정렬 컨테이너 | problem-history |
 
 > 구체 색상값은 shadcn `neutral` 프리셋을 따르며, `--success`/`--warning`은 구현 시 라이트 팔레트에 맞춰 확정한다.
 
@@ -55,8 +57,12 @@
 | Label | shadcn/ui | USE | 없음 | timer |
 | Input | shadcn/ui | USE | 없음 (태그 직접 입력) | timer |
 | Toggle Group | shadcn/ui (Radix) | EXTEND | `ResultToggleGroup`(single·의미색), `TagToggleGroup`(multiple·chip) | timer |
-| Collapsible | shadcn/ui (Radix) | USE | 태그 "더보기", 정답 "메모 추가하기" | timer |
-| Badge | shadcn/ui | USE (선택) | 결과 표시 | timer |
+| Collapsible | shadcn/ui (Radix) | USE / EXTEND(`TagFilterPanel`) | 태그 "더보기", 정답 "메모 추가하기" / 태그 필터 패널 | timer |
+| Badge | shadcn/ui | USE (선택) / EXTEND(`ResultBadge`) | 결과 표시 / 태그 chip | timer |
+| Alert | shadcn/ui | USE (`FormAlert`) | 로그인·회원가입 서버 에러, SignUp 성공 안내. npm 추가 없음 (cva/tailwind 단일 파일, Radix 의존 없음) | auth |
+| Skeleton | shadcn/ui | USE (`ListSkeleton`, `DetailSkeleton`) | Problem List / Detail mock 로딩 표현. npm 추가 없음 | problem-history |
+| Toggle Group | shadcn/ui (Radix) | EXTEND (`ResultFilterToggleGroup`) | 전체/정답/오답/보류 단일 선택 필터 | problem-history |
+| Card | shadcn/ui | EXTEND (`AuthCard`, `ProblemCard`) | Auth 카드 프레임 / 클릭 가능 문제 카드 | auth / problem-history |
 
 ---
 
@@ -64,9 +70,15 @@
 
 | 이름 | 기반 | 확장 내용 |
 |------|------|----------|
-| `PanelShell` | Card | 헤더(제목 + 스텝 인디케이터) 고정 레이아웃. 각 화면의 공통 프레임 |
+| `PanelShell` | Card | 헤더(제목 + 스텝 인디케이터) 고정 레이아웃. 각 화면의 공통 프레임 (Floating Widget 전용) |
 | `ResultToggleGroup` | Toggle Group (single) | 정답/오답/보류 3항목. 의미 토큰(`--success`/`--destructive`/`--warning`) 스타일 |
 | `TagToggleGroup` | Toggle Group (multiple) | chip 형태 렌더. 핵심 태그 + 더보기 태그 + 직접입력 태그를 하나의 선택 집합으로 관리 |
+| `AuthCard` | Card | Extension Page용 인증 카드. 브랜드 슬롯 + 폼 슬롯 + 하단 링크 슬롯 고정 레이아웃 |
+| `ProblemCard` | Card | 클릭 가능 문제 카드. problemId + `ResultBadge` + 제목(조건부) + 메타 라인 + 태그 chip 슬롯 |
+| `ResultBadge` | Badge | `CORRECT`/`WRONG`/`HOLD` → 의미 토큰 + 한글 라벨 매핑. Problem List / Detail / Attempt 공유 (Codit 공용 조합 승격) |
+| `ResultFilterToggleGroup` | Toggle Group (single) | 전체/정답/오답/보류 4항목 세그먼트 필터. 탭은 중립 색, 의미색은 `ResultBadge`에만 |
+| `TagFilterPanel` | Collapsible + `TagToggleGroup` | 태그 다중 선택 필터. `TagPicker`에서 직접입력 제거한 버전 |
+| `FormAlert` | Alert | 폼 레벨 서버 에러 / 성공 안내 배너. `role="alert"` |
 
 ---
 
@@ -74,13 +86,21 @@
 
 | 이름 | 근거 |
 |------|------|
-| `CoditWidget` | Shadow host 래퍼 / 위젯 프레임 |
+| `CoditWidget` | Shadow host 래퍼 / 위젯 프레임 (Floating Widget Surface) |
 | `TimerDisplay` | `tabular-nums` 대형 `mm:ss` 표시. 대응 primitive 없음 |
+| `ExtensionPageShell` | Extension Page Surface 프레임 (배경 / 중앙 정렬 컨테이너 / 헤더 슬롯). Auth·Problem History 공유 |
+| `PageHeader` | Extension Page 상단 바 (브랜드 + 현재 사용자(mock) + 로그아웃 자리). 대응 primitive 없음 |
+| `BrandHeader` | Codit 로고 마크(인라인 SVG) + 서비스명 + 문구. lucide 미도입 원칙에 따라 인라인 SVG |
+| `AttemptTimeline` | Attempt 회차 내림차순 나열 컨테이너 |
+| `AttemptItem` | 회차 / 결과 / 풀이 시간 / 태그 / 메모 / 날짜 표시. 구분선은 `border-t` 유틸. 대응 primitive 없음 |
+| `EmptyState` | empty / filtered-empty / 방어 3변형. 문구 + 선택적 액션 버튼 |
 
 ---
 
 ## 컴포넌트 패턴
 
-- 모든 화면은 `PanelShell`을 최상위 프레임으로 사용한다.
-- 화면 전환은 위젯 상위의 단일 상태(`screen`)로 관리한다.
+- Floating Widget의 모든 화면은 `PanelShell`을 최상위 프레임으로 사용한다.
+- Extension Page의 모든 화면은 `ExtensionPageShell`을 최상위 프레임으로 사용한다.
+- 화면 전환은 Surface 상위의 단일 상태로 관리한다. Floating Widget = `screen`, Extension Page = `view` (`login | signup | list | detail`). Router 라이브러리를 도입하지 않는다.
 - 결과값(정답/오답/보류)에 따른 분기는 화면 내부 조건부 렌더링(UI State)으로 표현한다.
+- 조건부 데이터(문제 제목, 풀이 날짜, 메모, 태그 등)는 있을 때만 렌더하고 없으면 해당 영역을 생략한다. 필수 데이터로 가정하지 않는다.
