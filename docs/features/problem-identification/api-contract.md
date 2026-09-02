@@ -30,8 +30,9 @@ Content-Type: application/json
 
 **Response** `200 OK` (이미 존재하는 문제)
 ```json
-{ "id": 12, "problemId": "AZ8R8haaeYnHBITH", "url": "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=AZ8R8haaeYnHBITH" }
+{ "id": 12, "problemId": "AZ8R8haaeYnHBITH", "url": "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=AZ8R8haaeYnHBITH", "createdAt": "2026-08-26T09:00:00Z" }
 ```
+> `createdAt`은 200/201 응답 모두 포함한다 (최초 생성 시각). 200이든 201이든 동일한 `ProblemResponse` 구조를 사용하므로 필드 구성을 분기하지 않는다.
 
 **Response** `201 Created` (신규 생성)
 ```json

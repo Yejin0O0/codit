@@ -148,3 +148,15 @@ public record ErrorResponse(String code, String message) {}
 | AC-2 (Problem 이미 있으면 기존 데이터 200, 중복 생성 안 됨) | [정상] upsertProblem — created=false / [정상] identifyProblem — 200 |
 | AC-3 (problemId 또는 url 누락 시 400 INVALID_REQUEST) | [예외] upsertProblem — problemId/url null (2건) / [예외] identifyProblem — 400 (2건) |
 | AC-4 (Authorization 헤더 없이도 정상 동작) | [정상] identifyProblem — Authorization 헤더 없이 성공 |
+
+---
+
+## 알려진 제약 / 향후 과제
+
+`ac-verifier`가 AC 4개를 "부분 충족"으로 판정하면서 발견한 갭 중, 이번 이슈 범위를 넘어선다고 판단해 지금은 처리하지 않고 남겨두는 것들.
+
+1. **동시 요청 시 500 위험** (AC-2 관련) — 같은 `problemId`로 두 요청이 동시에 들어오면 둘 다 `findByProblemId`에서 empty를 보고 둘 다 `save`를 시도할 수 있다. 이때 두 번째 저장은 `Problem.problemId`의 DB unique 제약 위반(`DataIntegrityViolationException`)으로 실패하는데, `GlobalExceptionHandler`에 이 예외를 처리하는 핸들러가 없어 500으로 응답한다. 이 API는 "사용자가 익스텐션 아이콘을 클릭"하는 단일 동작으로만 트리거되어 실제 동시 요청 가능성은 낮다고 판단해 지금은 처리하지 않음. 실제로 문제가 되면 별도 이슈로 `GlobalExceptionHandler`에 `DataIntegrityViolationException` 핸들러(재조회 후 정상 응답 또는 409 Conflict) 추가 검토.
+
+2. **잘못된 요청 바디 처리** (AC-3 관련) — JSON 바디를 아예 안 보내거나 `Content-Type`이 다르면 Spring이 `HttpMessageNotReadableException`을 던지는데, 이것도 `GlobalExceptionHandler`가 처리하지 않아 우리가 정한 `{code: "INVALID_REQUEST", message}` 형식이 아닌 Spring 기본 에러 형식으로 응답된다. 이 API를 호출하는 유일한 클라이언트가 우리가 직접 만드는 익스텐션(Issue 2)이라 형식이 깨진 요청이 나올 가능성이 낮다고 판단해 보류. 처리하려면 새 시나리오 도출부터 다시 밟아야 함.
+
+3. **Security 부재로 인한 우연한 통과** (AC-4 관련) — 지금 `Authorization` 헤더 없이도 성공하는 이유는 "인증이 불필요하도록 설계해서"가 아니라 `spring-boot-starter-security` 의존성 자체가 프로젝트에 없어서다. **향후 로그인/인증 기능 이슈에서 Spring Security를 추가할 때, `SecurityConfig`에 `/api/problems`를 `permitAll()`로 명시적으로 열어두는 걸 반드시 확인해야 한다** — 안 그러면 이 API가 의도치 않게 401로 막힐 수 있다.

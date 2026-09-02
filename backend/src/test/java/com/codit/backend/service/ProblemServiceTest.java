@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import java.util.Optional;
 
@@ -46,6 +48,7 @@ class ProblemServiceTest {
 
         assertThat(result.created()).isFalse();
         assertThat(result.problem()).isSameAs(existing);
+        verify(problemRepository, never()).save(any());
     }
 
     @Test
