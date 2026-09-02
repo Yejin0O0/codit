@@ -57,12 +57,23 @@ popup에서 현재 탭 URL의 `contestProbId`를 파싱하고, `chrome.storage`�
 
 **의존: Issue 1** (`api-contract.md` 확정 후에는 mock 기준으로 병렬 진행 가능)
 
+**URL 정규화 필요**: SWEA 문제 진입 경로가 여러 개다 — 스터디 박스 경유(`/main/talk/solvingClub/problemView.do?...&contestProbId=...`), 일반 목록 경유(`/main/code/problem/problemDetail.do?contestProbId=...`) 등. 경로마다 붙는 쿼리 파라미터는 다르지만 `contestProbId`는 공통으로 존재한다. API에 보낼 `url`은 현재 탭의 원본 URL을 그대로 보내지 말고, `contestProbId`로 아래처럼 정규화한 "기본 문제 상세 페이지" URL을 만들어서 보낸다 — 진입 경로와 무관하게 항상 같은 URL이 저장되어야, 이후 기능(예: 문제 페이지 바로가기)에서 일관되게 사용할 수 있다.
+
+```javascript
+const url = new URL(window.location.href);
+const contestProbId = url.searchParams.get("contestProbId");
+const normalizedUrl = `https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=${contestProbId}`;
+```
+
+> ⚠️ 검증 필요: `contestProbId`만으로 항상 정확한 문제 페이지로 연결되는지 미확인. 예시 URL 중 하나(`problemDetail.do`)엔 `categoryId=<contestProbId와 동일값>`도 같이 붙어 있었음 — 우연인지 필수 파라미터인지 실제 접속 테스트로 확인 필요. 안 뜨면 `categoryId`를 추가로 붙여야 할 수 있음.
+
 ### 완료 조건 (Acceptance Criteria)
 
 - [ ] `contestProbId`가 있는 페이지에서 아이콘 클릭 시 API를 호출해 저장하고 성공 상태를 보여준다
 - [ ] `contestProbId`가 없는 페이지에서 아이콘 클릭 시 "문제 페이지가 아닙니다" 안내를 보여준다
 - [ ] 같은 문제를 새로고침/재방문 시 `chrome.storage`에 진행 중 Attempt가 있으면 재사용하고 API를 다시 호출하지 않는다
 - [ ] API 호출 실패 시 에러 메시지와 재시도 버튼을 보여준다
+- [ ] API로 보내는 `url`은 현재 탭의 원본 URL이 아니라, `contestProbId` 기준으로 정규화된 기본 문제 상세 페이지 URL이다
 
 ### 시나리오
 

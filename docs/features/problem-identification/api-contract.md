@@ -86,4 +86,6 @@ Content-Type: application/json
 
 - 최초 제안: `Problem`(마스터) + `ProblemIdentification`(사용자별 방문 로그) 분리, JWT 인증 필요 — 사용자별 통계를 위해 "누가 언제 봤는지" 기록이 필요하다고 판단했음
 - **변경**: 사용자별 활동 기록은 향후 `Attempt`(실제 풀이 기록) 이슈가 담당하기로 결정. "문제 식별"은 `Problem` 마스터 데이터 upsert만 담당 — 인증도, 방문 로그도 불필요해짐
-- 팀 내 기존 스펙(담당: 지은, `POST /api/problems`)을 기준으로 재정렬하고, `url` 필드를 추가함. `title`은 이번 이슈 범위에서 제외
+- 엔드포인트(`POST /api/problems`)와 upsert 패턴은 팀 기존 스펙(담당: 지은)을 따르되, 필드 구성은 지은님 원본 명세와 다르게 확정함. 지은님 명세의 "팀 확정 필요 항목 #2"(`title` 파싱 필요 여부)에 대한 답으로 두 필드를 재검토함:
+  - **`title` 제외**: 이번 이슈에서 DOM 파싱을 구현하지 않기로 확정(Out of Scope). 지은님 명세에서도 선택 필드였고, 파싱 로직이 없으면 항상 `null`이라 의미가 없어 아예 필드에서 뺌
+  - **`url` 필수 추가** (지은님 원본 명세엔 없던 필드): SWEA 문제 진입 경로가 여러 개다 — 스터디 박스 경유(`.../talk/solvingClub/problemView.do?...&contestProbId=...`), 일반 목록 경유(`.../code/problem/problemDetail.do?contestProbId=...`) 등 — 경로마다 붙는 쿼리 파라미터는 다르지만 `contestProbId`는 공통으로 존재함을 확인함. 이 `contestProbId`를 기준으로 정규화된 기본 문제 상세 페이지 URL을 만들어 저장해두면, 어느 경로로 들어왔든 이후 기능(예: 문제 페이지 바로가기)에서 동일한 URL로 이동할 수 있음
