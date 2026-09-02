@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { ExtensionPageShell } from '@/components/codit/extension-page-shell';
 import { PageHeader } from '@/components/codit/page-header';
 
+import { HistoryView } from './history/history-view';
+
 interface ExtensionPageAppProps {
     /** 초기 인증 상태 (mock, 테스트 주입용). 기본 false */
     initialAuthed?: boolean;
@@ -21,11 +23,7 @@ export default function ExtensionPageApp({ initialAuthed }: ExtensionPageAppProp
                 maxWidth={HISTORY_MAX_WIDTH}
                 header={<PageHeader userName={MOCK_USER} />}
             >
-                <section aria-label="문제풀이 기록 화면 자리">
-                    <p className="text-muted-foreground text-sm">
-                        문제풀이 기록 화면은 이후 이슈에서 구현됩니다.
-                    </p>
-                </section>
+                <HistoryView />
             </ExtensionPageShell>
         );
     }

@@ -3,7 +3,8 @@ import { render, screen } from '@testing-library/react';
 import ExtensionPageApp from './App';
 
 const LOGIN_PLACEHOLDER = '로그인 화면 자리';
-const HISTORY_PLACEHOLDER = '문제풀이 기록 화면 자리';
+/** #9: authenticated branch 는 placeholder 대신 HistoryView(aria-label="내 문제풀이") 를 렌더한다 */
+const HISTORY_VIEW_LABEL = '내 문제풀이';
 const MOCK_USER = 'you@example.com';
 
 describe('ExtensionPageApp', () => {
@@ -11,13 +12,13 @@ describe('ExtensionPageApp', () => {
         render(<ExtensionPageApp initialAuthed={false} />);
 
         expect(screen.queryByLabelText(LOGIN_PLACEHOLDER)).not.toBeNull();
-        expect(screen.queryByLabelText(HISTORY_PLACEHOLDER)).toBeNull();
+        expect(screen.queryByLabelText(HISTORY_VIEW_LABEL)).toBeNull();
     });
 
-    it('should render the problem-history placeholder when initialAuthed is true', () => {
+    it('should render HistoryView (aria-label "내 문제풀이") in the authenticated branch', () => {
         render(<ExtensionPageApp initialAuthed />);
 
-        expect(screen.queryByLabelText(HISTORY_PLACEHOLDER)).not.toBeNull();
+        expect(screen.queryByLabelText(HISTORY_VIEW_LABEL)).not.toBeNull();
         expect(screen.queryByLabelText(LOGIN_PLACEHOLDER)).toBeNull();
     });
 
@@ -60,7 +61,7 @@ describe('ExtensionPageApp', () => {
         unmount();
 
         render(<ExtensionPageApp initialAuthed />);
-        expect(screen.queryByLabelText(HISTORY_PLACEHOLDER)).not.toBeNull();
+        expect(screen.queryByLabelText(HISTORY_VIEW_LABEL)).not.toBeNull();
 
         expect(window.location.href).toBe(urlBefore);
     });
