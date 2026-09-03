@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+
+    <!-- 테스트 클래스는 should_x_when_y 형태의 snake_case 메서드명을 허용한다. -->
+    <suppress checks="MethodName" files=".*Tests?\.java"/>
+
+</suppressions>

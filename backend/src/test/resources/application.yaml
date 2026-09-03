@@ -1,0 +1,14 @@
+# 테스트 전용. Docker/PostgreSQL 없이 인메모리 H2 로 컨텍스트를 띄운다.
+# 실제 PostgreSQL 방언 검증이 필요한 리포지토리 테스트는 이후 Testcontainers 로 별도 구성한다.
+spring:
+  datasource:
+    url: jdbc:h2:mem:codit;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
