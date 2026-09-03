@@ -13,8 +13,9 @@
 
 | # | 결정 | 내용 |
 |---|---|---|
-| 1 | collapsed 위젯 구성 | 작은 pill. expanded 와 동일한 top-right anchor. 소형 Codit 아이콘 + `mm:ss` 만. 문제 번호·브랜드 텍스트·상태 문구 없음. SWEA 화면 최소 침습 우선. |
+| 1 | collapsed 위젯 구성 | pill. expanded 와 동일한 top-right anchor. Codit 아이콘 + `mm:ss` + 펼치기 기호만. 문제 번호·브랜드 텍스트·상태 문구 없음. SWEA 화면 침습은 최소화하되, **읽고 누를 수 있는 크기**를 우선한다(초소형 금지 — 대략 40px 높이). |
 | 2 | running / stopped 구분 | stopped 는 소형 완료(check) 아이콘으로 running 과 구분. 색상에만 의존하지 않음. pill 폭이 상태에 따라 크게 바뀌지 않음. 상태 텍스트("완료"/"진행중") 없음. 아이콘은 design-system(인라인 SVG) 패턴을 따름. collapse/expand 컨트롤에는 접근 가능한 이름 제공(접기 = `aria-label`, 펼치기 = name-from-contents + sr-only — "Accessibility" 절). |
+| 3 | 펼치기 어피던스 | collapsed pill 우측에 **상시 표시되는 펼치기 기호(chevron-up 인라인 SVG, 장식 — `aria-hidden`)**. expanded 헤더의 접기 기호(chevron-down)와 시각적으로 대응. running/stopped 무관하게 항상 있으므로 폭 일관성(#2)에 영향 없음. 펼치기 의미는 sr-only 텍스트가 전달하고, chevron 은 sighted 사용자에게 "클릭하면 펼쳐짐"을 알린다. |
 
 ---
 
@@ -47,30 +48,33 @@ Timer 화면                            메모 / 태그 화면 (step 있음)
 ### ② collapsed — running
 
 ```
-                       ┌──────────────────┐
-                       │  [C]   12:34     │
-                       └──────────────────┘
-        top-right 코너 앵커 (expanded 위젯과 같은 위치에서 크기만 축소)
+                       ┌────────────────────┐
+                       │  [C]   12:34    ⌃  │
+                       └────────────────────┘
+        top-right 코너 앵커 (expanded 위젯과 같은 위치, 약 40px 높이의 pill)
 ```
 
 - `[C]` = 소형 Codit 아이콘 (인라인 SVG 마크, `BrandHeader` 와 동일 path). 장식용 —
   `aria-hidden="true"`.
 - `12:34` = `mm:ss`, `tabular-nums`, 초 단위로 계속 증가. **실제 텍스트 노드로 유지**한다.
+- `⌃` = 펼치기 기호 (chevron-up 인라인 SVG). 상시 표시. 장식용 — `aria-hidden="true"`.
+  expanded 헤더의 접기 기호(chevron-down)와 대응.
 - pill 전체가 하나의 펼치기 버튼 (클릭 / Enter / Space). accessible name 은 아래
   "Accessibility" 참조 — 단순 `aria-label` 로 내부 텍스트를 덮어쓰지 않는다.
 
 ### ③ collapsed — stopped ("완료" 이후)
 
 ```
-                       ┌──────────────────┐
-                       │  [C]   07:30  ✓  │
-                       └──────────────────┘
+                       ┌────────────────────┐
+                       │  [C]   07:30  ✓  ⌃ │
+                       └────────────────────┘
 ```
 
 - `07:30` = `stoppedAt` 기준 고정된 최종 시간. 더 이상 증가하지 않는다. 실제 텍스트 노드.
 - `✓` = 소형 완료 아이콘 (인라인 SVG check, `SaveSuccessScreen` 의 path 재사용 가능).
   색상 대비만이 아니라 **아이콘 자체**로 stopped 를 알린다. 장식용 —
   `aria-hidden="true"` (stopped 의미는 아래 sr-only 텍스트가 전달).
+- `⌃` = 펼치기 기호. running(②)과 동일하게 상시 표시(맨 오른쪽).
 - running(②) 대비 pill 폭이 크게 늘지 않도록, check 아이콘 자리를 상시 확보하거나 최소
   폭만 증가시킨다. 상태 텍스트("완료"/"진행중")는 시각적으로 넣지 않는다.
 
@@ -128,7 +132,8 @@ CoditWidget                         → CUSTOM (Shadow host / 320px 프레임, p
             ├── CoditMark (소형)       → 인라인 SVG (BrandHeader 마크 재사용), aria-hidden
             ├── sr-only 동작·상태 문구 → 실제 텍스트 노드 (접근성 절 참조)
             ├── 경과시간 mm:ss         → formatDuration (tabular-nums), 실제 텍스트 노드
-            └── CompletedMark          → 인라인 SVG check (status === "stopped" 일 때만), aria-hidden
+            ├── CompletedMark          → 인라인 SVG check (status === "stopped" 일 때만), aria-hidden
+            └── ExpandMark             → 인라인 SVG chevron-up (상시), aria-hidden
 ```
 
 - `viewState: "expanded" | "collapsed"` 는 `App` 이 `screen` 과 **별개로** 소유하는
@@ -179,6 +184,7 @@ pill 전체는 하나의 `<button>` 이며, **단순 `aria-label` 로 내부 텍
 | sr-only 문구 | 실제 텍스트 노드(`sr-only` 유틸로 시각적 숨김). 동작 의미 + (stopped 시) 상태를 보완 |
 | 경과시간 `mm:ss` | 시각적으로 보이는 실제 텍스트 노드 — 이름 계산에 그대로 포함 |
 | 완료 check SVG (stopped 만) | `aria-hidden="true"` (장식) — 상태 의미는 sr-only 문구가 전달 |
+| 펼치기 chevron-up SVG (상시) | `aria-hidden="true"` (장식) — 펼치기 의미는 sr-only 문구가 전달 |
 
 전달되어야 하는 accessible name (개념):
 
@@ -214,11 +220,13 @@ pill 전체는 하나의 `<button>` 이며, **단순 `aria-label` 로 내부 텍
 
 | 컴포넌트 | 용도 | 커스터마이징 |
 |---|---|---|
-| Button | `CollapseControl` (헤더 아이콘 버튼), `CollapsedTimer` pill 베이스 | `CollapseControl` = `variant="ghost" size="icon"`. pill = outline 계열 + 커스텀 크기(소형). |
+| Button | `CollapseControl` (헤더 아이콘 버튼), `CollapsedTimer` pill 베이스 | `CollapseControl` = `variant="ghost" size="icon"`. pill = outline 계열 + 커스텀 크기(약 40px 높이 — 읽고 누를 수 있는 크기). |
+
+- **아이콘 (전부 인라인 SVG)**: chevron-down(접기) · chevron-up(펼치기) · check(완료 표시) · Codit 마크(collapsed pill). lucide 미도입 원칙(`BrandHeader`, `SaveSuccessScreen` 동일).
 
 - **신규 shadcn/ui 컴포넌트 없음.**
 - **아이콘**: 전부 인라인 SVG. lucide 미도입 원칙(`BrandHeader`, `SaveSuccessScreen`
-  와 동일). chevron-down(접기) / check(완료 표시) / Codit 마크(collapsed pill).
+  와 동일). chevron-down(접기) / chevron-up(펼치기) / check(완료 표시) / Codit 마크(collapsed pill).
 
 ---
 
@@ -226,6 +234,7 @@ pill 전체는 하나의 `<button>` 이며, **단순 `aria-label` 로 내부 텍
 
 - pause / resume / reset 컨트롤
 - collapsed 상태의 새로고침 후 복원 · 접힘/펼침 선호 저장 UI (Widget preference persistence)
+- **위젯 위치 이동 (마우스 드래그)** — expanded/collapsed 공통 위치·경계 clamp·위치 영속·`#codit-root` 컨테이너 전환이 필요한 독립 feature. `feature-planner` 로 별도 착수 (Widget preference persistence 와 함께). 이번 feature 는 top-right 고정.
 - collapsed pill 에 문제 번호 · 브랜드 텍스트 · 상태 문구("완료"/"진행중")
 - running / stopped 를 **색상만으로** 구분
 - 기존 Timer / Result / Memo / Tags 화면 레이아웃 변경 (헤더 접기 컨트롤 슬롯 추가 외)
