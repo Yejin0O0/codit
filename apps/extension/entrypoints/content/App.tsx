@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { CoditWidget } from '@/components/codit/codit-widget';
 
-import { CORE_TAGS, MOCK_PROBLEM, TAG_CATALOG, TAG_CATEGORIES, type Tag } from './mockData';
+import { CORE_TAGS, TAG_CATALOG, TAG_CATEGORIES, type Tag } from './mockData';
 import { type ResultType, type Screen } from './screens';
 import { MemoScreen } from './screens/MemoScreen';
 import { ResultSelectScreen } from './screens/ResultSelectScreen';
@@ -12,12 +12,17 @@ import { TimerScreen } from './screens/TimerScreen';
 import { resolveCustomTagInput } from './tag-input';
 import { useTimer } from './useTimer';
 
+interface AppProps {
+    /** 현재 SWEA 문제의 contestProbId (content script 가 URL 에서 파싱해 주입) */
+    problemId: string;
+}
+
 /** 결과가 메모 화면을 거치는가 (HOLD 는 건너뜀) */
 function hasMemoStep(result: ResultType | null): boolean {
     return result === 'CORRECT' || result === 'WRONG';
 }
 
-export default function App() {
+export default function App({ problemId }: AppProps) {
     const [screen, setScreen] = useState<Screen>('timer');
     const [result, setResult] = useState<ResultType | null>(null);
     const [memo, setMemo] = useState('');
@@ -135,7 +140,7 @@ export default function App() {
     return (
         <CoditWidget>
             <TimerScreen
-                problemId={MOCK_PROBLEM.problemId}
+                problemId={problemId}
                 elapsedSeconds={elapsedSeconds}
                 onComplete={handleComplete}
             />
