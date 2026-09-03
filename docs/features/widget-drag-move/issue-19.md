@@ -172,3 +172,17 @@ interface PanelShellProps {
 | AC-6 hover `grab` / 드래그 중 `grabbing` | PanelShell `cursor-grab` 클래스 (`panel-shell.test.tsx`) + `[정상] 드래그 커서` (`document.body` `grabbing`) |
 | AC-7 새로고침 시 Default position 복귀 | `[정상] 재mount` |
 | AC-8 timer-persistence #15 회귀 없음 | `[정상] #15 회귀` (기존 collapse 스위트 유지) |
+
+---
+
+## E2E 결정 — 스킵
+
+이 이슈는 E2E 테스트를 작성하지 않는다.
+
+- `e2e/` 인프라가 아직 없다 (프로젝트 첫 E2E). Chrome Extension E2E 셋업(`headless:false` + 확장 로드 + SWEA URL fixture)은 그 자체로 별도 작업이다.
+- widget-drag-move 는 #19/#20/#21 3개 이슈다. #19 만 단독 E2E 를 짜면 #20(pill 드래그)·#21(영속·다중 탭)에서 재작업이 발생한다 — feature 완성 후 한 번에 작성하는 편이 리뷰·유지보수에 유리하다.
+- 선례: timer-persistence #15 (PR #18) 도 E2E 없이 머지 (create-pr 자동 스킵).
+- #19 핵심 로직(`clampPosition` 순수 함수 + `useWidgetPosition` 훅 + App 통합 11개)은 단위 테스트로 충분히 커버된다. 미커버는 rAF `transform` 프리뷰와 pointer capture 뿐 (시각 효과, 회귀 위험 낮음).
+
+widget-drag-move E2E 는 별도 "E2E 인프라 + 핵심 플로우" 이슈 또는 #21 완료 시점에 인프라와 함께 구축한다.
+(Timer 흐름·Problem History 도 같은 유예 상태 — `frontend-handoff.md §7` 참고)
