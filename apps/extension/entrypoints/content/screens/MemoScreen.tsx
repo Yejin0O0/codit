@@ -1,3 +1,5 @@
+import type { Ref } from 'react';
+
 import { PanelShell } from '@/components/codit/panel-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +17,8 @@ interface MemoScreenProps {
     onMemoOpenChange: (open: boolean) => void;
     onBack: () => void;
     onNext: () => void;
+    onCollapse?: () => void;
+    collapseControlRef?: Ref<HTMLButtonElement>;
 }
 
 export function MemoScreen({
@@ -26,11 +30,15 @@ export function MemoScreen({
     onMemoOpenChange,
     onBack,
     onNext,
+    onCollapse,
+    collapseControlRef,
 }: MemoScreenProps) {
     return (
         <PanelShell
             title="메모"
             step={step}
+            onCollapse={onCollapse}
+            collapseControlRef={collapseControlRef}
             footer={
                 <>
                     <Button type="button" variant="outline" className="flex-1" onClick={onBack}>

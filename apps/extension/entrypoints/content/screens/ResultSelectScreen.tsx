@@ -1,3 +1,5 @@
+import type { Ref } from 'react';
+
 import { PanelShell } from '@/components/codit/panel-shell';
 import { Button } from '@/components/ui/button';
 import { formatDuration } from '@/lib/format-duration';
@@ -10,6 +12,8 @@ interface ResultSelectScreenProps {
     value: ResultType | null;
     onChange: (value: ResultType) => void;
     onNext: () => void;
+    onCollapse?: () => void;
+    collapseControlRef?: Ref<HTMLButtonElement>;
 }
 
 export function ResultSelectScreen({
@@ -17,10 +21,14 @@ export function ResultSelectScreen({
     value,
     onChange,
     onNext,
+    onCollapse,
+    collapseControlRef,
 }: ResultSelectScreenProps) {
     return (
         <PanelShell
             title="결과 선택"
+            onCollapse={onCollapse}
+            collapseControlRef={collapseControlRef}
             footer={
                 <Button type="button" className="w-full" disabled={value === null} onClick={onNext}>
                     다음

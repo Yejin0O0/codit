@@ -1,3 +1,5 @@
+import type { Ref } from 'react';
+
 import { PanelShell } from '@/components/codit/panel-shell';
 import { formatDuration } from '@/lib/format-duration';
 
@@ -9,11 +11,24 @@ interface SaveSuccessScreenProps {
     elapsedSeconds: number;
     memo: string;
     tags: Tag[];
+    onCollapse?: () => void;
+    collapseControlRef?: Ref<HTMLButtonElement>;
 }
 
-export function SaveSuccessScreen({ result, elapsedSeconds, memo, tags }: SaveSuccessScreenProps) {
+export function SaveSuccessScreen({
+    result,
+    elapsedSeconds,
+    memo,
+    tags,
+    onCollapse,
+    collapseControlRef,
+}: SaveSuccessScreenProps) {
     return (
-        <PanelShell title="저장 완료">
+        <PanelShell
+            title="저장 완료"
+            onCollapse={onCollapse}
+            collapseControlRef={collapseControlRef}
+        >
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col items-center gap-2 py-1">
                     <span className="bg-success/10 text-success flex size-10 items-center justify-center rounded-full">
