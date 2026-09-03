@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 
 import { MemoField } from '../components/MemoField';
 import { RESULT_LABELS, type ResultType } from '../screens';
+import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface MemoScreenProps {
     /** HOLD 는 이 화면에 진입하지 않는다 */
@@ -19,6 +20,7 @@ interface MemoScreenProps {
     onNext: () => void;
     onCollapse?: () => void;
     collapseControlRef?: Ref<HTMLButtonElement>;
+    dragHandlers?: WidgetDragHandlers;
 }
 
 export function MemoScreen({
@@ -32,6 +34,7 @@ export function MemoScreen({
     onNext,
     onCollapse,
     collapseControlRef,
+    dragHandlers,
 }: MemoScreenProps) {
     return (
         <PanelShell
@@ -39,6 +42,7 @@ export function MemoScreen({
             step={step}
             onCollapse={onCollapse}
             collapseControlRef={collapseControlRef}
+            dragHandlers={dragHandlers}
             footer={
                 <>
                     <Button type="button" variant="outline" className="flex-1" onClick={onBack}>

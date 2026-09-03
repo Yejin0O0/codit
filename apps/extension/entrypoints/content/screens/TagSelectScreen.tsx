@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 
 import { TagPicker } from '../components/TagPicker';
 import type { Tag, TagCategory } from '../mockData';
+import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface TagSelectScreenProps {
     step: string;
@@ -18,6 +19,7 @@ interface TagSelectScreenProps {
     onSave: () => void;
     onCollapse?: () => void;
     collapseControlRef?: Ref<HTMLButtonElement>;
+    dragHandlers?: WidgetDragHandlers;
 }
 
 export function TagSelectScreen({
@@ -32,6 +34,7 @@ export function TagSelectScreen({
     onSave,
     onCollapse,
     collapseControlRef,
+    dragHandlers,
 }: TagSelectScreenProps) {
     const canSave = selectedTagIds.length >= 1;
 
@@ -41,6 +44,7 @@ export function TagSelectScreen({
             step={step}
             onCollapse={onCollapse}
             collapseControlRef={collapseControlRef}
+            dragHandlers={dragHandlers}
             footer={
                 <>
                     <Button type="button" variant="outline" className="flex-1" onClick={onBack}>

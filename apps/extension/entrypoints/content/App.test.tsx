@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import App from './App';
@@ -389,5 +389,185 @@ describe('App collapse', () => {
         await user.click(expandBtn()!);
 
         expect(screen.getByText('저장되었어요')).toBeInTheDocument();
+    });
+});
+
+function domRect(width: number, height: number): DOMRect {
+    return {
+        x: 0,
+        y: 0,
+        width,
+        height,
+        top: 0,
+        left: 0,
+        right: width,
+        bottom: height,
+        toJSON: () => ({}),
+    } as DOMRect;
+}
+
+function setViewport(width: number, height: number): void {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
+}
+
+/** containerEl(#codit-root 대역)을 주입해 App 을 렌더한다. */
+function mountAppWithContainer(size?: { width?: number; height?: number }) {
+    const containerEl = document.createElement('div');
+    containerEl.style.position = 'fixed';
+    containerEl.style.top = '20px';
+    containerEl.style.right = '20px';
+    document.body.appendChild(containerEl);
+    vi.spyOn(containerEl, 'getBoundingClientRect').mockReturnValue(
+        domRect(size?.width ?? 320, size?.height ?? 400),
+    );
+    const view = render(<App problemId={PROBLEM_ID} containerEl={containerEl} />);
+    return { containerEl, ...view };
+}
+
+/** expanded 타이머 화면의 PanelShell 헤더 div. */
+const timerHeader = () => screen.getByText('풀이 타이머').closest('div') as HTMLElement;
+
+describe('App widget drag (#19)', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        setViewport(1024, 768);
+    });
+
+    it('[정상] 헤더를 드래그하면 #codit-root 의 left/top 이 이동량만큼 바뀐다 (시나리오 A)', () => {
+        setViewport(2000, 1000);
+        const { containerEl } = mountAppWithContainer();
+        // Default position: left = 2000 - 320 - 20 = 1660, top = 20
+
+        fireEvent.pointerDown(timerHeader(), { clientX: 500, clientY: 300 });
+        fireEvent.pointerMove(window, { clientX: 300, clientY: 450 });
+        fireEvent.pointerUp(window, { clientX: 300, clientY: 450 });
+
+        expect(containerEl.style.left).toBe('1460px'); // 1660 - 200
+        expect(containerEl.style.top).toBe('170px'); // 20 + 150
+    });
+
+    it('[경계] 헤더를 화면 밖까지 오른쪽으로 끌면 오른쪽 끝에서 멈춘다 (시나리오 B)', () => {
+        setViewport(1000, 800);
+        const { containerEl } = mountAppWithContainer();
+        // Default left = 1000 - 320 - 20 = 660
+
+        fireEvent.pointerDown(timerHeader(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 900, clientY: 100 });
+        fireEvent.pointerUp(window, { clientX: 900, clientY: 100 });
+
+        expect(containerEl.style.left).toBe('680px'); // 1000 - 320
+    });
+
+    it('[정상] 어떤 드래그 후에도 위젯 전체가 뷰포트 안에 남는다', () => {
+        setViewport(800, 600);
+        const { containerEl } = mountAppWithContainer({ width: 320, height: 400 });
+
+        fireEvent.pointerDown(timerHeader(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 5000, clientY: 5000 });
+        fireEvent.pointerUp(window, { clientX: 5000, clientY: 5000 });
+
+        expect(containerEl.style.left).toBe('480px'); // 800 - 320
+        expect(containerEl.style.top).toBe('200px'); // 600 - 400
+    });
+
+    it('[경계] 헤더에서 5px 미만 이동 후 놓으면 위치를 변경하지 않는다', () => {
+        setViewport(1000, 800);
+        const { containerEl } = mountAppWithContainer();
+
+        fireEvent.pointerDown(timerHeader(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 103, clientY: 102 });
+        fireEvent.pointerUp(window, { clientX: 103, clientY: 102 });
+
+        expect(containerEl.style.left).toBe('660px');
+        expect(containerEl.style.top).toBe('20px');
+    });
+
+    it('[정상] 드래그 중 document 에 user-select:none, #codit-root 에 data-dragging 을 적용하고 pointerup 시 되돌린다', () => {
+        const { containerEl } = mountAppWithContainer();
+
+        fireEvent.pointerDown(timerHeader(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 140, clientY: 140 });
+
+        expect(containerEl.getAttribute('data-dragging')).toBe('true');
+        expect(document.body.style.userSelect).toBe('none');
+
+        fireEvent.pointerUp(window, { clientX: 140, clientY: 140 });
+
+        expect(containerEl.hasAttribute('data-dragging')).toBe(false);
+        expect(document.body.style.userSelect).toBe('');
+    });
+
+    it('[정상] 드래그 중 body 커서가 grabbing 이 되고 pointerup 시 되돌아온다', () => {
+        mountAppWithContainer();
+
+        fireEvent.pointerDown(timerHeader(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 140, clientY: 140 });
+
+        expect(document.body.style.cursor).toBe('grabbing');
+
+        fireEvent.pointerUp(window, { clientX: 140, clientY: 140 });
+
+        expect(document.body.style.cursor).toBe('');
+    });
+
+    it('[예외] 드래그 중 pointercancel 이 오면 현재 위치에서 종료하고 정리한다', () => {
+        setViewport(1000, 800);
+        const { containerEl } = mountAppWithContainer();
+
+        fireEvent.pointerDown(timerHeader(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 60, clientY: 300 });
+        fireEvent.pointerCancel(window, { clientX: 60, clientY: 300 });
+
+        expect(containerEl.hasAttribute('data-dragging')).toBe(false);
+        expect(document.body.style.userSelect).toBe('');
+        expect(containerEl.style.left).toBe('620px'); // 660 - 40
+        expect(containerEl.style.top).toBe('220px'); // 20 + 200
+    });
+
+    it('[정상] resize 시 위젯이 새 뷰포트 밖이면 경계 안으로 재배치된다 (시나리오 D)', () => {
+        setViewport(1000, 800);
+        const { containerEl } = mountAppWithContainer();
+        // left 660
+
+        setViewport(500, 800);
+        window.dispatchEvent(new Event('resize'));
+
+        expect(containerEl.style.left).toBe('180px'); // 500 - 320
+    });
+
+    it('[경계] resize 시 위젯이 여전히 뷰포트 안이면 위치가 그대로다', () => {
+        setViewport(1000, 800);
+        const { containerEl } = mountAppWithContainer();
+        // left 660
+
+        setViewport(990, 790);
+        window.dispatchEvent(new Event('resize'));
+
+        expect(containerEl.style.left).toBe('660px'); // 660 <= 990 - 320
+    });
+
+    it('[예외] 헤더의 접기 버튼을 클릭하면 접힌다 (드래그로 오인하지 않는다) (시나리오 C)', async () => {
+        const user = userEvent.setup();
+        mountAppWithContainer();
+
+        await user.click(screen.getByRole('button', { name: COLLAPSE }));
+
+        expect(expandBtn()).not.toBeNull();
+        expect(screen.queryByRole('button', { name: '완료' })).toBeNull();
+    });
+
+    it('[정상] 새로 mount 하면 Default position(top-right)으로 돌아온다 (영속 없음)', () => {
+        setViewport(1000, 800);
+        const first = mountAppWithContainer();
+        fireEvent.pointerDown(timerHeader(), { clientX: 400, clientY: 300 });
+        fireEvent.pointerMove(window, { clientX: 200, clientY: 400 });
+        fireEvent.pointerUp(window, { clientX: 200, clientY: 400 });
+        first.unmount();
+
+        const second = mountAppWithContainer();
+
+        expect(second.containerEl.style.left).toBe('660px'); // 1000 - 320 - 20
+        expect(second.containerEl.style.top).toBe('20px');
     });
 });
