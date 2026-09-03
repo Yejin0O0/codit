@@ -127,3 +127,13 @@ beforeEach(() => fakeBrowser.reset());
 | 드래그 중 다른 탭 변경 무시 | `[예외] 드래그 중 동기 무시` |
 | `set` 실패해도 위젯 유지, 에러 UI 없음 | `[예외] 저장 실패 fail-soft` (C) + `[예외] writeWidgetPosition throw` |
 | `wxt.config.ts` storage permission, 그 외 없음 | security-review 6단계 manifest 감사로 확인 (unit 테스트 대상 아님) |
+
+---
+
+## E2E 결정 — 스킵
+
+이슈 #19 · #20 과 동일한 근거로 E2E 를 작성하지 않는다.
+
+- `e2e/` 인프라 미구축. widget-drag-move(#19~#21) 완결 시점 또는 전용 E2E 인프라 이슈에서 일괄 작성.
+- #21 로직은 `fakeBrowser` 기반 단위 테스트로 커버: `storage.local` read/write, `storage.onChanged` 다중 탭, 손상값 폴백, fail-soft, 드래그 중 무시.
+- "깜빡임 없음" · "에러 UI 없음" 은 jsdom 에서 직접 단언 불가 — visibility 전환 테스트 + 에러 렌더 경로 부재가 proxy (ac-verifier 검증).
