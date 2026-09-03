@@ -6,9 +6,10 @@ interface SocialLoginButtonProps {
     isLoading: boolean;
 }
 
-export default function SocialLoginButton({ provider, onClick }: SocialLoginButtonProps) {
+export default function SocialLoginButton({ provider, onClick, isLoading }: SocialLoginButtonProps) {
     return (
-        <button onClick={onClick}>
+        <button onClick={onClick} disabled={isLoading}>
+            {isLoading && <span data-testid="spinner" />}
             {provider}로 계속하기
         </button>
     );

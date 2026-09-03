@@ -1,3 +1,3 @@
 export default function MainPage() {
-    return null;
+    return <div data-testid="main-page" />;
 }

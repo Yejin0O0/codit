@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -125,6 +126,26 @@ class AuthServiceTest {
                 () -> authService.loginWithOAuth("KAKAO", "auth-code", "http://redirect"));
 
         assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.UNSUPPORTED_PROVIDER);
+    }
+
+    @Test
+    @DisplayName("기존 Google 사용자 재로그인 시 User와 SocialAccount가 새로 생성되지 않아야 한다")
+    void loginWithOAuthShouldNotCreateUserOrSocialAccountForExistingGoogleUser() {
+        GoogleProfile profile = GoogleProfile.builder()
+                .sub("google-sub-123")
+                .email("test@gmail.com")
+                .name("Test User")
+                .build();
+        when(googleOAuthClient.getProfile(anyString(), anyString())).thenReturn(profile);
+        User existingUser = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        SocialAccount existingAccount = SocialAccount.builder().user(existingUser).build();
+        when(socialAccountRepository.findByProviderAndProviderId("GOOGLE", "google-sub-123"))
+                .thenReturn(Optional.of(existingAccount));
+
+        authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect");
+
+        verify(userRepository, never()).save(any(User.class));
+        verify(socialAccountRepository, never()).save(any(SocialAccount.class));
     }
 
     @Test

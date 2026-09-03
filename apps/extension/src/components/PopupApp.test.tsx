@@ -2,6 +2,7 @@ import type { AuthStatus } from '@codit/shared-types';
 import { render, screen } from '@testing-library/react';
 
 import * as useAuthModule from '../hooks/useAuth';
+
 import PopupApp from './PopupApp';
 
 vi.mock('../hooks/useAuth');
