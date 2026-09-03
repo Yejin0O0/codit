@@ -45,6 +45,22 @@ FE/BE 역할 분리 워크플로우에 따라 2개 이슈로 나눈다. `api-con
 **When** `POST /api/problems`를 호출한다
 **Then** `400 Bad Request`와 `{code: "INVALID_REQUEST", message: "..."}`를 반환한다
 
+### ⚠️ 후속 논의 필요 — 예외 처리 프레임워크 통합 (`feature/backend-setup`과 중복)
+
+이슈 #5 PR 준비 중, 다른 백엔드 담당 팀원이 올린 `feature/backend-setup` 브랜치(아직 `develop` 미병합)에 이미 공통 예외 처리 프레임워크가 구현돼 있는 걸 확인함. 이슈 #5는 이걸 모르고 자체적으로 별도 예외 처리를 구현해서, 두 세트가 병렬로 존재하는 상태.
+
+| | 이슈 #5 (이번 구현) | `feature/backend-setup` |
+|---|---|---|
+| 패키지 | `com.codit.backend.exception` | `com.codit.backend.common.error` |
+| 커스텀 예외 | `InvalidRequestException(String message)` | `BusinessException(ErrorCode)` |
+| 에러 코드 | 하드코딩 문자열 `"INVALID_REQUEST"` | `ErrorCode` enum (`PROBLEM_ID_REQUIRED` 등 이미 정의됨 — Tag/Attempt 도메인 에러코드도 포함) |
+| 에러 응답 필드명 | `code` | `errorCode` |
+| catch-all 처리 | 없음 | `@ExceptionHandler(Exception.class)` 있음 (미처리 예외 → 500) |
+
+git 충돌은 아님(패키지 경로가 달라 파일 자체는 안 겹침)이지만, 같은 역할을 하는 클래스가 두 세트 존재하는 논리적 중복이라 병합 전에 정리가 필요함.
+
+**참고**: 같은 브랜치에 있는 `Problem`/`ProblemRepository` 중복(`domain.problem.Problem`, `title` 필드 보유)은 팀원과 이미 논의 완료 — 이슈 #5 버전(`domain.Problem`, `url` 필드 보유)으로 나중에 대체하기로 합의됨. **예외 처리 프레임워크는 방향이 아직 안 정해짐** — `ErrorCode`가 여러 도메인(Tag, Attempt)의 공통 인프라로 이미 설계돼 있어서, `Problem`처럼 단순히 "먼저 만든 이슈 #5 버전이 우선"이라고 판단하기 어려울 수 있음. 팀원과 논의 후 어느 쪽으로 통합할지 결정 필요.
+
 ---
 
 ## Issue 2: [문제 식별] 문제 식별 팝업 UI (프론트엔드)
