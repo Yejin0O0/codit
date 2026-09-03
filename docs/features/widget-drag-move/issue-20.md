@@ -127,3 +127,13 @@ export interface UseWidgetPositionResult {
 | pill hover `grab` / 드래그 중 `grabbing` | `[정상] pill hover 커서` + `[정상] pill 드래그 중 커서` |
 | Enter/Space 펼치기 유지 (#15 회귀) | `[정상] Enter/Space 펼치기 유지` + 기존 `collapsed-timer.test.tsx` |
 | (spec-fixed) 가장자리 pill → 펼칠 때 clamp | `[정상] reclamp` + `[정상] 가장자리 pill→펼침 재clamp` |
+
+---
+
+## E2E 결정 — 스킵
+
+이슈 #19 와 동일한 근거로 E2E 를 작성하지 않는다.
+
+- `e2e/` 인프라 미구축, widget-drag-move(#19~#21) 미완성 — feature 완성 시점 또는 전용 E2E 인프라 이슈에서 일괄 작성.
+- #20 로직(pill 드래그, `consumeDragEnd`, `reclamp`)은 단위 테스트 25개로 커버.
+- 미커버는 rAF `transform` 프리뷰 / pointer capture — 실브라우저(E2E) 영역, `useWidgetPosition.ts` 방어 가드.
