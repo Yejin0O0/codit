@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 
 import { clampPosition, useWidgetPosition } from './useWidgetPosition';
 
@@ -100,5 +100,31 @@ describe('useWidgetPosition', () => {
 
         const { result } = renderHook(() => useWidgetPosition(undefined));
         expect(() => result.current.dragHandlers.onPointerDown({} as never)).not.toThrow();
+    });
+});
+
+describe('useWidgetPosition — reclamp (#20)', () => {
+    it('[정상] 위젯 크기가 커진 뒤 reclamp() 를 호출하면 현재 위치를 새 크기 기준으로 재clamp 한다', () => {
+        setViewport(1000, 800);
+        const el = makeContainer(140, 40); // pill 크기
+        const { result } = renderHook(() => useWidgetPosition(el));
+        // mount 시 Default left = 1000 - 140 - 20 = 840
+
+        vi.spyOn(el, 'getBoundingClientRect').mockReturnValue(rect(320, 400)); // 패널 크기로 확장
+        act(() => result.current.reclamp());
+
+        expect(el.style.left).toBe('680px'); // 1000 - 320 (840 > 680 → clamp)
+    });
+
+    it('[경계] 위젯이 여전히 뷰포트 안이면 reclamp() 후 위치가 그대로다', () => {
+        setViewport(1000, 800);
+        const el = makeContainer(140, 40);
+        const { result } = renderHook(() => useWidgetPosition(el));
+        // Default left = 840
+
+        vi.spyOn(el, 'getBoundingClientRect').mockReturnValue(rect(150, 50));
+        act(() => result.current.reclamp());
+
+        expect(el.style.left).toBe('840px'); // 840 <= 1000 - 150 = 850 → 유지
     });
 });

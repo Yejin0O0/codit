@@ -571,3 +571,164 @@ describe('App widget drag (#19)', () => {
         expect(second.containerEl.style.top).toBe('20px');
     });
 });
+
+describe('App pill drag (#20)', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        setViewport(1024, 768);
+        document.body.innerHTML = '';
+    });
+
+    const pill = () => screen.getByRole('button', { name: /펼치기/ });
+    const doneBtn = () => screen.queryByRole('button', { name: '완료' });
+
+    async function collapse(user: ReturnType<typeof userEvent.setup>) {
+        await user.click(screen.getByRole('button', { name: COLLAPSE }));
+    }
+
+    it('[정상] pill 을 5px 이상 드래그하면 위젯이 이동하고 펼쳐지지 않는다 (시나리오 A)', async () => {
+        const user = userEvent.setup();
+        setViewport(1000, 800);
+        const { containerEl } = mountAppWithContainer({ width: 140, height: 40 });
+        await collapse(user);
+        // collapsed 기본 위치: left = 1000 - 140 - 20 = 840, top 20
+
+        fireEvent.pointerDown(pill(), { clientX: 500, clientY: 400 });
+        fireEvent.pointerMove(window, { clientX: 300, clientY: 500 });
+        fireEvent.pointerUp(window, { clientX: 300, clientY: 500 });
+        fireEvent.click(pill()); // 브라우저가 뒤이어 발생시키는 click
+
+        expect(doneBtn()).toBeNull(); // 여전히 collapsed
+        expect(containerEl.style.left).toBe('640px'); // 840 - 200
+        expect(containerEl.style.top).toBe('120px'); // 20 + 100
+    });
+
+    it('[예외] pill 을 5px 이상 드래그하면 뒤따르는 click 이 억제되어 펼쳐지지 않는다', async () => {
+        const user = userEvent.setup();
+        mountAppWithContainer({ width: 140, height: 40 });
+        await collapse(user);
+
+        fireEvent.pointerDown(pill(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 200, clientY: 200 });
+        fireEvent.pointerUp(window, { clientX: 200, clientY: 200 });
+        fireEvent.click(pill());
+
+        expect(doneBtn()).toBeNull();
+        expect(screen.queryByRole('button', { name: /펼치기/ })).not.toBeNull();
+    });
+
+    it('[정상] pill 을 5px 미만 이동 후 떼면 펼쳐진다 (시나리오 B)', async () => {
+        const user = userEvent.setup();
+        mountAppWithContainer({ width: 140, height: 40 });
+        await collapse(user);
+
+        fireEvent.pointerDown(pill(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 103, clientY: 102 });
+        fireEvent.pointerUp(window, { clientX: 103, clientY: 102 });
+        fireEvent.click(pill());
+
+        expect(doneBtn()).not.toBeNull();
+    });
+
+    it('[경계] pill 을 4px 이동 후 떼면 펼쳐진다 (임계값 경계)', async () => {
+        const user = userEvent.setup();
+        mountAppWithContainer({ width: 140, height: 40 });
+        await collapse(user);
+
+        fireEvent.pointerDown(pill(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 104, clientY: 100 });
+        fireEvent.pointerUp(window, { clientX: 104, clientY: 100 });
+        fireEvent.click(pill());
+
+        expect(doneBtn()).not.toBeNull();
+    });
+
+    it('[정상] pill 을 드래그해 옮긴 뒤 클릭해 펼치면 expanded 패널이 옮긴 위치에 나타난다 (시나리오 C)', async () => {
+        const user = userEvent.setup();
+        setViewport(2000, 1200);
+        const { containerEl } = mountAppWithContainer({ width: 140, height: 40 });
+        await collapse(user);
+        // default left = 2000 - 140 - 20 = 1840
+
+        fireEvent.pointerDown(pill(), { clientX: 900, clientY: 400 });
+        fireEvent.pointerMove(window, { clientX: 300, clientY: 700 });
+        fireEvent.pointerUp(window, { clientX: 300, clientY: 700 });
+        fireEvent.click(pill()); // 억제됨 → 아직 collapsed
+        fireEvent.click(pill()); // 새 클릭 → 펼침
+
+        expect(doneBtn()).not.toBeNull();
+        expect(containerEl.style.left).toBe('1240px'); // 1840 - 600
+        expect(containerEl.style.top).toBe('320px'); // 20 + 300
+    });
+
+    it('[정상] expanded 에서 헤더로 옮긴 뒤 접으면 pill 이 그 위치에 나타난다', async () => {
+        const user = userEvent.setup();
+        setViewport(1000, 800);
+        const { containerEl } = mountAppWithContainer({ width: 320, height: 400 });
+        // expanded default left = 1000 - 320 - 20 = 660
+
+        fireEvent.pointerDown(timerHeader(), { clientX: 400, clientY: 300 });
+        fireEvent.pointerMove(window, { clientX: 200, clientY: 450 });
+        fireEvent.pointerUp(window, { clientX: 200, clientY: 450 });
+        // 660 - 200 = 460, 20 + 150 = 170
+
+        await collapse(user);
+
+        expect(screen.queryByRole('button', { name: /펼치기/ })).not.toBeNull();
+        expect(containerEl.style.left).toBe('460px');
+        expect(containerEl.style.top).toBe('170px');
+    });
+
+    it('[정상] pill 드래그 중 body 커서가 grabbing 이 되고 종료 시 되돌아온다', async () => {
+        const user = userEvent.setup();
+        mountAppWithContainer({ width: 140, height: 40 });
+        await collapse(user);
+
+        fireEvent.pointerDown(pill(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 140, clientY: 140 });
+
+        expect(document.body.style.cursor).toBe('grabbing');
+
+        fireEvent.pointerUp(window, { clientX: 140, clientY: 140 });
+
+        expect(document.body.style.cursor).toBe('');
+    });
+
+    it('[정상] pill 을 우측 가장자리로 옮긴 뒤 펼치면 넓은 패널이 뷰포트 안으로 재배치된다', async () => {
+        const user = userEvent.setup();
+        setViewport(1000, 800);
+        const { containerEl } = mountAppWithContainer({ width: 140, height: 40 });
+        await collapse(user);
+        // pill default left = 840
+
+        // pill 을 우측 끝으로 드래그 (140 폭 → maxLeft = 860)
+        fireEvent.pointerDown(pill(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 300, clientY: 100 });
+        fireEvent.pointerUp(window, { clientX: 300, clientY: 100 });
+        // 840 + 200 = 1040 → clamp 860
+        expect(containerEl.style.left).toBe('860px');
+
+        // 펼치면 패널 폭 320 → maxLeft = 680 이므로 재clamp 되어야 함
+        vi.spyOn(containerEl, 'getBoundingClientRect').mockReturnValue(domRect(320, 400));
+        fireEvent.click(pill()); // 억제됨
+        fireEvent.click(pill()); // 펼침
+
+        expect(doneBtn()).not.toBeNull();
+        expect(containerEl.style.left).toBe('680px'); // 1000 - 320
+    });
+
+    it('[예외] pill 드래그 중 pointercancel 이 오면 collapsed 로 유지되고 종료된다', async () => {
+        const user = userEvent.setup();
+        setViewport(1000, 800);
+        const { containerEl } = mountAppWithContainer({ width: 140, height: 40 });
+        await collapse(user);
+
+        fireEvent.pointerDown(pill(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 60, clientY: 300 });
+        fireEvent.pointerCancel(window, { clientX: 60, clientY: 300 });
+
+        expect(screen.queryByRole('button', { name: /펼치기/ })).not.toBeNull();
+        expect(containerEl.hasAttribute('data-dragging')).toBe(false);
+        expect(containerEl.style.left).toBe('800px'); // 840 - 40
+    });
+});
