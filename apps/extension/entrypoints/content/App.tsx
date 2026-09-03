@@ -2,23 +2,15 @@ import { useMemo, useState } from 'react';
 
 import { CoditWidget } from '@/components/codit/codit-widget';
 
-import { CORE_TAGS, MOCK_PROBLEM, TAG_CATEGORIES, type Tag } from './mockData';
+import { CORE_TAGS, MOCK_PROBLEM, TAG_CATALOG, TAG_CATEGORIES, type Tag } from './mockData';
 import { type ResultType, type Screen } from './screens';
 import { MemoScreen } from './screens/MemoScreen';
 import { ResultSelectScreen } from './screens/ResultSelectScreen';
 import { SaveSuccessScreen } from './screens/SaveSuccessScreen';
 import { TagSelectScreen } from './screens/TagSelectScreen';
 import { TimerScreen } from './screens/TimerScreen';
+import { resolveCustomTagInput } from './tag-input';
 import { useTimer } from './useTimer';
-
-const PREDEFINED_TAGS: Tag[] = [
-    ...CORE_TAGS,
-    ...TAG_CATEGORIES.flatMap((category) => category.tags),
-];
-
-function toCustomTagId(name: string): string {
-    return `custom:${name.trim().toLowerCase().replace(/\s+/g, '-')}`;
-}
 
 /** 결과가 메모 화면을 거치는가 (HOLD 는 건너뜀) */
 function hasMemoStep(result: ResultType | null): boolean {
@@ -36,7 +28,7 @@ export default function App() {
     const { elapsedSeconds, stop } = useTimer();
 
     const selectedTags = useMemo(() => {
-        const pool = [...PREDEFINED_TAGS, ...customTags];
+        const pool = [...TAG_CATALOG, ...customTags];
 
         return selectedTagIds
             .map((id) => pool.find((tag) => tag.id === id))
@@ -65,20 +57,18 @@ export default function App() {
     };
 
     const handleAddCustomTag = (name: string) => {
-        const trimmed = name.trim();
-        if (!trimmed) {
+        const resolved = resolveCustomTagInput(name, [...TAG_CATALOG, ...customTags]);
+        if (!resolved) {
             return;
         }
 
-        const id = toCustomTagId(trimmed);
-        const duplicate = [...PREDEFINED_TAGS, ...customTags].some(
-            (tag) => tag.id === id || tag.name.toLowerCase() === trimmed.toLowerCase(),
-        );
-
-        if (!duplicate) {
-            setCustomTags((prev) => [...prev, { id, name: trimmed }]);
+        // 같은 이름이 이미 있으면 그 태그 id 를 선택한다 — 새 custom id 를 만들지 않는다.
+        if (resolved.isNew) {
+            setCustomTags((prev) => [...prev, resolved.tag]);
         }
-        setSelectedTagIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+        setSelectedTagIds((prev) =>
+            prev.includes(resolved.tag.id) ? prev : [...prev, resolved.tag.id],
+        );
     };
 
     if (screen === 'result') {
