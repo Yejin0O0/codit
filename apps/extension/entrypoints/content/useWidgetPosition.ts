@@ -49,6 +49,11 @@ function elementSize(el: HTMLElement): Size {
     return { width: rect.width, height: rect.height };
 }
 
+/** pos 를 el 의 현재 크기·뷰포트 기준으로 clamp 한다. */
+function clampWithin(el: HTMLElement, pos: WidgetPosition): WidgetPosition {
+    return clampPosition(pos, elementSize(el), viewportSize());
+}
+
 /** 최종 위치를 `top/left` 로 확정하고 `right` 앵커를 제거한다. */
 function writePosition(el: HTMLElement, pos: WidgetPosition): void {
     el.style.top = `${pos.top}px`;
@@ -81,7 +86,8 @@ function endDragVisual(el: HTMLElement): void {
  *   `right` 앵커를 제거한 뒤 `top/left` 로 전환한다.
  * - 헤더 드래그: pointermove 중 `transform: translate3d`(rAF throttle), pointerup 시
  *   최종 위치를 clamp 해 `top/left` 로 확정한다. 이동 거리가 5px 미만이면 클릭으로 보고 커밋하지 않는다.
- * - 드래그 중 containerEl 에 `data-dragging`, document.body 에 `user-select: none` 을 적용한다.
+ * - 드래그 중 containerEl 에 `data-dragging`, document.body 에 `user-select: none` +
+ *   `cursor: grabbing` 을 적용하고 종료 시 되돌린다.
  * - `resize` 시 현재 위치를 새 뷰포트에 맞춰 재clamp 한다.
  * - storage 연동은 없다 — 새로고침 시 Default position 으로 복귀한다 (영속은 Issue #21).
  */
@@ -105,15 +111,8 @@ export function useWidgetPosition(
         if (!containerEl) {
             return;
         }
-        const size = elementSize(containerEl);
-        const viewport = viewportSize();
-        commitPosition(
-            clampPosition(
-                { top: DEFAULT_MARGIN, left: viewport.width - size.width - DEFAULT_MARGIN },
-                size,
-                viewport,
-            ),
-        );
+        const defaultLeft = viewportSize().width - elementSize(containerEl).width - DEFAULT_MARGIN;
+        commitPosition(clampWithin(containerEl, { top: DEFAULT_MARGIN, left: defaultLeft }));
     }, [containerEl, commitPosition]);
 
     // resize: 현재 위치를 새 뷰포트에 맞춰 재clamp 한다.
@@ -122,9 +121,7 @@ export function useWidgetPosition(
             return;
         }
         const onResize = () => {
-            commitPosition(
-                clampPosition(positionRef.current, elementSize(containerEl), viewportSize()),
-            );
+            commitPosition(clampWithin(containerEl, positionRef.current));
         };
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
@@ -161,14 +158,14 @@ export function useWidgetPosition(
                 }
             }
 
-            function finish() {
+            function endDrag() {
                 if (state.rafId !== null) {
                     cancelAnimationFrame(state.rafId);
                     state.rafId = null;
                 }
                 window.removeEventListener('pointermove', onMove);
-                window.removeEventListener('pointerup', finish);
-                window.removeEventListener('pointercancel', finish);
+                window.removeEventListener('pointerup', endDrag);
+                window.removeEventListener('pointercancel', endDrag);
                 endDragVisual(el);
 
                 const dx = state.latestX - startX;
@@ -177,17 +174,13 @@ export function useWidgetPosition(
                     return;
                 }
                 commitPosition(
-                    clampPosition(
-                        { top: startPos.top + dy, left: startPos.left + dx },
-                        elementSize(el),
-                        viewportSize(),
-                    ),
+                    clampWithin(el, { top: startPos.top + dy, left: startPos.left + dx }),
                 );
             }
 
             window.addEventListener('pointermove', onMove);
-            window.addEventListener('pointerup', finish);
-            window.addEventListener('pointercancel', finish);
+            window.addEventListener('pointerup', endDrag);
+            window.addEventListener('pointercancel', endDrag);
         },
         [containerEl, commitPosition],
     );
