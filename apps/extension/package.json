@@ -13,8 +13,8 @@
         "zip:firefox": "wxt zip -b firefox",
         "test": "vitest run --passWithNoTests",
         "typecheck": "tsc --noEmit",
-        "lint": "eslint entrypoints components lib",
-        "lint:fix": "eslint entrypoints components lib --fix",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "postinstall": "wxt prepare"
