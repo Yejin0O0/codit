@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { CollapsedTimer } from './collapsed-timer';
@@ -115,5 +115,61 @@ describe('CollapsedTimer', () => {
         render(<CollapsedTimer seconds={0} status="running" onExpand={vi.fn()} />);
 
         expect(screen.getByRole('button')).not.toHaveAttribute('aria-live');
+    });
+});
+
+describe('CollapsedTimer drag handle (#20)', () => {
+    it('[정상] dragHandlers 가 주어지면 pill 에 grab 커서 클래스가 있다', () => {
+        render(
+            <CollapsedTimer
+                seconds={0}
+                status="running"
+                onExpand={vi.fn()}
+                dragHandlers={{ onPointerDown: vi.fn(), consumeDragEnd: vi.fn() }}
+            />,
+        );
+
+        expect(screen.getByRole('button').className).toMatch(/grab/);
+    });
+
+    it('[정상] dragHandlers 가 주어지면 pill pointerdown 시 onPointerDown 을 호출한다', () => {
+        const onPointerDown = vi.fn();
+        render(
+            <CollapsedTimer
+                seconds={0}
+                status="running"
+                onExpand={vi.fn()}
+                dragHandlers={{ onPointerDown, consumeDragEnd: vi.fn() }}
+            />,
+        );
+
+        fireEvent.pointerDown(screen.getByRole('button'), { clientX: 10, clientY: 10 });
+
+        expect(onPointerDown).toHaveBeenCalledTimes(1);
+    });
+
+    it('[정상] dragHandlers 가 없으면 pill 에 grab 커서 클래스가 없다', () => {
+        render(<CollapsedTimer seconds={0} status="running" onExpand={vi.fn()} />);
+
+        expect(screen.getByRole('button').className).not.toMatch(/grab/);
+    });
+
+    it('[정상] dragHandlers 가 있어도 Enter/Space 로는 펼쳐진다 (#15 접근성 회귀 방지)', async () => {
+        const onExpand = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <CollapsedTimer
+                seconds={0}
+                status="running"
+                onExpand={onExpand}
+                dragHandlers={{ onPointerDown: vi.fn(), consumeDragEnd: () => false }}
+            />,
+        );
+
+        screen.getByRole('button').focus();
+        await user.keyboard('{Enter}');
+        await user.keyboard('[Space]');
+
+        expect(onExpand).toHaveBeenCalledTimes(2);
     });
 });

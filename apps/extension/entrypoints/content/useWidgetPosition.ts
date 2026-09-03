@@ -31,13 +31,17 @@ export function clampPosition(pos: WidgetPosition, widget: Size, viewport: Size)
     };
 }
 
-/** PanelShell 헤더 등 드래그 핸들에 스프레드하는 pointer 핸들러 묶음. */
+/** PanelShell 헤더 · collapsed pill 등 드래그 핸들에 연결하는 pointer 핸들러 묶음. */
 export interface WidgetDragHandlers {
     onPointerDown: (event: ReactPointerEvent) => void;
+    /** 직전 pointer 제스처가 드래그(≥5px)였으면 true 를 1회 반환하고 플래그를 소비한다. (Issue #20) */
+    consumeDragEnd: () => boolean;
 }
 
 export interface UseWidgetPositionResult {
     dragHandlers: WidgetDragHandlers;
+    /** 위젯 크기가 바뀐 뒤(collapsed↔expanded 등) 현재 위치를 재clamp 한다. (Issue #20) */
+    reclamp: () => void;
 }
 
 // --- #codit-root(React 트리 밖) 를 조작하는 명령형 헬퍼 (prd ADR-2) ---
@@ -110,6 +114,8 @@ export function useWidgetPosition(
     const positionRef = useRef<WidgetPosition>({ top: DEFAULT_MARGIN, left: DEFAULT_MARGIN });
     // 드래그 중인지. 드래그 중에는 다른 탭의 storage 변경을 무시한다.
     const isDraggingRef = useRef(false);
+    // 직전 pointer 제스처가 드래그(≥5px)였는지. pill 의 클릭(펼치기) 억제용. (Issue #20)
+    const draggedRef = useRef(false);
 
     const commitPosition = useCallback(
         (pos: WidgetPosition) => {
@@ -120,6 +126,15 @@ export function useWidgetPosition(
         },
         [containerEl],
     );
+
+    // 현재 위치를 현재 위젯 크기·뷰포트 기준으로 재clamp 한다.
+    // resize · 위젯 크기 변화(collapsed↔expanded) 시 호출된다. (Issue #20)
+    const reclamp = useCallback(() => {
+        if (!containerEl) {
+            return;
+        }
+        commitPosition(clampWithin(containerEl, positionRef.current));
+    }, [containerEl, commitPosition]);
 
     // mount: Default position(top-right)으로 초기화하고 top/left 로 전환한다.
     // 저장값 읽기 전까지 비표시.
@@ -167,15 +182,9 @@ export function useWidgetPosition(
 
     // resize: 현재 위치를 새 뷰포트에 맞춰 재clamp 한다.
     useEffect(() => {
-        if (!containerEl) {
-            return;
-        }
-        const onResize = () => {
-            commitPosition(clampWithin(containerEl, positionRef.current));
-        };
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, [containerEl, commitPosition]);
+        window.addEventListener('resize', reclamp);
+        return () => window.removeEventListener('resize', reclamp);
+    }, [reclamp]);
 
     const onPointerDown = useCallback(
         (event: ReactPointerEvent) => {
@@ -187,6 +196,7 @@ export function useWidgetPosition(
             }
 
             isDraggingRef.current = true;
+            draggedRef.current = false;
             const el = containerEl;
             const startX = event.clientX;
             const startY = event.clientY;
@@ -225,6 +235,11 @@ export function useWidgetPosition(
                 if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) {
                     return;
                 }
+                // 드래그였음을 표시 — 뒤따르는 click(펼치기 등)을 소비처가 억제한다.
+                draggedRef.current = true;
+                setTimeout(() => {
+                    draggedRef.current = false;
+                }, 0);
                 commitPosition(
                     clampWithin(el, { top: startPos.top + dy, left: startPos.left + dx }),
                 );
@@ -238,5 +253,12 @@ export function useWidgetPosition(
         [containerEl, commitPosition],
     );
 
-    return { dragHandlers: { onPointerDown } };
+    // 직전 제스처가 드래그였으면 true 를 반환하고 플래그를 소비한다.
+    const consumeDragEnd = useCallback(() => {
+        const dragged = draggedRef.current;
+        draggedRef.current = false;
+        return dragged;
+    }, []);
+
+    return { dragHandlers: { onPointerDown, consumeDragEnd }, reclamp };
 }

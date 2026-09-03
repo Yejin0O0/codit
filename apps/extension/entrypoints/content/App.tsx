@@ -30,7 +30,7 @@ function hasMemoStep(result: ResultType | null): boolean {
 }
 
 export default function App({ problemId, containerEl }: AppProps) {
-    const { dragHandlers } = useWidgetPosition(containerEl);
+    const { dragHandlers, reclamp } = useWidgetPosition(containerEl);
 
     const [viewState, setViewState] = useState<WidgetViewState>('expanded');
     const [screen, setScreen] = useState<Screen>('timer');
@@ -59,6 +59,12 @@ export default function App({ problemId, containerEl }: AppProps) {
             collapseControlRef.current?.focus();
         }
     }, [viewState]);
+
+    // collapsed↔expanded 로 위젯 크기가 바뀌면 현재 위치를 새 크기 기준으로 재clamp 한다.
+    // (가장자리로 옮긴 pill 을 펼칠 때 넓은 패널이 뷰포트 밖으로 나가는 것 방지)
+    useEffect(() => {
+        reclamp();
+    }, [viewState, reclamp]);
 
     const selectedTags = useMemo(() => {
         const pool = [...TAG_CATALOG, ...customTags];
@@ -117,6 +123,7 @@ export default function App({ problemId, containerEl }: AppProps) {
                     seconds={elapsedSeconds}
                     status={collapsedStatus}
                     onExpand={() => setViewState('expanded')}
+                    dragHandlers={dragHandlers}
                 />
             </CoditWidget>
         );
