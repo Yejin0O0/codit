@@ -64,12 +64,14 @@ function writeDragTransform(el: HTMLElement, dx: number, dy: number): void {
 function beginDragVisual(el: HTMLElement): void {
     el.setAttribute('data-dragging', 'true');
     document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'grabbing';
 }
 
 function endDragVisual(el: HTMLElement): void {
     el.style.transform = '';
     el.removeAttribute('data-dragging');
     document.body.style.userSelect = '';
+    document.body.style.cursor = '';
 }
 
 /**

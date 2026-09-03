@@ -137,6 +137,7 @@ interface PanelShellProps {
 - `[정상] 헤더 드래그` — 어떤 드래그 후에도 위젯 전체가 뷰포트 안에 남는다
 - `[정상] resize` — 창을 줄여 위젯이 밖에 놓일 상황이면 `resize` 시 위젯을 새 경계 안으로 재배치한다 (시나리오 D)
 - `[정상] 드래그 부작용 방지` — 드래그 중 document 에 `user-select: none` + `#codit-root` 에 `data-dragging` 을 적용하고 pointerup 시 되돌린다
+- `[정상] 드래그 커서` — 드래그 중 `document.body` 커서가 `grabbing` 이 되고 pointerup 시 되돌아온다 (AC-6)
 - `[정상] 재mount` — 영속이 없으므로 새로 mount 하면 Default position(top-right)으로 돌아온다 (AC-7)
 - `[정상] #15 회귀` — 접기/펼치기·포커스 이동이 그대로 동작한다 (기존 `App.test.tsx` collapse 스위트 유지로 커버)
 
@@ -168,6 +169,6 @@ interface PanelShellProps {
 | AC-3 `resize` 시 경계 안 재배치 | `[정상] resize` (D) + `[경계] resize` |
 | AC-4 접기 버튼 클릭(이동<5px) = 접기 | `[예외] 헤더 접기 버튼` 2종 (C) + `[경계] 헤더 미세 이동` |
 | AC-5 드래그 중 SWEA 텍스트 선택 안 됨 | `[정상] 드래그 부작용 방지` (`user-select: none` + pointer capture) |
-| AC-6 hover `grab` / 드래그 중 `grabbing` | `[정상] 드래그 부작용 방지` 의 커서 단언 (`cursor-grab` 클래스 / `data-dragging`) |
+| AC-6 hover `grab` / 드래그 중 `grabbing` | PanelShell `cursor-grab` 클래스 (`panel-shell.test.tsx`) + `[정상] 드래그 커서` (`document.body` `grabbing`) |
 | AC-7 새로고침 시 Default position 복귀 | `[정상] 재mount` |
 | AC-8 timer-persistence #15 회귀 없음 | `[정상] #15 회귀` (기존 collapse 스위트 유지) |

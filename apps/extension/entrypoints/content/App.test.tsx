@@ -498,6 +498,19 @@ describe('App widget drag (#19)', () => {
         expect(document.body.style.userSelect).toBe('');
     });
 
+    it('[정상] 드래그 중 body 커서가 grabbing 이 되고 pointerup 시 되돌아온다', () => {
+        mountAppWithContainer();
+
+        fireEvent.pointerDown(timerHeader(), { clientX: 100, clientY: 100 });
+        fireEvent.pointerMove(window, { clientX: 140, clientY: 140 });
+
+        expect(document.body.style.cursor).toBe('grabbing');
+
+        fireEvent.pointerUp(window, { clientX: 140, clientY: 140 });
+
+        expect(document.body.style.cursor).toBe('');
+    });
+
     it('[예외] 드래그 중 pointercancel 이 오면 현재 위치에서 종료하고 정리한다', () => {
         setViewport(1000, 800);
         const { containerEl } = mountAppWithContainer();
