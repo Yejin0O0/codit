@@ -10,7 +10,7 @@ import prettierConfig from 'eslint-config-prettier';
 
 export default tseslint.config(
     {
-        ignores: ['.wxt/**', 'node_modules/**', '.output/**', 'dist/**'],
+        ignores: ['.wxt/**', 'node_modules/**', '.output/**', 'dist/**', 'coverage/**'],
     },
 
     js.configs.recommended,
@@ -102,6 +102,19 @@ export default tseslint.config(
              * TypeScript 중복 검사 제거
              */
             '@typescript-eslint/no-unused-vars': 'off',
+        },
+    },
+
+    /*
+     * shadcn/ui primitive — 라이브러리 복사 코드.
+     * variant 상수(buttonVariants 등)를 컴포넌트와 함께 export 하므로
+     * react-refresh 규칙을 완화한다.
+     */
+    {
+        files: ['components/ui/**/*.{ts,tsx}'],
+
+        rules: {
+            'react-refresh/only-export-components': 'off',
         },
     },
 

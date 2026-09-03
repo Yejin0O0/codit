@@ -1,17 +1,19 @@
+import type { AuthStatus } from '@codit/shared-types';
 import { render, screen } from '@testing-library/react';
+
 import * as useAuthModule from '../hooks/useAuth';
 import PopupApp from './PopupApp';
 
 vi.mock('../hooks/useAuth');
 
-const mockAuthState = (status: string, extra: object = {}) =>
+const mockAuthState = (status: AuthStatus, extra: object = {}) =>
     vi.mocked(useAuthModule.useAuth).mockReturnValue({
         authState: {
             user: null,
             accessToken: null,
             expiresAt: null,
             error: null,
-            status: status as any,
+            status,
             ...extra,
         },
         loginWithGoogle: vi.fn(),

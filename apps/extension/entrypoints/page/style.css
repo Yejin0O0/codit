@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+/*
+ * semantic token 값은 styles/tokens.css 단일 파일에서 공급한다 (Source of Truth).
+ * Extension Page 는 자체 document 이므로 :root -> :host 치환 없이 :root 로 적용된다.
+ */
+@import '../../styles/tokens.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Extension Page document 전용 리셋 / 기본 레이아웃.
+ * Shadow DOM 위젯과 달리 호스트 페이지가 없으므로 document 자체를 확정한다.
+ */
+html,
+body,
+#root {
+    min-height: 100vh;
+}
+
+body {
+    margin: 0;
+    background: var(--muted);
+    color: var(--foreground);
+    color-scheme: light;
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo',
+        'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+    * {
+        border-color: var(--border);
+        outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+}

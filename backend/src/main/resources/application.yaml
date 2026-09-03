@@ -1,3 +1,31 @@
 spring:
   application:
     name: backend
+  datasource:
+    # 로컬 기본값 = docker-compose.yml 의 PostgreSQL.
+    # 배포(RDS)는 환경변수 DB_URL / DB_USERNAME / DB_PASSWORD 로 주입한다.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/codit}
+    username: ${DB_USERNAME:codit}
+    password: ${DB_PASSWORD:codit}
+  jpa:
+    hibernate:
+      # MVP 단계: 엔티티 변경 시 스키마 자동 반영.
+      # 배포 전에 Flyway 도입하고 validate 로 전환한다.
+      ddl-auto: update
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+springdoc:
+  # 컨트롤러 코드에서 API 문서를 자동 생성한다. http://localhost:8080/swagger-ui.html
+  swagger-ui:
+    path: /swagger-ui.html
+    doc-expansion: list
+    display-request-duration: true
+  api-docs:
+    path: /v3/api-docs

@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
+
 import { useAuth } from './useAuth';
 
 beforeEach(() => {
