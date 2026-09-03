@@ -153,4 +153,23 @@ describe('CollapsedTimer drag handle (#20)', () => {
 
         expect(screen.getByRole('button').className).not.toMatch(/grab/);
     });
+
+    it('[정상] dragHandlers 가 있어도 Enter/Space 로는 펼쳐진다 (#15 접근성 회귀 방지)', async () => {
+        const onExpand = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <CollapsedTimer
+                seconds={0}
+                status="running"
+                onExpand={onExpand}
+                dragHandlers={{ onPointerDown: vi.fn(), consumeDragEnd: () => false }}
+            />,
+        );
+
+        screen.getByRole('button').focus();
+        await user.keyboard('{Enter}');
+        await user.keyboard('[Space]');
+
+        expect(onExpand).toHaveBeenCalledTimes(2);
+    });
 });
