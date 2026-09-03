@@ -1,6 +1,9 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, fireEvent, renderHook } from '@testing-library/react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
+import { storage } from 'wxt/utils/storage';
 
 import { clampPosition, useWidgetPosition } from './useWidgetPosition';
+import { WIDGET_POSITION_KEY } from './widget-position-storage';
 
 function rect(width: number, height: number): DOMRect {
     return {
@@ -100,6 +103,157 @@ describe('useWidgetPosition', () => {
 
         const { result } = renderHook(() => useWidgetPosition(undefined));
         expect(() => result.current.dragHandlers.onPointerDown({} as never)).not.toThrow();
+    });
+});
+
+type HookResult = { current: ReturnType<typeof useWidgetPosition> };
+
+function startDrag(el: HTMLElement, result: HookResult, clientX: number, clientY: number): void {
+    act(() => {
+        result.current.dragHandlers.onPointerDown({
+            clientX,
+            clientY,
+            pointerId: 1,
+            target: el,
+            currentTarget: el,
+        } as unknown as ReactPointerEvent);
+    });
+}
+
+function drag(
+    el: HTMLElement,
+    result: HookResult,
+    from: [number, number],
+    to: [number, number],
+): void {
+    startDrag(el, result, from[0], from[1]);
+    fireEvent.pointerMove(window, { clientX: to[0], clientY: to[1] });
+    fireEvent.pointerUp(window, { clientX: to[0], clientY: to[1] });
+}
+
+describe('useWidgetPosition — storage 연동 (#21)', () => {
+    it('[경계] 저장값 읽기 완료 전 #codit-root 의 visibility 가 hidden 이다', () => {
+        setViewport(1000, 800);
+        const el = makeContainer(320, 400);
+
+        renderHook(() => useWidgetPosition(el));
+
+        expect(el.style.visibility).toBe('hidden');
+    });
+
+    it('[정상] 저장된 위치가 있으면 그 위치(clamp 후)로 배치하고 visibility 를 해제한다', async () => {
+        setViewport(1000, 800);
+        await storage.setItem(WIDGET_POSITION_KEY, { top: 100, left: 300 });
+        const el = makeContainer(320, 400);
+
+        const view = renderHook(() => useWidgetPosition(el));
+        await act(async () => {});
+
+        expect(el.style.left).toBe('300px');
+        expect(el.style.top).toBe('100px');
+        expect(el.style.visibility).toBe('');
+        view.unmount();
+    });
+
+    it('[정상] 저장값이 없으면 Default position + visibility 해제', async () => {
+        setViewport(1000, 800);
+        const el = makeContainer(320, 400);
+
+        renderHook(() => useWidgetPosition(el));
+        await act(async () => {});
+
+        expect(el.style.left).toBe('660px'); // 1000 - 320 - 20
+        expect(el.style.visibility).toBe('');
+    });
+
+    it('[예외] 저장값이 손상(NaN)이면 Default position 폴백 + 표시', async () => {
+        setViewport(1000, 800);
+        await storage.setItem(WIDGET_POSITION_KEY, { top: NaN, left: 5 });
+        const el = makeContainer(320, 400);
+
+        renderHook(() => useWidgetPosition(el));
+        await act(async () => {});
+
+        expect(el.style.left).toBe('660px');
+        expect(el.style.visibility).toBe('');
+    });
+
+    it('[정상] 드래그로 옮기고 놓으면 새 위치가 storage 에 저장된다', async () => {
+        setViewport(1000, 800);
+        const el = makeContainer(320, 400);
+        const { result } = renderHook(() => useWidgetPosition(el));
+        await act(async () => {});
+        // Default left = 660, top 20
+
+        drag(el, { current: result.current }, [500, 300], [300, 400]); // dx -200, dy +100
+        await act(async () => {});
+
+        expect(await storage.getItem(WIDGET_POSITION_KEY)).toEqual({ top: 120, left: 460 });
+    });
+
+    it('[예외] storage.set 이 throw 해도 위젯은 놓은 위치에 유지되고 console.warn 만 찍힌다', async () => {
+        setViewport(1000, 800);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(storage, 'setItem').mockRejectedValue(new Error('quota'));
+        const el = makeContainer(320, 400);
+        const { result } = renderHook(() => useWidgetPosition(el));
+        await act(async () => {});
+
+        drag(el, { current: result.current }, [500, 300], [300, 400]);
+        await act(async () => {});
+
+        expect(el.style.left).toBe('460px'); // 놓은 위치 유지
+        expect(warn).toHaveBeenCalled();
+    });
+
+    it('[정상] 다른 탭이 위치를 바꾸면(storage.onChanged) 위젯이 그 위치로 이동한다', async () => {
+        setViewport(1000, 800);
+        const el = makeContainer(320, 400);
+        renderHook(() => useWidgetPosition(el));
+        await act(async () => {});
+        // Default left = 660
+
+        await act(async () => {
+            await storage.setItem(WIDGET_POSITION_KEY, { top: 200, left: 400 });
+        });
+
+        expect(el.style.left).toBe('400px');
+        expect(el.style.top).toBe('200px');
+    });
+
+    it('[예외] 드래그 중에는 다른 탭의 위치 변경을 무시한다', async () => {
+        setViewport(1000, 800);
+        const el = makeContainer(320, 400);
+        const { result } = renderHook(() => useWidgetPosition(el));
+        await act(async () => {});
+
+        startDrag(el, { current: result.current }, 100, 100);
+        fireEvent.pointerMove(window, { clientX: 150, clientY: 150 }); // dragging, left ~610
+
+        await act(async () => {
+            await storage.setItem(WIDGET_POSITION_KEY, { top: 700, left: 50 });
+        });
+
+        expect(el.style.left).not.toBe('50px');
+        fireEvent.pointerUp(window, { clientX: 150, clientY: 150 });
+    });
+
+    it('[정상] resize 재clamp 는 storage 에 저장하지 않는다 (저장값 보존)', async () => {
+        setViewport(1000, 800);
+        const el = makeContainer(320, 400);
+        const { result } = renderHook(() => useWidgetPosition(el));
+        await act(async () => {});
+
+        const setSpy = vi.spyOn(storage, 'setItem');
+        drag(el, { current: result.current }, [500, 300], [300, 400]); // 1회 저장
+        await act(async () => {});
+        expect(setSpy).toHaveBeenCalledTimes(1);
+
+        setViewport(500, 800);
+        fireEvent(window, new Event('resize'));
+        await act(async () => {});
+
+        expect(setSpy).toHaveBeenCalledTimes(1); // resize 로 추가 저장 없음
     });
 });
 

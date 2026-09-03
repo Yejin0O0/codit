@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 
+import { readWidgetPosition, watchWidgetPosition, writeWidgetPosition } from './widget-position-storage';
+
 /** 위젯의 화면 내 위치. 뷰포트 좌상단 기준 px. 전역 1개. (prd ADR-1) */
 export interface WidgetPosition {
     top: number;
@@ -83,22 +85,35 @@ function endDragVisual(el: HTMLElement): void {
     document.body.style.cursor = '';
 }
 
+/** 저장값 읽기 완료 전 — 깜빡임 방지. */
+function hideWidget(el: HTMLElement): void {
+    el.style.visibility = 'hidden';
+}
+
+function showWidget(el: HTMLElement): void {
+    el.style.visibility = '';
+}
+
 /**
  * `#codit-root`(Shadow DOM 밖의 position:fixed 컨테이너)의 위치를 소유하는 훅. (prd ADR-2)
  *
  * - mount 시 containerEl 크기를 측정해 Default position(top-right, margin 20)으로 초기화하고
  *   `right` 앵커를 제거한 뒤 `top/left` 로 전환한다.
+ * - 저장된 위치가 있으면 그것으로 복원한다. 읽기 전까지 비표시 — 깜빡임 방지.
  * - 헤더 드래그: pointermove 중 `transform: translate3d`(rAF throttle), pointerup 시
- *   최종 위치를 clamp 해 `top/left` 로 확정한다. 이동 거리가 5px 미만이면 클릭으로 보고 커밋하지 않는다.
+ *   최종 위치를 clamp 해 `top/left` 로 확정하고 `chrome.storage.local` 에 저장한다.
+ *   이동 거리가 5px 미만이면 클릭으로 보고 커밋하지 않는다.
  * - 드래그 중 containerEl 에 `data-dragging`, document.body 에 `user-select: none` +
  *   `cursor: grabbing` 을 적용하고 종료 시 되돌린다.
- * - `resize` 시 현재 위치를 새 뷰포트에 맞춰 재clamp 한다.
- * - storage 연동은 없다 — 새로고침 시 Default position 으로 복귀한다 (영속은 Issue #21).
+ * - `resize` 시 현재 위치를 새 뷰포트에 맞춰 재clamp 한다 (저장은 하지 않는다).
+ * - 다른 탭이 위치를 바꾸면(`storage.onChanged`) 현재 탭도 따라 이동한다. 드래그 중이면 무시.
  */
 export function useWidgetPosition(
     containerEl: HTMLElement | null | undefined,
 ): UseWidgetPositionResult {
     const positionRef = useRef<WidgetPosition>({ top: DEFAULT_MARGIN, left: DEFAULT_MARGIN });
+    // 드래그 중인지. 드래그 중에는 다른 탭의 storage 변경을 무시한다.
+    const isDraggingRef = useRef(false);
     // 직전 pointer 제스처가 드래그(≥5px)였는지. pill 의 클릭(펼치기) 억제용. (Issue #20)
     const draggedRef = useRef(false);
 
@@ -122,12 +137,47 @@ export function useWidgetPosition(
     }, [containerEl, commitPosition]);
 
     // mount: Default position(top-right)으로 초기화하고 top/left 로 전환한다.
+    // 저장값 읽기 전까지 비표시.
     useLayoutEffect(() => {
         if (!containerEl) {
             return;
         }
+        hideWidget(containerEl);
         const defaultLeft = viewportSize().width - elementSize(containerEl).width - DEFAULT_MARGIN;
         commitPosition(clampWithin(containerEl, { top: DEFAULT_MARGIN, left: defaultLeft }));
+    }, [containerEl, commitPosition]);
+
+    // mount: 저장된 위치가 있으면 복원, 없으면 Default 유지. 확정 후 표시.
+    useEffect(() => {
+        if (!containerEl) {
+            return;
+        }
+        let cancelled = false;
+        readWidgetPosition().then((stored) => {
+            if (cancelled) {
+                return;
+            }
+            if (stored) {
+                commitPosition(clampWithin(containerEl, stored));
+            }
+            showWidget(containerEl);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [containerEl, commitPosition]);
+
+    // 다른 탭이 위치를 바꾸면(storage.onChanged) 현재 탭 위젯도 이동한다. 드래그 중이면 무시.
+    useEffect(() => {
+        if (!containerEl) {
+            return;
+        }
+        return watchWidgetPosition((pos) => {
+            if (isDraggingRef.current) {
+                return;
+            }
+            commitPosition(clampWithin(containerEl, pos));
+        });
     }, [containerEl, commitPosition]);
 
     // resize: 현재 위치를 새 뷰포트에 맞춰 재clamp 한다.
@@ -145,6 +195,7 @@ export function useWidgetPosition(
                 return;
             }
 
+            isDraggingRef.current = true;
             draggedRef.current = false;
             const el = containerEl;
             const startX = event.clientX;
@@ -177,6 +228,7 @@ export function useWidgetPosition(
                 window.removeEventListener('pointerup', endDrag);
                 window.removeEventListener('pointercancel', endDrag);
                 endDragVisual(el);
+                isDraggingRef.current = false;
 
                 const dx = state.latestX - startX;
                 const dy = state.latestY - startY;
@@ -191,6 +243,7 @@ export function useWidgetPosition(
                 commitPosition(
                     clampWithin(el, { top: startPos.top + dy, left: startPos.left + dx }),
                 );
+                void writeWidgetPosition(positionRef.current);
             }
 
             window.addEventListener('pointermove', onMove);
