@@ -60,27 +60,63 @@ export function ProblemListView({
                 </Button>
             ) : null}
 
-            {status === 'loading' ? (
-                <ListSkeleton />
-            ) : problems.length === 0 ? (
-                <EmptyState variant="empty" />
-            ) : filtered.length === 0 ? (
-                <EmptyState
-                    variant="filtered-empty"
-                    action={{ label: '필터 해제', onClick: onClearFilters }}
+            <ProblemListContent
+                status={status}
+                problems={problems}
+                filtered={filtered}
+                tagCatalog={tagCatalog}
+                onClearFilters={onClearFilters}
+                onSelectProblem={onSelectProblem}
+            />
+        </div>
+    );
+}
+
+interface ProblemListContentProps {
+    status: 'loading' | 'ready';
+    problems: ProblemHistoryListItem[];
+    filtered: ProblemHistoryListItem[];
+    tagCatalog: TagOption[];
+    onClearFilters: () => void;
+    onSelectProblem: (problemId: string) => void;
+}
+
+/** 본문(로딩 / 전체 empty / 필터 결과 empty / 목록) 렌더링만 담당한다. */
+function ProblemListContent({
+    status,
+    problems,
+    filtered,
+    tagCatalog,
+    onClearFilters,
+    onSelectProblem,
+}: ProblemListContentProps) {
+    if (status === 'loading') {
+        return <ListSkeleton />;
+    }
+
+    if (problems.length === 0) {
+        return <EmptyState variant="empty" />;
+    }
+
+    if (filtered.length === 0) {
+        return (
+            <EmptyState
+                variant="filtered-empty"
+                action={{ label: '필터 해제', onClick: onClearFilters }}
+            />
+        );
+    }
+
+    return (
+        <div className="flex flex-col gap-2">
+            {filtered.map((problem) => (
+                <ProblemCard
+                    key={problem.problemId}
+                    problem={problem}
+                    tagCatalog={tagCatalog}
+                    onSelect={() => onSelectProblem(problem.problemId)}
                 />
-            ) : (
-                <div className="flex flex-col gap-2">
-                    {filtered.map((problem) => (
-                        <ProblemCard
-                            key={problem.problemId}
-                            problem={problem}
-                            tagCatalog={tagCatalog}
-                            onSelect={() => onSelectProblem(problem.problemId)}
-                        />
-                    ))}
-                </div>
-            )}
+            ))}
         </div>
     );
 }
