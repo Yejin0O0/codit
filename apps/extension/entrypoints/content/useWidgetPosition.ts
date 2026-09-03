@@ -99,6 +99,8 @@ export function useWidgetPosition(
     containerEl: HTMLElement | null | undefined,
 ): UseWidgetPositionResult {
     const positionRef = useRef<WidgetPosition>({ top: DEFAULT_MARGIN, left: DEFAULT_MARGIN });
+    // 직전 pointer 제스처가 드래그(≥5px)였는지. pill 의 클릭(펼치기) 억제용. (Issue #20)
+    const draggedRef = useRef(false);
 
     const commitPosition = useCallback(
         (pos: WidgetPosition) => {
@@ -140,6 +142,7 @@ export function useWidgetPosition(
                 return;
             }
 
+            draggedRef.current = false;
             const el = containerEl;
             const startX = event.clientX;
             const startY = event.clientY;
@@ -177,6 +180,11 @@ export function useWidgetPosition(
                 if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) {
                     return;
                 }
+                // 드래그였음을 표시 — 뒤따르는 click(펼치기 등)을 소비처가 억제한다.
+                draggedRef.current = true;
+                setTimeout(() => {
+                    draggedRef.current = false;
+                }, 0);
                 commitPosition(
                     clampWithin(el, { top: startPos.top + dy, left: startPos.left + dx }),
                 );
@@ -189,9 +197,20 @@ export function useWidgetPosition(
         [containerEl, commitPosition],
     );
 
-    // TDD Red 스텁 — Green 단계에서 구현
-    const reclamp = useCallback(() => {}, []);
-    const consumeDragEnd = useCallback(() => false, []);
+    // 위젯 크기 변화(collapsed↔expanded 등) 후 현재 위치를 새 크기·뷰포트 기준으로 재clamp.
+    const reclamp = useCallback(() => {
+        if (!containerEl) {
+            return;
+        }
+        commitPosition(clampWithin(containerEl, positionRef.current));
+    }, [containerEl, commitPosition]);
+
+    // 직전 제스처가 드래그였으면 true 를 반환하고 플래그를 소비한다.
+    const consumeDragEnd = useCallback(() => {
+        const dragged = draggedRef.current;
+        draggedRef.current = false;
+        return dragged;
+    }, []);
 
     return { dragHandlers: { onPointerDown, consumeDragEnd }, reclamp };
 }
