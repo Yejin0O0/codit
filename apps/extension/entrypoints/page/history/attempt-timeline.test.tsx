@@ -4,7 +4,7 @@ import { AttemptTimeline } from './attempt-timeline';
 import { ATTEMPT_1, ATTEMPT_2, ATTEMPT_3, CATALOG_FX } from './test-fixtures';
 
 describe('AttemptTimeline', () => {
-    it('should render AttemptItems ordered by seq descending', () => {
+    it('AttemptItem을 seq 내림차순으로 표시한다', () => {
         render(
             <AttemptTimeline
                 attempts={[ATTEMPT_1, ATTEMPT_2, ATTEMPT_3]}
@@ -18,14 +18,14 @@ describe('AttemptTimeline', () => {
         expect(labels[2]).toMatch(/1회차/);
     });
 
-    it('should render a single AttemptItem when attempts has length 1', () => {
+    it('attempts 길이가 1이면 AttemptItem 하나만 표시한다', () => {
         render(<AttemptTimeline attempts={[ATTEMPT_2]} tagCatalog={CATALOG_FX} />);
 
         expect(screen.queryAllByText(/회차/).length).toBe(1);
         expect(screen.queryByText(/2회차/)).not.toBeNull();
     });
 
-    it('should not mutate the input attempts array when sorting', () => {
+    it('정렬 시 입력 attempts 배열을 변경하지 않는다', () => {
         const input = [ATTEMPT_1, ATTEMPT_2, ATTEMPT_3];
         const snapshot = [...input];
 

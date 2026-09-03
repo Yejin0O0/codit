@@ -5,7 +5,7 @@ import { ProblemCard } from './problem-card';
 import { CATALOG_FX, PROBLEM_CORRECT, PROBLEM_HOLD, PROBLEM_WRONG } from './test-fixtures';
 
 describe('ProblemCard', () => {
-    it('should always render problemId, attempt count and mm:ss duration', () => {
+    it('problemId, 풀이 횟수, mm:ss 소요시간을 항상 표시한다', () => {
         render(<ProblemCard problem={PROBLEM_WRONG} tagCatalog={CATALOG_FX} onSelect={vi.fn()} />);
 
         expect(screen.queryByText(/2178/)).not.toBeNull();
@@ -13,7 +13,7 @@ describe('ProblemCard', () => {
         expect(screen.queryByText('23:11')).not.toBeNull(); // 1391s
     });
 
-    it('should render title, date and tag chips when present', () => {
+    it('title, 날짜, tag chip이 있으면 표시한다', () => {
         render(<ProblemCard problem={PROBLEM_WRONG} tagCatalog={CATALOG_FX} onSelect={vi.fn()} />);
 
         expect(screen.queryByText('그래프 탐색')).not.toBeNull();
@@ -22,7 +22,7 @@ describe('ProblemCard', () => {
     });
 
     it.each(['click', 'Enter', 'Space'] as const)(
-        'should call onSelect exactly once on %s',
+        '%s 시 onSelect를 정확히 한 번 호출한다',
         async (mode) => {
             const onSelect = vi.fn();
             const user = userEvent.setup();
@@ -45,7 +45,7 @@ describe('ProblemCard', () => {
         },
     );
 
-    it('should expose a keyboard-focusable activation target', () => {
+    it('키보드 포커스가 가능한 활성화 대상을 노출한다', () => {
         render(
             <ProblemCard problem={PROBLEM_CORRECT} tagCatalog={CATALOG_FX} onSelect={vi.fn()} />,
         );
@@ -56,7 +56,7 @@ describe('ProblemCard', () => {
         expect(target).toHaveFocus();
     });
 
-    it('should omit the title line when problem.title is undefined', () => {
+    it('problem.title이 undefined이면 title 줄을 생략한다', () => {
         render(
             <ProblemCard problem={PROBLEM_CORRECT} tagCatalog={CATALOG_FX} onSelect={vi.fn()} />,
         );
@@ -65,14 +65,14 @@ describe('ProblemCard', () => {
         expect(screen.queryByText('그래프 탐색')).toBeNull();
     });
 
-    it('should omit the date from the meta line when latestSolvedAt is undefined', () => {
+    it('latestSolvedAt이 undefined이면 메타 줄에서 날짜를 생략한다', () => {
         render(<ProblemCard problem={PROBLEM_HOLD} tagCatalog={CATALOG_FX} onSelect={vi.fn()} />);
 
         expect(screen.queryByText(/1012/)).not.toBeNull();
         expect(screen.queryByText(/2026-/)).toBeNull();
     });
 
-    it('should omit the tag chip row when tagIds is empty', () => {
+    it('tagIds가 비면 tag chip 행을 생략한다', () => {
         render(<ProblemCard problem={PROBLEM_HOLD} tagCatalog={CATALOG_FX} onSelect={vi.fn()} />);
 
         expect(screen.queryByText(/1012/)).not.toBeNull();

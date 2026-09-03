@@ -2,18 +2,18 @@ import { filterProblems } from './filter-problems';
 import { PROBLEM_CORRECT, PROBLEM_HOLD, PROBLEM_WRONG, PROBLEMS_FX } from './test-fixtures';
 
 describe('filterProblems', () => {
-    it('should return all problems when result is ALL and tagIds is empty', () => {
+    it('result가 ALL이고 tagIds가 비면 모든 problem을 반환한다', () => {
         expect(filterProblems(PROBLEMS_FX, { result: 'ALL', tagIds: [] })).toEqual(PROBLEMS_FX);
     });
 
-    it('should keep only problems whose latestResult equals the selected result', () => {
+    it('latestResult가 선택한 result와 같은 problem만 남긴다', () => {
         expect(filterProblems(PROBLEMS_FX, { result: 'WRONG', tagIds: [] })).toEqual([
             PROBLEM_WRONG,
         ]);
         expect(filterProblems(PROBLEMS_FX, { result: 'HOLD', tagIds: [] })).toEqual([PROBLEM_HOLD]);
     });
 
-    it('should keep a problem when any selected tag is in its union tagIds (OR)', () => {
+    it('선택한 tag 중 하나라도 problem의 union tagIds에 있으면 남긴다(OR)', () => {
         // bfs → PROBLEM_WRONG, dp → PROBLEM_CORRECT
         expect(filterProblems(PROBLEMS_FX, { result: 'ALL', tagIds: ['bfs', 'dp'] })).toEqual([
             PROBLEM_WRONG,
@@ -21,7 +21,7 @@ describe('filterProblems', () => {
         ]);
     });
 
-    it('should combine result and tag filters with AND', () => {
+    it('result 필터와 tag 필터를 AND로 결합한다', () => {
         expect(filterProblems(PROBLEMS_FX, { result: 'WRONG', tagIds: ['bfs'] })).toEqual([
             PROBLEM_WRONG,
         ]);
@@ -29,19 +29,19 @@ describe('filterProblems', () => {
         expect(filterProblems(PROBLEMS_FX, { result: 'CORRECT', tagIds: ['bfs'] })).toEqual([]);
     });
 
-    it('should return [] for empty input and the full list when every problem matches', () => {
+    it('입력이 비면 []을, 모든 problem이 매칭되면 전체 목록을 반환한다', () => {
         expect(filterProblems([], { result: 'ALL', tagIds: [] })).toEqual([]);
         expect(filterProblems(PROBLEMS_FX, { result: 'ALL', tagIds: [] })).toEqual(PROBLEMS_FX);
     });
 
-    it('should return [] when a selected tag matches nothing and the match when it does', () => {
+    it('선택한 tag가 아무것도 매칭하지 않으면 []을, 매칭하면 해당 problem을 반환한다', () => {
         expect(filterProblems(PROBLEMS_FX, { result: 'ALL', tagIds: ['nope'] })).toEqual([]);
         expect(filterProblems(PROBLEMS_FX, { result: 'ALL', tagIds: ['bfs'] })).toEqual([
             PROBLEM_WRONG,
         ]);
     });
 
-    it('should not mutate the input array', () => {
+    it('입력 배열을 변경하지 않는다', () => {
         const input = [...PROBLEMS_FX];
         const out = filterProblems(input, { result: 'CORRECT', tagIds: [] });
         expect(out).toEqual([PROBLEM_CORRECT]);

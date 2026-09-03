@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 describe('mountCoditWidget', () => {
-    it('should not create any DOM when the page has no contestProbId', () => {
+    it('contestProbId가 없으면 DOM을 만들지 않는다', () => {
         const childCountBefore = document.body.childElementCount;
 
         const mounted = mountCoditWidget(NON_PROBLEM_URL);
@@ -24,7 +24,7 @@ describe('mountCoditWidget', () => {
         expect(document.body.childElementCount).toBe(childCountBefore);
     });
 
-    it('should mount a shadow-DOM widget root on a SWEA problem page', () => {
+    it('SWEA 문제 페이지에서는 Shadow DOM 위젯 root를 mount한다', () => {
         const mounted = mountCoditWidget(PROBLEM_URL);
 
         expect(mounted).toBe(true);
@@ -33,7 +33,7 @@ describe('mountCoditWidget', () => {
         expect(root!.shadowRoot).not.toBeNull();
     });
 
-    it('should not mount a second time when a root already exists', () => {
+    it('root가 이미 있으면 다시 mount하지 않는다', () => {
         mountCoditWidget(PROBLEM_URL);
         const mountedAgain = mountCoditWidget(PROBLEM_URL);
 

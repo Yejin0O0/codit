@@ -8,27 +8,27 @@ const HISTORY_VIEW_LABEL = '내 문제풀이';
 const MOCK_USER = 'you@example.com';
 
 describe('ExtensionPageApp', () => {
-    it('should render the login-screen placeholder when initialAuthed is false', () => {
+    it('initialAuthed가 false이면 로그인 화면 placeholder를 표시한다', () => {
         render(<ExtensionPageApp initialAuthed={false} />);
 
         expect(screen.queryByLabelText(LOGIN_PLACEHOLDER)).not.toBeNull();
         expect(screen.queryByLabelText(HISTORY_VIEW_LABEL)).toBeNull();
     });
 
-    it('should render HistoryView (aria-label "내 문제풀이") in the authenticated branch', () => {
+    it('인증된 분기에서는 HistoryView(aria-label "내 문제풀이")를 표시한다', () => {
         render(<ExtensionPageApp initialAuthed />);
 
         expect(screen.queryByLabelText(HISTORY_VIEW_LABEL)).not.toBeNull();
         expect(screen.queryByLabelText(LOGIN_PLACEHOLDER)).toBeNull();
     });
 
-    it('should default to the login-screen placeholder when initialAuthed is omitted', () => {
+    it('initialAuthed를 생략하면 기본값으로 로그인 화면 placeholder를 표시한다', () => {
         render(<ExtensionPageApp />);
 
         expect(screen.queryByLabelText(LOGIN_PLACEHOLDER)).not.toBeNull();
     });
 
-    it('should mount the shell with max-width 400 and a PageHeader without userName in the unauthenticated branch', () => {
+    it('비인증 분기에서는 max-width 400 shell과 userName 없는 PageHeader를 mount한다', () => {
         const { container } = render(<ExtensionPageApp initialAuthed={false} />);
 
         const shellContainer = container.querySelector(
@@ -41,7 +41,7 @@ describe('ExtensionPageApp', () => {
         expect(container.querySelector('[data-slot="page-header-user"]')).toBeNull();
     });
 
-    it('should mount the shell with max-width 720 and a PageHeader with the mock userName in the authenticated branch', () => {
+    it('인증된 분기에서는 max-width 720 shell과 mock userName을 가진 PageHeader를 mount한다', () => {
         const { container } = render(<ExtensionPageApp initialAuthed />);
 
         const shellContainer = container.querySelector(
@@ -53,7 +53,7 @@ describe('ExtensionPageApp', () => {
         expect(screen.queryByText(MOCK_USER)).not.toBeNull();
     });
 
-    it('should render both auth branches at the same document URL (no router / no navigation)', () => {
+    it('두 인증 분기를 같은 document URL에서 표시한다(router / navigation 없음)', () => {
         const urlBefore = window.location.href;
 
         const { unmount } = render(<ExtensionPageApp initialAuthed={false} />);

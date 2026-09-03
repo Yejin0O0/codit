@@ -4,7 +4,7 @@ import { ProblemSummary } from './problem-summary';
 import { CATALOG_FX } from './test-fixtures';
 
 describe('ProblemSummary', () => {
-    it('should render problemId, total attempt count and union tag chips', () => {
+    it('problemId, 총 풀이 횟수, union tag chip을 표시한다', () => {
         render(
             <ProblemSummary
                 detail={{

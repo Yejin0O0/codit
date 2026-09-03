@@ -4,7 +4,7 @@ const sameSet = (a: string[], b: string[]) =>
     a.length === b.length && a.every((x) => b.includes(x));
 
 describe('mock-data integrity', () => {
-    it('should keep MOCK_PROBLEMS and MOCK_DETAILS mutually consistent (Product Rule)', () => {
+    it('MOCK_PROBLEMS와 MOCK_DETAILS를 서로 일관되게 유지한다(Product Rule)', () => {
         expect(MOCK_PROBLEMS.length).toBeGreaterThan(0);
 
         const entries = Object.entries(MOCK_DETAILS);
@@ -28,7 +28,7 @@ describe('mock-data integrity', () => {
         }
     });
 
-    it('should resolve a known problemId and return null for an unknown one', () => {
+    it('알려진 problemId는 resolve하고 모르는 problemId는 null을 반환한다', () => {
         const knownId = Object.keys(MOCK_DETAILS)[0] ?? '';
         expect(resolveMockDetail(knownId)).not.toBeNull();
         expect(resolveMockDetail('__no_such_id__')).toBeNull();

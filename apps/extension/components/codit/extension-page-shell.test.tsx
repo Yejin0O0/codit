@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { ExtensionPageShell } from './extension-page-shell';
 
 describe('ExtensionPageShell', () => {
-    it('should render children inside the centered container', () => {
+    it('children을 가운데 정렬된 컨테이너 안에 표시한다', () => {
         const { container } = render(
             <ExtensionPageShell maxWidth={400}>
                 <div>child-content</div>
@@ -18,7 +18,7 @@ describe('ExtensionPageShell', () => {
         expect(containerSlot).toHaveTextContent('child-content');
     });
 
-    it('should render the header slot above the content when header is given', () => {
+    it('header가 주어지면 header 슬롯을 콘텐츠 위에 표시한다', () => {
         const { container } = render(
             <ExtensionPageShell maxWidth={400} header={<div>header-content</div>}>
                 <div>child-content</div>
@@ -40,7 +40,7 @@ describe('ExtensionPageShell', () => {
         ).toBeTruthy();
     });
 
-    it('should apply maxWidth (number) as the container max-width inline style in px', () => {
+    it('maxWidth(number)를 컨테이너 max-width 인라인 스타일에 px 단위로 적용한다', () => {
         const { container } = render(
             <ExtensionPageShell maxWidth={400}>
                 <div>child-content</div>
@@ -55,7 +55,7 @@ describe('ExtensionPageShell', () => {
         expect(containerSlot).toHaveStyle({ maxWidth: '400px' });
     });
 
-    it('should apply the muted page background to the outer frame', () => {
+    it('바깥 프레임에 muted 페이지 배경을 적용한다', () => {
         const { container } = render(
             <ExtensionPageShell maxWidth={400}>
                 <div>child-content</div>
@@ -68,7 +68,7 @@ describe('ExtensionPageShell', () => {
         expect(root).toHaveClass('bg-muted');
     });
 
-    it('should merge className onto the outer frame', () => {
+    it('className을 바깥 프레임에 병합한다', () => {
         const { container } = render(
             <ExtensionPageShell maxWidth={400} className="custom-shell">
                 <div>child-content</div>
@@ -81,7 +81,7 @@ describe('ExtensionPageShell', () => {
         expect(root).toHaveClass('custom-shell');
     });
 
-    it('should apply max-width exactly 400px and exactly 720px when those values are passed', () => {
+    it('400px, 720px 값을 넘기면 max-width를 정확히 그 값으로 적용한다', () => {
         const { container: authContainer } = render(
             <ExtensionPageShell maxWidth={400}>
                 <div>auth</div>
@@ -106,7 +106,7 @@ describe('ExtensionPageShell', () => {
         expect(historySlot).toHaveStyle({ maxWidth: '720px' });
     });
 
-    it('should omit the header region and still render children when header is not given', () => {
+    it('header가 없으면 header 영역을 생략하고 children은 그대로 표시한다', () => {
         const { container } = render(
             <ExtensionPageShell maxWidth={400}>
                 <div>child-content</div>

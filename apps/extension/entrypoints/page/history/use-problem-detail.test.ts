@@ -7,7 +7,7 @@ describe('useProblemDetail', () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => vi.useRealTimers());
 
-    it('should resolve the detail for a known problemId via the injected resolver once ready', () => {
+    it('ready가 되면 주입된 resolver로 알려진 problemId의 detail을 resolve한다', () => {
         const resolveDetail = vi.fn(() => DETAIL_1859);
         const { result } = renderHook(() =>
             useProblemDetail('1859', { resolveDetail, loadDelayMs: 10 }),

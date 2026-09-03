@@ -1,7 +1,7 @@
 import { parseContestProbId } from './parse-contest-problem-id';
 
 describe('parseContestProbId', () => {
-    it('should extract contestProbId from a problemDetail.do URL', () => {
+    it('problemDetail.do URL에서 contestProbId를 추출한다', () => {
         expect(
             parseContestProbId(
                 'https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=AZ8R8haaeYnHBITH',
@@ -9,7 +9,7 @@ describe('parseContestProbId', () => {
         ).toBe('AZ8R8haaeYnHBITH');
     });
 
-    it('should extract contestProbId from a solvingClub problemView.do URL', () => {
+    it('solvingClub problemView.do URL에서 contestProbId를 추출한다', () => {
         expect(
             parseContestProbId(
                 'https://swexpertacademy.com/main/solvingClub/problem/problemView.do?contestProbId=AZ5itNFKh2XHBITl&clubId=1234',
@@ -17,7 +17,7 @@ describe('parseContestProbId', () => {
         ).toBe('AZ5itNFKh2XHBITl');
     });
 
-    it('should extract only contestProbId even with many other query parameters', () => {
+    it('다른 query parameter가 많아도 contestProbId만 추출한다', () => {
         expect(
             parseContestProbId(
                 'https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=AWTtj7GqeAgDFAVT&categoryId=1&pageIndex=3&problemTitle=abc',
@@ -25,14 +25,14 @@ describe('parseContestProbId', () => {
         ).toBe('AWTtj7GqeAgDFAVT');
     });
 
-    it('should return null when the URL has no contestProbId', () => {
+    it('URL에 contestProbId가 없으면 null을 반환한다', () => {
         expect(parseContestProbId('https://swexpertacademy.com/main/main.do')).toBeNull();
         expect(
             parseContestProbId('https://swexpertacademy.com/main/code/problem/problemDetail.do'),
         ).toBeNull();
     });
 
-    it('should return null when contestProbId is present but empty', () => {
+    it('contestProbId가 있지만 값이 비어 있으면 null을 반환한다', () => {
         expect(
             parseContestProbId(
                 'https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=',
@@ -40,12 +40,12 @@ describe('parseContestProbId', () => {
         ).toBeNull();
     });
 
-    it('should return null for a non-URL string', () => {
+    it('URL이 아닌 문자열이면 null을 반환한다', () => {
         expect(parseContestProbId('not a url')).toBeNull();
         expect(parseContestProbId('')).toBeNull();
     });
 
-    it('should preserve the exact casing of the contestProbId', () => {
+    it('contestProbId의 대소문자를 그대로 보존한다', () => {
         expect(
             parseContestProbId(
                 'https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=AZ3XsaWKSB3HBIPV',

@@ -5,7 +5,7 @@ import { HistoryView } from './history-view';
 import { DETAIL_1859, PROBLEMS_FX } from './test-fixtures';
 
 describe('HistoryView', () => {
-    it('should switch to the detail view for the clicked problem and back to the list', async () => {
+    it('클릭한 problem의 상세 화면으로 전환하고 다시 목록으로 돌아온다', async () => {
         const user = userEvent.setup();
         const { container } = render(
             <HistoryView
@@ -25,7 +25,7 @@ describe('HistoryView', () => {
         expect(await screen.findByText(/2178/)).toBeInTheDocument();
     });
 
-    it('should keep resultFilter and selectedTagIds after returning from detail to list', async () => {
+    it('상세에서 목록으로 돌아와도 resultFilter와 selectedTagIds를 유지한다', async () => {
         const user = userEvent.setup();
         const { container } = render(
             <HistoryView
@@ -48,7 +48,7 @@ describe('HistoryView', () => {
         expect(screen.queryByText(/1859/)).toBeNull();
     });
 
-    it('should reset the result tab and tag selection via 필터 해제, restoring the full list', async () => {
+    it('"필터 해제"로 result 탭과 tag 선택을 초기화하고 전체 목록을 복원한다', async () => {
         const user = userEvent.setup();
         const { container } = render(<HistoryView problems={PROBLEMS_FX} loadDelayMs={0} />);
 

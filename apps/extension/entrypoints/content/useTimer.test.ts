@@ -18,13 +18,13 @@ describe('useTimer', () => {
         vi.useRealTimers();
     });
 
-    it('should start at 0', () => {
+    it('초기 elapsedSeconds는 0이다', () => {
         const { result } = renderHook(() => useTimer());
 
         expect(result.current.elapsedSeconds).toBe(0);
     });
 
-    it('should report 1 after one wall-clock second', () => {
+    it('실제로 1초가 지나면 1을 반환한다', () => {
         const { result } = renderHook(() => useTimer());
 
         act(() => {
@@ -35,7 +35,7 @@ describe('useTimer', () => {
         expect(result.current.elapsedSeconds).toBe(1);
     });
 
-    it('should report 5 after five wall-clock seconds', () => {
+    it('실제로 5초가 지나면 5를 반환한다', () => {
         const { result } = renderHook(() => useTimer());
 
         act(() => {
@@ -46,7 +46,7 @@ describe('useTimer', () => {
         expect(result.current.elapsedSeconds).toBe(5);
     });
 
-    it('should use wall-clock time even when interval callbacks are coalesced', () => {
+    it('interval callback이 병합되어도 실제 경과시간 기준으로 계산한다', () => {
         const { result } = renderHook(() => useTimer());
 
         // 5초의 실제 시간이 흘렀지만 interval 콜백은 단 한 번만 실행된다 (스로틀링 상황)
@@ -59,7 +59,7 @@ describe('useTimer', () => {
         expect(result.current.elapsedSeconds).toBe(5);
     });
 
-    it('should freeze elapsedSeconds at the exact wall-clock time when stopped between ticks', () => {
+    it('tick 사이에 stop해도 실제 경과시간 기준으로 elapsedSeconds를 고정한다', () => {
         const { result } = renderHook(() => useTimer());
 
         act(() => {
@@ -77,7 +77,7 @@ describe('useTimer', () => {
         expect(result.current.elapsedSeconds).toBe(9);
     });
 
-    it('should clear the interval on unmount', () => {
+    it('unmount 시 interval을 정리한다', () => {
         const { unmount } = renderHook(() => useTimer());
         expect(vi.getTimerCount()).toBe(1);
 

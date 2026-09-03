@@ -4,7 +4,7 @@ import { AttemptItem } from './attempt-item';
 import { ATTEMPT_1, ATTEMPT_3, CATALOG_FX } from './test-fixtures';
 
 describe('AttemptItem', () => {
-    it('should render seq label, duration, date, tag chips and memo when present', () => {
+    it('seq 라벨, 소요시간, 날짜, tag chip, memo가 있으면 모두 표시한다', () => {
         render(<AttemptItem attempt={ATTEMPT_3} tagCatalog={CATALOG_FX} />);
 
         expect(screen.queryByText(/3회차/)).not.toBeNull();
@@ -14,21 +14,21 @@ describe('AttemptItem', () => {
         expect(screen.queryByText(/점화식 다시 세워 통과/)).not.toBeNull();
     });
 
-    it('should omit the memo line when memo is undefined', () => {
+    it('memo가 undefined이면 memo 줄을 생략한다', () => {
         render(<AttemptItem attempt={ATTEMPT_1} tagCatalog={CATALOG_FX} />);
 
         expect(screen.queryByText(/1회차/)).not.toBeNull();
         expect(screen.queryByText(/메모/)).toBeNull();
     });
 
-    it('should omit the right-side date when recordedAt is undefined', () => {
+    it('recordedAt이 undefined이면 오른쪽 날짜를 생략한다', () => {
         render(<AttemptItem attempt={ATTEMPT_1} tagCatalog={CATALOG_FX} />);
 
         expect(screen.queryByText(/1회차/)).not.toBeNull();
         expect(screen.queryByText(/2026-/)).toBeNull();
     });
 
-    it('should omit the tag chip row when the attempts tagIds is empty', () => {
+    it('attempt의 tagIds가 비어 있으면 tag chip 행을 생략한다', () => {
         render(<AttemptItem attempt={{ ...ATTEMPT_1, tagIds: [] }} tagCatalog={CATALOG_FX} />);
 
         expect(screen.queryByText(/1회차/)).not.toBeNull();

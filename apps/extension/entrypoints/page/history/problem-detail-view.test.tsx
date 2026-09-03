@@ -7,7 +7,7 @@ describe('ProblemDetailView', () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => vi.useRealTimers());
 
-    it('should render ProblemSummary + AttemptTimeline once the detail resolves', () => {
+    it('detail이 resolve되면 ProblemSummary + AttemptTimeline을 표시한다', () => {
         const { container } = render(
             <ProblemDetailView
                 problemId="1859"
@@ -28,7 +28,7 @@ describe('ProblemDetailView', () => {
         expect(screen.queryByText(/3회차/)).not.toBeNull();
     });
 
-    it('should render the detail skeleton while loading', () => {
+    it('로딩 중에는 상세 스켈레톤을 표시한다', () => {
         const { container } = render(
             <ProblemDetailView
                 problemId="1859"
@@ -42,7 +42,7 @@ describe('ProblemDetailView', () => {
         expect(container.querySelector('[data-slot="skeleton"]')).not.toBeNull();
     });
 
-    it('should render the not-found state when the detail resolves to null', () => {
+    it('detail이 null로 resolve되면 not-found 상태를 표시한다', () => {
         render(
             <ProblemDetailView
                 problemId="ghost"

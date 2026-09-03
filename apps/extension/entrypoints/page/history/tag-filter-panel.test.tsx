@@ -11,7 +11,7 @@ async function openPanel(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('TagFilterPanel', () => {
-    it('should merge a newly toggled tag into selectedTagIds while keeping other groups selections', async () => {
+    it('새로 토글한 tag를 selectedTagIds에 병합하고 다른 그룹의 선택은 유지한다', async () => {
         const onChange = vi.fn();
         const user = userEvent.setup();
         render(
@@ -32,7 +32,7 @@ describe('TagFilterPanel', () => {
         expect(onChange).toHaveBeenCalledWith(expect.arrayContaining(['dp', 'bfs']));
     });
 
-    it('should drop only the deselected tag and keep the other group selection', async () => {
+    it('해제한 tag만 제거하고 다른 그룹의 선택은 유지한다', async () => {
         const onChange = vi.fn();
         const user = userEvent.setup();
         render(

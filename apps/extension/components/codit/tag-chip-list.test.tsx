@@ -8,7 +8,7 @@ const CATALOG = [
 ];
 
 describe('TagChipList', () => {
-    it('should render a chip per known tagId and nothing when the list is empty', () => {
+    it('카탈로그에 있는 tagId마다 chip을 표시하고 목록이 비면 아무것도 표시하지 않는다', () => {
         const { container, rerender } = render(
             <TagChipList tagIds={['bfs', 'dp']} catalog={CATALOG} />,
         );
@@ -20,7 +20,7 @@ describe('TagChipList', () => {
         expect(container.firstChild).toBeNull();
     });
 
-    it('should skip a tagId that is not in the catalog without crashing', () => {
+    it('카탈로그에 없는 tagId는 오류 없이 건너뛴다', () => {
         render(<TagChipList tagIds={['bfs', 'ghost-tag']} catalog={CATALOG} />);
 
         expect(screen.queryByText('BFS')).not.toBeNull();

@@ -27,7 +27,7 @@ const REQUIRED_TOKENS = [
 ];
 
 describe('semantic token Source of Truth', () => {
-    it('styles/tokens.css should declare every semantic token value', () => {
+    it('styles/tokens.css가 모든 semantic token 값을 선언한다', () => {
         const css = readFileSync(TOKENS_CSS, 'utf-8');
 
         for (const token of REQUIRED_TOKENS) {
@@ -35,13 +35,13 @@ describe('semantic token Source of Truth', () => {
         }
     });
 
-    it('entrypoints/content/style.css should not declare any custom-property values (var() references only)', () => {
+    it('entrypoints/content/style.css는 custom-property 값을 선언하지 않는다(var() 참조만)', () => {
         const css = readFileSync(CONTENT_STYLE_CSS, 'utf-8');
 
         expect(css).not.toMatch(TOKEN_VALUE_DECLARATION);
     });
 
-    it('entrypoints/page/style.css should exist and not declare any custom-property values', () => {
+    it('entrypoints/page/style.css는 존재하며 custom-property 값을 선언하지 않는다', () => {
         expect(existsSync(PAGE_STYLE_CSS)).toBe(true);
 
         const css = readFileSync(PAGE_STYLE_CSS, 'utf-8');
