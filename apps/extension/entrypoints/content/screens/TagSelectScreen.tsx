@@ -1,3 +1,5 @@
+import type { Ref } from 'react';
+
 import { PanelShell } from '@/components/codit/panel-shell';
 import { Button } from '@/components/ui/button';
 
@@ -14,6 +16,8 @@ interface TagSelectScreenProps {
     onAddCustomTag: (name: string) => void;
     onBack: () => void;
     onSave: () => void;
+    onCollapse?: () => void;
+    collapseControlRef?: Ref<HTMLButtonElement>;
 }
 
 export function TagSelectScreen({
@@ -26,6 +30,8 @@ export function TagSelectScreen({
     onAddCustomTag,
     onBack,
     onSave,
+    onCollapse,
+    collapseControlRef,
 }: TagSelectScreenProps) {
     const canSave = selectedTagIds.length >= 1;
 
@@ -33,6 +39,8 @@ export function TagSelectScreen({
         <PanelShell
             title="태그 선택"
             step={step}
+            onCollapse={onCollapse}
+            collapseControlRef={collapseControlRef}
             footer={
                 <>
                     <Button type="button" variant="outline" className="flex-1" onClick={onBack}>

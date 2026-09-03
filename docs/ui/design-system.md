@@ -42,7 +42,7 @@
 | 기본 폰트 크기 | `14px` | 위젯 전체 | timer |
 | Extension Page 컨테이너 max-width (auth) | `≈ 400px` (구현 시 확정) | Auth 카드 중앙 정렬 컨테이너 | auth |
 | Extension Page 컨테이너 max-width (history) | `≈ 720px` (구현 시 확정) | Problem List / Detail 중앙 정렬 컨테이너 | problem-history |
-| 위젯 collapsed pill 크기 | 소형 (폭 ≈ 96–120px, 구현 시 확정) | `CollapsedTimer` — expanded 320px 프레임과 같은 top-right anchor 에서 축소 렌더 | timer-persistence |
+| 위젯 collapsed pill 크기 | 높이 ≈ 40px (`h-10`) — 읽고 누를 수 있는 크기, 초소형 금지 | `CollapsedTimer` — expanded 320px 프레임과 같은 top-right anchor 에서 축소 렌더 | timer-persistence |
 
 > 구체 색상값은 shadcn `neutral` 프리셋을 따르며, `--success`/`--warning`은 구현 시 라이트 팔레트에 맞춰 확정한다.
 
@@ -95,7 +95,7 @@
 | `AttemptTimeline` | Attempt 회차 내림차순 나열 컨테이너 |
 | `AttemptItem` | 회차 / 결과 / 풀이 시간 / 태그 / 메모 / 날짜 표시. 구분선은 `border-t` 유틸. 대응 primitive 없음 |
 | `EmptyState` | empty / filtered-empty / 방어 3변형. 문구 + 선택적 액션 버튼 |
-| `CollapsedTimer` | Floating Widget 접힌 상태. 소형 Codit 아이콘 + `mm:ss`(`tabular-nums`) + stopped 시 인라인 check 아이콘. pill 전체가 펼치기 버튼 — accessible name 은 name-from-contents(sr-only 동작 문구 + 보이는 시간), 장식 아이콘 `aria-hidden`, `aria-live` 미사용. Button 베이스 + 인라인 SVG. 첫 사용 Feature: timer-persistence |
+| `CollapsedTimer` | Floating Widget 접힌 상태. Codit 아이콘 + `mm:ss`(`tabular-nums`) + 상시 펼치기 chevron(chevron-up) + stopped 시 인라인 check 아이콘. pill 전체가 펼치기 버튼 — accessible name 은 name-from-contents(sr-only 동작 문구 + 보이는 시간), 장식 아이콘 전부 `aria-hidden`, `aria-live` 미사용. Button 베이스(`h-10`) + 인라인 SVG. 첫 사용 Feature: timer-persistence |
 
 ---
 
