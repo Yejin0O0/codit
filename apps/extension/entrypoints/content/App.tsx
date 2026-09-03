@@ -19,6 +19,8 @@ type WidgetViewState = 'expanded' | 'collapsed';
 interface AppProps {
     /** 현재 SWEA 문제의 contestProbId (content script 가 URL 에서 파싱해 주입) */
     problemId: string;
+    /** `#codit-root` element (mount.tsx 주입). 위치·드래그 제어용. 테스트에서 생략 가능. */
+    containerEl?: HTMLElement | null;
 }
 
 /** 결과가 메모 화면을 거치는가 (HOLD 는 건너뜀) */

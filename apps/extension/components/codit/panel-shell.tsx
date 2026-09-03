@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from 'react';
+import type { PointerEvent as ReactPointerEvent, ReactNode, Ref } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,6 +11,11 @@ interface PanelShellProps {
     onCollapse?: () => void;
     /** collapsed→expanded 전환 직후 접기 컨트롤로 포커스를 되돌리기 위한 ref (App 이 소유) */
     collapseControlRef?: Ref<HTMLButtonElement>;
+    /**
+     * 주어지면 헤더가 드래그 핸들이 된다 (hover 시 cursor: grab).
+     * 접기 버튼 위에서 시작한 pointerdown 은 드래그로 처리하지 않는다.
+     */
+    dragHandlers?: { onPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void };
     children: ReactNode;
     footer?: ReactNode;
     className?: string;

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { PanelShell } from './panel-shell';
@@ -84,5 +84,58 @@ describe('PanelShell', () => {
         expect(screen.getByText('2 / 3')).toBeInTheDocument();
         const header = container.querySelector('.border-b');
         expect(header?.querySelector('button')).toBeNull();
+    });
+});
+
+describe('PanelShell drag handle (#19)', () => {
+    const header = () => screen.getByText('풀이 타이머').closest('div') as HTMLElement;
+
+    it('dragHandlers 가 주어지면 헤더 pointerdown 시 onPointerDown 을 호출한다', () => {
+        const onPointerDown = vi.fn();
+        render(
+            <PanelShell title="풀이 타이머" onCollapse={vi.fn()} dragHandlers={{ onPointerDown }}>
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        fireEvent.pointerDown(header(), { clientX: 10, clientY: 10 });
+
+        expect(onPointerDown).toHaveBeenCalledTimes(1);
+    });
+
+    it('dragHandlers 가 주어지면 헤더에 grab 커서 클래스가 있다', () => {
+        render(
+            <PanelShell title="풀이 타이머" dragHandlers={{ onPointerDown: vi.fn() }}>
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(header().className).toMatch(/grab/);
+    });
+
+    it('pointerdown 대상이 접기 버튼이면 onPointerDown 을 호출하지 않는다', () => {
+        const onPointerDown = vi.fn();
+        render(
+            <PanelShell title="풀이 타이머" onCollapse={vi.fn()} dragHandlers={{ onPointerDown }}>
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Codit 타이머 접기' }), {
+            clientX: 10,
+            clientY: 10,
+        });
+
+        expect(onPointerDown).not.toHaveBeenCalled();
+    });
+
+    it('dragHandlers 가 없으면 헤더에 grab 커서 클래스가 없다', () => {
+        render(
+            <PanelShell title="풀이 타이머">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(header().className).not.toMatch(/grab/);
     });
 });
