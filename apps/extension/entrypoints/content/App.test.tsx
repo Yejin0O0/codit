@@ -503,8 +503,8 @@ describe('App widget drag (#19)', () => {
         const { containerEl } = mountAppWithContainer();
 
         fireEvent.pointerDown(timerHeader(), { clientX: 100, clientY: 100 });
-        fireEvent.pointerMove(window, { clientX: 60, clientY: 200 });
-        fireEvent.pointerCancel(window, { clientX: 60, clientY: 200 });
+        fireEvent.pointerMove(window, { clientX: 60, clientY: 300 });
+        fireEvent.pointerCancel(window, { clientX: 60, clientY: 300 });
 
         expect(containerEl.hasAttribute('data-dragging')).toBe(false);
         expect(document.body.style.userSelect).toBe('');

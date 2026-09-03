@@ -48,7 +48,9 @@ export function mountCoditWidget(href: string = window.location.href): boolean {
     shadowRoot.appendChild(app);
 
     // 5. React 실행
-    ReactDOM.createRoot(app).render(<App problemId={problemId} />);
+    //    #codit-root(container)를 주입해 App 이 위치·드래그를 제어한다.
+    //    top:20/right:20 초기 스타일은 useWidgetPosition 이 top/left 로 전환한다.
+    ReactDOM.createRoot(app).render(<App problemId={problemId} containerEl={container} />);
 
     return true;
 }

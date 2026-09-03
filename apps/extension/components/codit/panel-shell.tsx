@@ -31,13 +31,31 @@ export function PanelShell({
     step,
     onCollapse,
     collapseControlRef,
+    dragHandlers,
     children,
     footer,
     className,
 }: PanelShellProps) {
+    function handleHeaderPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+        if (!dragHandlers?.onPointerDown) {
+            return;
+        }
+        // 접기 버튼 위에서 시작한 pointerdown 은 드래그로 처리하지 않는다.
+        if ((event.target as HTMLElement).closest('[data-codit-no-drag]')) {
+            return;
+        }
+        dragHandlers.onPointerDown(event);
+    }
+
     return (
         <Card className={cn('gap-0 overflow-hidden py-0', className)}>
-            <div className="flex items-center justify-between border-b px-4 py-3">
+            <div
+                className={cn(
+                    'flex items-center justify-between border-b px-4 py-3',
+                    dragHandlers && 'cursor-grab',
+                )}
+                onPointerDown={handleHeaderPointerDown}
+            >
                 <span className="text-sm font-semibold">{title}</span>
                 <span className="flex items-center gap-2">
                     {step ? (
@@ -54,6 +72,7 @@ export function PanelShell({
                             className="-mr-1 size-6"
                             aria-label="Codit 타이머 접기"
                             onClick={onCollapse}
+                            data-codit-no-drag
                         >
                             <svg
                                 viewBox="0 0 16 16"

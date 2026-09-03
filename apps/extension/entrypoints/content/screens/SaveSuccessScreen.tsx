@@ -5,6 +5,7 @@ import { formatDuration } from '@/lib/format-duration';
 
 import type { Tag } from '../mockData';
 import { RESULT_LABELS, type ResultType } from '../screens';
+import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface SaveSuccessScreenProps {
     result: ResultType;
@@ -13,6 +14,7 @@ interface SaveSuccessScreenProps {
     tags: Tag[];
     onCollapse?: () => void;
     collapseControlRef?: Ref<HTMLButtonElement>;
+    dragHandlers?: WidgetDragHandlers;
 }
 
 export function SaveSuccessScreen({
@@ -22,12 +24,14 @@ export function SaveSuccessScreen({
     tags,
     onCollapse,
     collapseControlRef,
+    dragHandlers,
 }: SaveSuccessScreenProps) {
     return (
         <PanelShell
             title="저장 완료"
             onCollapse={onCollapse}
             collapseControlRef={collapseControlRef}
+            dragHandlers={dragHandlers}
         >
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col items-center gap-2 py-1">

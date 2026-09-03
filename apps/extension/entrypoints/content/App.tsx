@@ -12,6 +12,7 @@ import { TagSelectScreen } from './screens/TagSelectScreen';
 import { TimerScreen } from './screens/TimerScreen';
 import { resolveCustomTagInput } from './tag-input';
 import { useTimer } from './useTimer';
+import { useWidgetPosition } from './useWidgetPosition';
 
 /** 위젯 표현 상태 — screen 과 별개. 새 mount 는 항상 expanded. */
 type WidgetViewState = 'expanded' | 'collapsed';
@@ -28,7 +29,9 @@ function hasMemoStep(result: ResultType | null): boolean {
     return result === 'CORRECT' || result === 'WRONG';
 }
 
-export default function App({ problemId }: AppProps) {
+export default function App({ problemId, containerEl }: AppProps) {
+    const { dragHandlers } = useWidgetPosition(containerEl);
+
     const [viewState, setViewState] = useState<WidgetViewState>('expanded');
     const [screen, setScreen] = useState<Screen>('timer');
     const [result, setResult] = useState<ResultType | null>(null);
@@ -129,6 +132,7 @@ export default function App({ problemId }: AppProps) {
                     onNext={handleNextFromResult}
                     onCollapse={handleCollapse}
                     collapseControlRef={collapseControlRef}
+                    dragHandlers={dragHandlers}
                 />
             </CoditWidget>
         );
@@ -148,6 +152,7 @@ export default function App({ problemId }: AppProps) {
                     onNext={() => setScreen('tags')}
                     onCollapse={handleCollapse}
                     collapseControlRef={collapseControlRef}
+                    dragHandlers={dragHandlers}
                 />
             </CoditWidget>
         );
@@ -168,6 +173,7 @@ export default function App({ problemId }: AppProps) {
                     onSave={() => setScreen('success')}
                     onCollapse={handleCollapse}
                     collapseControlRef={collapseControlRef}
+                    dragHandlers={dragHandlers}
                 />
             </CoditWidget>
         );
@@ -183,6 +189,7 @@ export default function App({ problemId }: AppProps) {
                     tags={selectedTags}
                     onCollapse={handleCollapse}
                     collapseControlRef={collapseControlRef}
+                    dragHandlers={dragHandlers}
                 />
             </CoditWidget>
         );
@@ -196,6 +203,7 @@ export default function App({ problemId }: AppProps) {
                 onComplete={handleComplete}
                 onCollapse={handleCollapse}
                 collapseControlRef={collapseControlRef}
+                dragHandlers={dragHandlers}
             />
         </CoditWidget>
     );
