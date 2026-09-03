@@ -9,12 +9,12 @@ export function isValidPosition(value: unknown): value is WidgetPosition {
     if (typeof value !== 'object' || value === null) {
         return false;
     }
-    const pos = value as Record<string, unknown>;
+    const candidate = value as Record<string, unknown>;
     return (
-        typeof pos.top === 'number' &&
-        Number.isFinite(pos.top) &&
-        typeof pos.left === 'number' &&
-        Number.isFinite(pos.left)
+        typeof candidate.top === 'number' &&
+        Number.isFinite(candidate.top) &&
+        typeof candidate.left === 'number' &&
+        Number.isFinite(candidate.left)
     );
 }
 

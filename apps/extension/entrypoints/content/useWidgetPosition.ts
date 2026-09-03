@@ -81,7 +81,7 @@ function endDragVisual(el: HTMLElement): void {
     document.body.style.cursor = '';
 }
 
-/** 저장값 읽기 완료 전 — 깜빡임 방지. (Issue #21) */
+/** 저장값 읽기 완료 전 — 깜빡임 방지. */
 function hideWidget(el: HTMLElement): void {
     el.style.visibility = 'hidden';
 }
@@ -95,18 +95,20 @@ function showWidget(el: HTMLElement): void {
  *
  * - mount 시 containerEl 크기를 측정해 Default position(top-right, margin 20)으로 초기화하고
  *   `right` 앵커를 제거한 뒤 `top/left` 로 전환한다.
+ * - 저장된 위치가 있으면 그것으로 복원한다. 읽기 전까지 비표시 — 깜빡임 방지.
  * - 헤더 드래그: pointermove 중 `transform: translate3d`(rAF throttle), pointerup 시
- *   최종 위치를 clamp 해 `top/left` 로 확정한다. 이동 거리가 5px 미만이면 클릭으로 보고 커밋하지 않는다.
+ *   최종 위치를 clamp 해 `top/left` 로 확정하고 `chrome.storage.local` 에 저장한다.
+ *   이동 거리가 5px 미만이면 클릭으로 보고 커밋하지 않는다.
  * - 드래그 중 containerEl 에 `data-dragging`, document.body 에 `user-select: none` +
  *   `cursor: grabbing` 을 적용하고 종료 시 되돌린다.
- * - `resize` 시 현재 위치를 새 뷰포트에 맞춰 재clamp 한다.
- * - storage 연동은 없다 — 새로고침 시 Default position 으로 복귀한다 (영속은 Issue #21).
+ * - `resize` 시 현재 위치를 새 뷰포트에 맞춰 재clamp 한다 (저장은 하지 않는다).
+ * - 다른 탭이 위치를 바꾸면(`storage.onChanged`) 현재 탭도 따라 이동한다. 드래그 중이면 무시.
  */
 export function useWidgetPosition(
     containerEl: HTMLElement | null | undefined,
 ): UseWidgetPositionResult {
     const positionRef = useRef<WidgetPosition>({ top: DEFAULT_MARGIN, left: DEFAULT_MARGIN });
-    // 드래그 중인지. 드래그 중 다른 탭의 storage 변경을 무시하기 위함. (Issue #21)
+    // 드래그 중인지. 드래그 중에는 다른 탭의 storage 변경을 무시한다.
     const isDraggingRef = useRef(false);
 
     const commitPosition = useCallback(
@@ -120,7 +122,7 @@ export function useWidgetPosition(
     );
 
     // mount: Default position(top-right)으로 초기화하고 top/left 로 전환한다.
-    // 저장값 읽기 전까지 비표시 (Issue #21).
+    // 저장값 읽기 전까지 비표시.
     useLayoutEffect(() => {
         if (!containerEl) {
             return;
@@ -130,7 +132,7 @@ export function useWidgetPosition(
         commitPosition(clampWithin(containerEl, { top: DEFAULT_MARGIN, left: defaultLeft }));
     }, [containerEl, commitPosition]);
 
-    // mount: 저장된 위치가 있으면 복원, 없으면 Default 유지. 확정 후 표시. (Issue #21)
+    // mount: 저장된 위치가 있으면 복원, 없으면 Default 유지. 확정 후 표시.
     useEffect(() => {
         if (!containerEl) {
             return;
@@ -150,7 +152,7 @@ export function useWidgetPosition(
         };
     }, [containerEl, commitPosition]);
 
-    // 다른 탭이 위치를 바꾸면(storage.onChanged) 현재 탭 위젯도 이동한다. 드래그 중이면 무시. (Issue #21)
+    // 다른 탭이 위치를 바꾸면(storage.onChanged) 현재 탭 위젯도 이동한다. 드래그 중이면 무시.
     useEffect(() => {
         if (!containerEl) {
             return;
