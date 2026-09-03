@@ -27,7 +27,7 @@ class ProblemServiceTest {
     private ProblemService problemService;
 
     @Test
-    void should_create_new_problem_and_return_created_true_when_problem_id_does_not_exist() {
+    void shouldCreateNewProblemAndReturnCreatedTrueWhenProblemIdDoesNotExist() {
         problemService = new ProblemService(problemRepository);
         given(problemRepository.findByProblemId("7965")).willReturn(Optional.empty());
         given(problemRepository.save(any())).willReturn(new Problem("7965", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965"));
@@ -39,7 +39,7 @@ class ProblemServiceTest {
     }
 
     @Test
-    void should_return_existing_problem_and_created_false_when_problem_id_already_exists() {
+    void shouldReturnExistingProblemAndCreatedFalseWhenProblemIdAlreadyExists() {
         problemService = new ProblemService(problemRepository);
         Problem existing = new Problem("7965", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965");
         given(problemRepository.findByProblemId("7965")).willReturn(Optional.of(existing));
@@ -52,7 +52,7 @@ class ProblemServiceTest {
     }
 
     @Test
-    void should_reject_when_problem_id_is_whitespace_only_string() {
+    void shouldRejectWhenProblemIdIsWhitespaceOnlyString() {
         problemService = new ProblemService(problemRepository);
 
         assertThatThrownBy(() -> problemService.upsertProblem("   ", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965"))
@@ -60,7 +60,7 @@ class ProblemServiceTest {
     }
 
     @Test
-    void should_reject_when_url_is_whitespace_only_string() {
+    void shouldRejectWhenUrlIsWhitespaceOnlyString() {
         problemService = new ProblemService(problemRepository);
 
         assertThatThrownBy(() -> problemService.upsertProblem("7965", "   "))
@@ -68,7 +68,7 @@ class ProblemServiceTest {
     }
 
     @Test
-    void should_throw_invalid_request_exception_when_problem_id_is_null() {
+    void shouldThrowInvalidRequestExceptionWhenProblemIdIsNull() {
         problemService = new ProblemService(problemRepository);
 
         assertThatThrownBy(() -> problemService.upsertProblem(null, "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965"))
@@ -76,7 +76,7 @@ class ProblemServiceTest {
     }
 
     @Test
-    void should_throw_invalid_request_exception_when_url_is_null() {
+    void shouldThrowInvalidRequestExceptionWhenUrlIsNull() {
         problemService = new ProblemService(problemRepository);
 
         assertThatThrownBy(() -> problemService.upsertProblem("7965", null))

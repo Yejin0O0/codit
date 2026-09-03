@@ -34,7 +34,7 @@ class ProblemControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void should_return_201_created_with_problem_body_when_new_problem_is_created() throws Exception {
+    void shouldReturn201CreatedWithProblemBodyWhenNewProblemIsCreated() throws Exception {
         Problem created = new Problem("7965", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965");
         ReflectionTestUtils.setField(created, "id", 13L);
         given(problemService.upsertProblem("7965", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965"))
@@ -52,7 +52,7 @@ class ProblemControllerTest {
     }
 
     @Test
-    void should_return_200_ok_with_existing_problem_body_when_problem_already_exists() throws Exception {
+    void shouldReturn200OkWithExistingProblemBodyWhenProblemAlreadyExists() throws Exception {
         Problem existing = new Problem("7965", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965");
         ReflectionTestUtils.setField(existing, "id", 12L);
         given(problemService.upsertProblem("7965", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965"))
@@ -69,7 +69,7 @@ class ProblemControllerTest {
     }
 
     @Test
-    void should_succeed_without_authorization_header() throws Exception {
+    void shouldSucceedWithoutAuthorizationHeader() throws Exception {
         Problem created = new Problem("7965", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965");
         given(problemService.upsertProblem("7965", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965"))
             .willReturn(new ProblemUpsertResult(created, true));
@@ -82,7 +82,7 @@ class ProblemControllerTest {
     }
 
     @Test
-    void should_return_400_with_invalid_request_code_when_problem_id_is_missing() throws Exception {
+    void shouldReturn400WithInvalidRequestCodeWhenProblemIdIsMissing() throws Exception {
         given(problemService.upsertProblem(null, "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965"))
             .willThrow(new InvalidRequestException("problemId와 url은 필수입니다."));
 
@@ -96,7 +96,7 @@ class ProblemControllerTest {
     }
 
     @Test
-    void should_return_400_with_invalid_request_code_when_url_is_missing() throws Exception {
+    void shouldReturn400WithInvalidRequestCodeWhenUrlIsMissing() throws Exception {
         given(problemService.upsertProblem("7965", null))
             .willThrow(new InvalidRequestException("problemId와 url은 필수입니다."));
 
@@ -110,7 +110,7 @@ class ProblemControllerTest {
     }
 
     @Test
-    void should_return_400_with_invalid_request_code_when_problem_id_is_blank() throws Exception {
+    void shouldReturn400WithInvalidRequestCodeWhenProblemIdIsBlank() throws Exception {
         given(problemService.upsertProblem("   ", "https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=7965"))
             .willThrow(new InvalidRequestException("problemId와 url은 필수입니다."));
 
