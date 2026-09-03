@@ -42,6 +42,7 @@
 | 기본 폰트 크기 | `14px` | 위젯 전체 | timer |
 | Extension Page 컨테이너 max-width (auth) | `≈ 400px` (구현 시 확정) | Auth 카드 중앙 정렬 컨테이너 | auth |
 | Extension Page 컨테이너 max-width (history) | `≈ 720px` (구현 시 확정) | Problem List / Detail 중앙 정렬 컨테이너 | problem-history |
+| 위젯 collapsed pill 크기 | 소형 (폭 ≈ 96–120px, 구현 시 확정) | `CollapsedTimer` — expanded 320px 프레임과 같은 top-right anchor 에서 축소 렌더 | timer-persistence |
 
 > 구체 색상값은 shadcn `neutral` 프리셋을 따르며, `--success`/`--warning`은 구현 시 라이트 팔레트에 맞춰 확정한다.
 
@@ -94,6 +95,7 @@
 | `AttemptTimeline` | Attempt 회차 내림차순 나열 컨테이너 |
 | `AttemptItem` | 회차 / 결과 / 풀이 시간 / 태그 / 메모 / 날짜 표시. 구분선은 `border-t` 유틸. 대응 primitive 없음 |
 | `EmptyState` | empty / filtered-empty / 방어 3변형. 문구 + 선택적 액션 버튼 |
+| `CollapsedTimer` | Floating Widget 접힌 상태. 소형 Codit 아이콘 + `mm:ss`(`tabular-nums`) + stopped 시 인라인 check 아이콘. pill 전체가 펼치기 버튼 — accessible name 은 name-from-contents(sr-only 동작 문구 + 보이는 시간), 장식 아이콘 `aria-hidden`, `aria-live` 미사용. Button 베이스 + 인라인 SVG. 첫 사용 Feature: timer-persistence |
 
 ---
 
@@ -104,3 +106,6 @@
 - 화면 전환은 Surface 상위의 단일 상태로 관리한다. Floating Widget = `screen`, Extension Page = `view` (`login | signup | list | detail`). Router 라이브러리를 도입하지 않는다.
 - 결과값(정답/오답/보류)에 따른 분기는 화면 내부 조건부 렌더링(UI State)으로 표현한다.
 - 조건부 데이터(문제 제목, 풀이 날짜, 메모, 태그 등)는 있을 때만 렌더하고 없으면 해당 영역을 생략한다. 필수 데이터로 가정하지 않는다.
+- **Floating Widget 표현 상태**: `WidgetViewState = expanded | collapsed` 는 `screen`(화면 전환)과 **별개**의 단일 상태로 Surface 상위(`App`)가 소유한다. 기본값 `expanded`. 접기/펼치기는 순수 view toggle — `useTimer`·`screen`·입력값·persistence 를 바꾸지 않는다. `App` 과 `App` 이 소유한 state 는 collapse 중에도 유지되나, expanded UI subtree 는 조건부 렌더링으로 unmount 될 수 있으므로 **보존이 필요한 workflow state 는 `App`(또는 상위)이 소유**한다. (timer-persistence, `prd.md` ADR-5)
+- `PanelShell` 은 선택적 접기 컨트롤 슬롯을 받는다(주입 시 헤더 최우측 아이콘 버튼, `aria-label`; 미주입 시 미렌더 → 기존 사용처 영향 없음). (timer-persistence)
+- Floating Widget 내 아이콘(Codit 마크 / chevron / check 등)은 인라인 SVG 로 둔다 — lucide 미도입 원칙(`BrandHeader`, `SaveSuccessScreen` 과 동일).
