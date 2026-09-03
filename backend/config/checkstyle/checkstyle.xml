@@ -6,11 +6,6 @@
 
 <module name="Checker">
 
-    <module name="SuppressionFilter">
-        <property name="file" value="${config_loc}/checkstyle-suppressions.xml"/>
-        <property name="optional" value="true"/>
-    </module>
-
     <module name="TreeWalker">
 
         <!-- Naming -->
