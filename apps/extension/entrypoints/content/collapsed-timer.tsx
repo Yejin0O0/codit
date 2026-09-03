@@ -3,12 +3,16 @@ import type { Ref } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatDuration } from '@/lib/format-duration';
 
+import type { WidgetDragHandlers } from './useWidgetPosition';
+
 interface CollapsedTimerProps {
     seconds: number;
     status: 'running' | 'stopped';
     onExpand: () => void;
     /** collapsed 진입 직후 이 pill 로 포커스를 옮기기 위한 ref (App 이 소유) */
     ref?: Ref<HTMLButtonElement>;
+    /** 주어지면 pill 전체가 드래그 핸들이 된다. 클릭(펼치기)과 드래그(이동)는 5px 임계값으로 구분. */
+    dragHandlers?: WidgetDragHandlers;
 }
 
 /**

@@ -23,7 +23,8 @@ interface CollapsedTimerProps {
 ```
 
 - `<Button>` 에 `onPointerDown={dragHandlers?.onPointerDown}` + `cn('h-10 gap-2 px-3.5', dragHandlers && 'cursor-grab')`
-- `onClick={onExpand}` **그대로 유지** — 키보드 Enter/Space 는 button 기본 click 발동으로 커버 (별도 코드 없음)
+- `onClick` → `if (dragHandlers?.consumeDragEnd()) return; onExpand();` (드래그였으면 펼치기 억제).
+  키보드 Enter/Space 도 button click 을 발동하지만 직전 드래그가 없으면 `consumeDragEnd()` 가 false → `onExpand`
 - pill 전체가 드래그 핸들 → `data-codit-no-drag` 없음
 
 #### 수정 `apps/extension/entrypoints/content/App.tsx`
@@ -46,6 +47,12 @@ useEffect(() => reclamp(), [viewState, reclamp]);
 #### 수정 `apps/extension/entrypoints/content/useWidgetPosition.ts`
 
 ```ts
+export interface WidgetDragHandlers {
+    onPointerDown: (event: ReactPointerEvent) => void;
+    /** 직전 pointer 제스처가 드래그(≥5px)였으면 true 를 1회 반환하고 플래그를 소비한다. (DP1) */
+    consumeDragEnd: () => boolean;
+}
+
 export interface UseWidgetPositionResult {
     dragHandlers: WidgetDragHandlers;
     /** 위젯 크기가 바뀐 뒤(collapsed↔expanded 등) 현재 위치를 재clamp 한다. (DP2) */
@@ -53,10 +60,12 @@ export interface UseWidgetPositionResult {
 }
 ```
 
-- **클릭/드래그 구분 (DP1 안 A)**: `endDrag` 에서 이동 거리가 `DRAG_THRESHOLD_PX` 이상이면(=드래그)
-  `window` 에 capture-phase `click` 리스너를 1회 등록해 뒤따르는 `click` 을
-  `stopPropagation()` + `preventDefault()` 로 삼킨다. self-cleaning + `setTimeout(0)` 안전 정리 +
-  hook unmount 시 정리. 소비처(pill)는 `onClick={onExpand}` 무변경.
+- **클릭/드래그 구분 (DP1 안 B로 전환)**: `endDrag` 에서 이동 거리가 `DRAG_THRESHOLD_PX` 이상이면
+  `draggedRef` 를 세우고 `setTimeout(0)` 로 리셋 예약. `onPointerDown` 시작에서 `draggedRef` 초기화.
+  `consumeDragEnd()` 는 `draggedRef` 를 읽고 즉시 클리어한다.
+  소비처(pill)가 `onClick` 에서 `if (dragHandlers?.consumeDragEnd()) return;` 로 클릭을 억제한다.
+  > 안 A(window-capture click 삼키기)는 헤더 드래그 후 접기 버튼 클릭까지 삼키는 결함이 있어 Red 중 전환.
+  > 헤더(#19 PanelShell)는 `consumeDragEnd` 를 쓰지 않으므로 영향 없음.
 - **`reclamp` (DP2 안 A)**: `commitPosition(clampWithin(containerEl, positionRef.current))` — resize 핸들러와 동일 로직. `useCallback` 으로 안정 참조.
 
 ### 위치 연속성 (AC: 상태 전환 시 위치 유지) — 신규 코드 없음

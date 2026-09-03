@@ -29,13 +29,17 @@ export function clampPosition(pos: WidgetPosition, widget: Size, viewport: Size)
     };
 }
 
-/** PanelShell 헤더 등 드래그 핸들에 스프레드하는 pointer 핸들러 묶음. */
+/** PanelShell 헤더 · collapsed pill 등 드래그 핸들에 연결하는 pointer 핸들러 묶음. */
 export interface WidgetDragHandlers {
     onPointerDown: (event: ReactPointerEvent) => void;
+    /** 직전 pointer 제스처가 드래그(≥5px)였으면 true 를 1회 반환하고 플래그를 소비한다. (Issue #20) */
+    consumeDragEnd: () => boolean;
 }
 
 export interface UseWidgetPositionResult {
     dragHandlers: WidgetDragHandlers;
+    /** 위젯 크기가 바뀐 뒤(collapsed↔expanded 등) 현재 위치를 재clamp 한다. (Issue #20) */
+    reclamp: () => void;
 }
 
 // --- #codit-root(React 트리 밖) 를 조작하는 명령형 헬퍼 (prd ADR-2) ---
@@ -185,5 +189,9 @@ export function useWidgetPosition(
         [containerEl, commitPosition],
     );
 
-    return { dragHandlers: { onPointerDown } };
+    // TDD Red 스텁 — Green 단계에서 구현
+    const reclamp = useCallback(() => {}, []);
+    const consumeDragEnd = useCallback(() => false, []);
+
+    return { dragHandlers: { onPointerDown, consumeDragEnd }, reclamp };
 }
