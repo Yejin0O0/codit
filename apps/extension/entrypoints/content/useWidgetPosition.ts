@@ -112,6 +112,15 @@ export function useWidgetPosition(
         [containerEl],
     );
 
+    // 현재 위치를 현재 위젯 크기·뷰포트 기준으로 재clamp 한다.
+    // resize · 위젯 크기 변화(collapsed↔expanded) 시 호출된다. (Issue #20)
+    const reclamp = useCallback(() => {
+        if (!containerEl) {
+            return;
+        }
+        commitPosition(clampWithin(containerEl, positionRef.current));
+    }, [containerEl, commitPosition]);
+
     // mount: Default position(top-right)으로 초기화하고 top/left 로 전환한다.
     useLayoutEffect(() => {
         if (!containerEl) {
@@ -123,15 +132,9 @@ export function useWidgetPosition(
 
     // resize: 현재 위치를 새 뷰포트에 맞춰 재clamp 한다.
     useEffect(() => {
-        if (!containerEl) {
-            return;
-        }
-        const onResize = () => {
-            commitPosition(clampWithin(containerEl, positionRef.current));
-        };
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, [containerEl, commitPosition]);
+        window.addEventListener('resize', reclamp);
+        return () => window.removeEventListener('resize', reclamp);
+    }, [reclamp]);
 
     const onPointerDown = useCallback(
         (event: ReactPointerEvent) => {
@@ -196,14 +199,6 @@ export function useWidgetPosition(
         },
         [containerEl, commitPosition],
     );
-
-    // 위젯 크기 변화(collapsed↔expanded 등) 후 현재 위치를 새 크기·뷰포트 기준으로 재clamp.
-    const reclamp = useCallback(() => {
-        if (!containerEl) {
-            return;
-        }
-        commitPosition(clampWithin(containerEl, positionRef.current));
-    }, [containerEl, commitPosition]);
 
     // 직전 제스처가 드래그였으면 true 를 반환하고 플래그를 소비한다.
     const consumeDragEnd = useCallback(() => {
