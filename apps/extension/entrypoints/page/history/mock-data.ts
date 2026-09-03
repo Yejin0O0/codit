@@ -1,72 +1,9 @@
-import type { ProblemHistoryDetail, ProblemHistoryListItem, TagCategory, TagOption } from './types';
+import type { ProblemHistoryDetail, ProblemHistoryListItem } from './types';
+
+// Tag taxonomy 는 Extension 공통 SoT(@/lib/tag-catalog)를 재노출한다 — History 는 복제하지 않는다.
+export { CORE_TAGS, TAG_CATALOG, TAG_CATEGORIES } from '@/lib/tag-catalog';
 
 export const MOCK_LOAD_DELAY_MS = 400;
-
-// History feature-local tag taxonomy (Timer taxonomy 를 물리 복제 — 공통 SoT 승격은 후속).
-export const CORE_TAGS: TagOption[] = [
-    { id: 'implementation', name: '구현' },
-    { id: 'simulation', name: '시뮬레이션' },
-    { id: 'brute-force', name: '완전 검색' },
-    { id: 'greedy', name: '그리디' },
-    { id: 'bfs', name: 'BFS' },
-    { id: 'dfs', name: 'DFS' },
-    { id: 'sorting', name: '정렬' },
-    { id: 'dp', name: '동적 계획법(DP)' },
-    { id: 'array', name: '배열' },
-    { id: 'string', name: '문자열' },
-    { id: 'stack-queue', name: '스택/큐' },
-];
-
-export const TAG_CATEGORIES: TagCategory[] = [
-    {
-        title: '자료구조',
-        tags: [
-            { id: 'linked-list', name: '연결 리스트' },
-            { id: 'tree', name: '트리' },
-            { id: 'list', name: '리스트(List)' },
-            { id: 'hash', name: '해시' },
-        ],
-    },
-    {
-        title: '탐색·완전탐색',
-        tags: [
-            { id: 'backtracking', name: '백트래킹' },
-            { id: 'binary-search', name: '이분 탐색' },
-        ],
-    },
-    {
-        title: '그래프',
-        tags: [
-            { id: 'shortest-path', name: '최단경로' },
-            { id: 'mst', name: '최소 신장 트리' },
-            { id: 'topological-sort', name: '위상 정렬' },
-        ],
-    },
-    {
-        title: '알고리즘 설계 기법',
-        tags: [{ id: 'divide-conquer', name: '분할 정복' }],
-    },
-    {
-        title: '문자열 알고리즘',
-        tags: [{ id: 'string-search', name: '문자열 탐색' }],
-    },
-    {
-        title: '수학',
-        tags: [{ id: 'math-number-theory', name: '수학/정수론' }],
-    },
-    {
-        title: '고급',
-        tags: [
-            { id: 'np-complete', name: 'NP-Complete' },
-            { id: 'approximation', name: '근사 알고리즘' },
-        ],
-    },
-];
-
-export const TAG_CATALOG: TagOption[] = [
-    ...CORE_TAGS,
-    ...TAG_CATEGORIES.flatMap((category) => category.tags),
-];
 
 // mock detail 이 SoT — list item 은 여기서 파생해 contract integrity 를 보장한다.
 const MOCK_DETAIL_LIST: ProblemHistoryDetail[] = [

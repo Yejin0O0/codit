@@ -1,14 +1,7 @@
 // feature-local view-model 타입의 Source of Truth.
-// components/codit/** 을 import 하지 않는다. TagOption / TagCategory 도 여기가 SoT.
-
-export interface TagOption {
-    id: string;
-    name: string;
-}
-export interface TagCategory {
-    title: string;
-    tags: TagOption[];
-}
+// components/codit/** 을 import 하지 않는다.
+// Tag 관련 타입은 Extension 공통 SoT(@/lib/tag-catalog)를 재노출한다.
+export type { TagCategory, TagOption } from '@/lib/tag-catalog';
 
 export type AttemptResult = 'CORRECT' | 'WRONG' | 'HOLD';
 export type ResultFilter = 'ALL' | AttemptResult;
