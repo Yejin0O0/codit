@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 
+import { readWidgetPosition, watchWidgetPosition, writeWidgetPosition } from './widget-position-storage';
+
 /** 위젯의 화면 내 위치. 뷰포트 좌상단 기준 px. 전역 1개. (prd ADR-1) */
 export interface WidgetPosition {
     top: number;
@@ -79,6 +81,15 @@ function endDragVisual(el: HTMLElement): void {
     document.body.style.cursor = '';
 }
 
+/** 저장값 읽기 완료 전 — 깜빡임 방지. (Issue #21) */
+function hideWidget(el: HTMLElement): void {
+    el.style.visibility = 'hidden';
+}
+
+function showWidget(el: HTMLElement): void {
+    el.style.visibility = '';
+}
+
 /**
  * `#codit-root`(Shadow DOM 밖의 position:fixed 컨테이너)의 위치를 소유하는 훅. (prd ADR-2)
  *
@@ -95,6 +106,8 @@ export function useWidgetPosition(
     containerEl: HTMLElement | null | undefined,
 ): UseWidgetPositionResult {
     const positionRef = useRef<WidgetPosition>({ top: DEFAULT_MARGIN, left: DEFAULT_MARGIN });
+    // 드래그 중인지. 드래그 중 다른 탭의 storage 변경을 무시하기 위함. (Issue #21)
+    const isDraggingRef = useRef(false);
 
     const commitPosition = useCallback(
         (pos: WidgetPosition) => {
@@ -107,12 +120,47 @@ export function useWidgetPosition(
     );
 
     // mount: Default position(top-right)으로 초기화하고 top/left 로 전환한다.
+    // 저장값 읽기 전까지 비표시 (Issue #21).
     useLayoutEffect(() => {
         if (!containerEl) {
             return;
         }
+        hideWidget(containerEl);
         const defaultLeft = viewportSize().width - elementSize(containerEl).width - DEFAULT_MARGIN;
         commitPosition(clampWithin(containerEl, { top: DEFAULT_MARGIN, left: defaultLeft }));
+    }, [containerEl, commitPosition]);
+
+    // mount: 저장된 위치가 있으면 복원, 없으면 Default 유지. 확정 후 표시. (Issue #21)
+    useEffect(() => {
+        if (!containerEl) {
+            return;
+        }
+        let cancelled = false;
+        readWidgetPosition().then((stored) => {
+            if (cancelled) {
+                return;
+            }
+            if (stored) {
+                commitPosition(clampWithin(containerEl, stored));
+            }
+            showWidget(containerEl);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [containerEl, commitPosition]);
+
+    // 다른 탭이 위치를 바꾸면(storage.onChanged) 현재 탭 위젯도 이동한다. 드래그 중이면 무시. (Issue #21)
+    useEffect(() => {
+        if (!containerEl) {
+            return;
+        }
+        return watchWidgetPosition((pos) => {
+            if (isDraggingRef.current) {
+                return;
+            }
+            commitPosition(clampWithin(containerEl, pos));
+        });
     }, [containerEl, commitPosition]);
 
     // resize: 현재 위치를 새 뷰포트에 맞춰 재clamp 한다.
@@ -136,6 +184,7 @@ export function useWidgetPosition(
                 return;
             }
 
+            isDraggingRef.current = true;
             const el = containerEl;
             const startX = event.clientX;
             const startY = event.clientY;
@@ -167,6 +216,7 @@ export function useWidgetPosition(
                 window.removeEventListener('pointerup', endDrag);
                 window.removeEventListener('pointercancel', endDrag);
                 endDragVisual(el);
+                isDraggingRef.current = false;
 
                 const dx = state.latestX - startX;
                 const dy = state.latestY - startY;
@@ -176,6 +226,7 @@ export function useWidgetPosition(
                 commitPosition(
                     clampWithin(el, { top: startPos.top + dy, left: startPos.left + dx }),
                 );
+                void writeWidgetPosition(positionRef.current);
             }
 
             window.addEventListener('pointermove', onMove);
