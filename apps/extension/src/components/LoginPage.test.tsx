@@ -21,4 +21,14 @@ describe('LoginPage', () => {
         render(<LoginPage onLoginWithGoogle={vi.fn()} isLoading={true} />);
         expect(screen.getByRole('button')).toBeDisabled();
     });
+
+    it('error가 있으면 에러 메시지가 표시되어야 한다', () => {
+        render(<LoginPage onLoginWithGoogle={vi.fn()} isLoading={false} error="로그인 실패" />);
+        expect(screen.getByRole('alert')).toHaveTextContent('로그인 실패');
+    });
+
+    it('error가 없으면 에러 메시지가 표시되지 않아야 한다', () => {
+        render(<LoginPage onLoginWithGoogle={vi.fn()} isLoading={false} />);
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
 });

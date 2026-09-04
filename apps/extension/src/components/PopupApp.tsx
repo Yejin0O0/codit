@@ -8,5 +8,11 @@ export default function PopupApp() {
     if (authState.status === 'authenticated') {
         return <MainPage />;
     }
-    return <LoginPage onLoginWithGoogle={loginWithGoogle} isLoading={authState.status === 'loading'} />;
+    return (
+        <LoginPage
+            onLoginWithGoogle={loginWithGoogle}
+            isLoading={authState.status === 'loading'}
+            error={authState.error}
+        />
+    );
 }

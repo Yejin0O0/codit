@@ -38,4 +38,10 @@ describe('PopupApp', () => {
         render(<PopupApp />);
         expect(screen.queryByTestId('login-page')).toBeInTheDocument();
     });
+
+    it('status가 error이면 에러 메시지가 표시되어야 한다', () => {
+        mockAuthState('error', { error: '로그인 실패' });
+        render(<PopupApp />);
+        expect(screen.getByRole('alert')).toHaveTextContent('로그인 실패');
+    });
 });
