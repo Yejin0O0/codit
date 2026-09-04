@@ -227,5 +227,7 @@ export default defineBackground(() => {
 
 - `e2e/timer-persistence.spec.ts` — 타이머 진행 중 실제로 몇 초 기다린 뒤(`expect`
   polling, `waitForTimeout` 미사용) 새로고침해도 0초로 리셋되지 않고 이어지는지 실제
-  Chrome에서 검증(AC-1 핵심 플로우).
-- 전체 E2E 11/11 통과(기존 widget-drag-move 10개 + 신규 1개), 회귀 없음.
+  Chrome에서 검증(AC-1 핵심 플로우). 다중 탭 시나리오(AC-5, ac-verifier가 "아키텍처로만
+  보장, 테스트 없음"으로 지적했던 부분)도 실제 탭 두 개로 검증 — 탭 A가 세션을
+  생성한 뒤 탭 B가 같은 세션을 이어받고, 탭 A를 새로고침해도 유지됨을 확인.
+- 전체 E2E 12/12 통과(기존 widget-drag-move 10개 + 신규 2개), 회귀 없음. AC-5 갭 해소.
