@@ -142,3 +142,16 @@ interface TimerScreenProps {
 
 263/263 통과(기존 250개 회귀 없음), typecheck/lint 클린. `resolve-problem-title.ts`,
 `problem-title-store.ts` 신규 + `mount.tsx`/`App.tsx`/`TimerScreen.tsx` 통합 완료.
+
+## E2E
+
+`e2e/timer-persistence.spec.ts`에 시나리오 1개 추가 — `e2e/fixtures/mock-problem-
+title-detail.html`(problemDetail.do 형식), `mock-problem-title-solving.html`
+(solvingProblem.do 형식, **의도적으로 다른 표시 포맷**) 신규.
+
+- `[정상]` 같은 문제(`E2E-TITLE-001`)로 problemDetail.do → solvingProblem.do
+  실제 페이지 이동해도, 두 페이지의 제목 표시 포맷이 다름에도 불구하고 처음
+  읽은 제목이 그대로 유지됨을 실제 Chrome에서 검증(캐싱 없으면 실패했을
+  케이스 — 셀렉터 충돌로 처음엔 실패, `#codit-root` 안으로 범위 좁혀서 해결)
+
+전체 E2E 15/15 통과(기존 14개 + 신규 1개), 회귀 없음.
