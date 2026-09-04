@@ -210,3 +210,11 @@ export default defineBackground(() => {
   `createRoot().render()`가 `setImmediate` 기반이라 타이밍이 어긋났음 — `flushSync`로
   동기 완료 보장)
 - `background.ts` — `browser.storage.session.setAccessLevel(...)` 추가(idempotent, catch로 무시)
+
+## ac-verifier 검증
+
+12개 AC 중 11개 충족, AC-5(다중 탭)는 아키텍처(storage 전역성)로 보장되나 명시적
+테스트 없음(이슈 문서에서 이미 "추가 코드 불필요"로 판단 — 문제 아님). 갭 1건
+발견: `removeTimerSession` 실패 시 App 흐름 테스트 누락 → 추가 완료
+(`App.test.tsx` "[예외] removeTimerSession 이 실패해도 success 화면은 정상
+표시된다"). 238/238 통과.

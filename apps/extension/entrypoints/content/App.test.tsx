@@ -814,4 +814,19 @@ describe('App timer-session', () => {
 
         expect(screen.getByText('결과 선택')).toBeInTheDocument();
     });
+
+    it('[예외] removeTimerSession 이 실패해도 success 화면은 정상 표시된다', async () => {
+        vi.spyOn(sessionStore, 'removeTimerSession').mockRejectedValue(new Error('quota'));
+        const session = makeSession();
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={session} />);
+
+        await user.click(screen.getByRole('button', { name: '완료' }));
+        await user.click(screen.getByText('보류'));
+        await user.click(screen.getByRole('button', { name: '다음' }));
+        await user.click(screen.getByRole('button', { name: 'DFS' }));
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(screen.getByText('저장되었어요')).toBeInTheDocument();
+    });
 });
