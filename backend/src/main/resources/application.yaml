@@ -21,6 +21,17 @@ spring:
 server:
   port: 8080
 
+jwt:
+  secret: ${JWT_SECRET:dev-only-local-secret-key-please-override-in-prod-min-32-bytes}
+  access-token-expiry-seconds: 3600
+
+google:
+  oauth:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+    token-uri: https://oauth2.googleapis.com/token
+    user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+
 springdoc:
   # 컨트롤러 코드에서 API 문서를 자동 생성한다. http://localhost:8080/swagger-ui.html
   swagger-ui:

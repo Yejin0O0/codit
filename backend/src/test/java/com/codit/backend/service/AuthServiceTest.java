@@ -3,6 +3,7 @@ package com.codit.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -17,6 +18,7 @@ import com.codit.backend.exception.AuthErrorCode;
 import com.codit.backend.exception.AuthException;
 import com.codit.backend.repository.SocialAccountRepository;
 import com.codit.backend.repository.UserRepository;
+import com.codit.backend.security.JwtTokenProvider;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,9 @@ class AuthServiceTest {
 
     @Mock
     private GoogleOAuthClient googleOAuthClient;
+
+    @Mock
+    private JwtTokenProvider jwtTokenProvider;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -77,6 +82,7 @@ class AuthServiceTest {
         User savedUser = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
         when(socialAccountRepository.save(any(SocialAccount.class))).thenReturn(SocialAccount.builder().build());
+        when(jwtTokenProvider.generateAccessToken(anyLong())).thenReturn("mock-jwt-token");
 
         AuthTokenResponse result = authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect");
 
@@ -146,6 +152,28 @@ class AuthServiceTest {
 
         verify(userRepository, never()).save(any(User.class));
         verify(socialAccountRepository, never()).save(any(SocialAccount.class));
+    }
+
+    @Test
+    @DisplayName("반환된 accessToken은 jwtTokenProvider가 로그인한 User.id로 발급한 JWT여야 한다")
+    void loginWithOAuthShouldReturnJwtAccessTokenIssuedForLoggedInUserId() {
+        GoogleProfile profile = GoogleProfile.builder()
+                .sub("google-sub-123")
+                .email("test@gmail.com")
+                .name("Test User")
+                .build();
+        when(googleOAuthClient.getProfile(anyString(), anyString())).thenReturn(profile);
+        when(socialAccountRepository.findByProviderAndProviderId(anyString(), anyString()))
+                .thenReturn(Optional.empty());
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        User savedUser = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        when(socialAccountRepository.save(any(SocialAccount.class))).thenReturn(SocialAccount.builder().build());
+        when(jwtTokenProvider.generateAccessToken(1L)).thenReturn("mock-jwt-token");
+
+        AuthTokenResponse result = authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect");
+
+        assertThat(result.getAccessToken()).isEqualTo("mock-jwt-token");
     }
 
     @Test

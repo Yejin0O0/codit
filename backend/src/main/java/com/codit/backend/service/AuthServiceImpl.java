@@ -11,8 +11,8 @@ import com.codit.backend.exception.AuthErrorCode;
 import com.codit.backend.exception.AuthException;
 import com.codit.backend.repository.SocialAccountRepository;
 import com.codit.backend.repository.UserRepository;
+import com.codit.backend.security.JwtTokenProvider;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +25,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final SocialAccountRepository socialAccountRepository;
     private final GoogleOAuthClient googleOAuthClient;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     public AuthTokenResponse loginWithOAuth(String provider, String code, String redirectUri) {
@@ -43,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
                 .map(SocialAccount::getUser)
                 .orElseGet(() -> findOrCreateUser(provider, profile));
 
-        String accessToken = UUID.randomUUID().toString();
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
         long expiresAt = System.currentTimeMillis() + TOKEN_EXPIRY_MS;
 
         UserProfile userProfile = UserProfile.builder()
