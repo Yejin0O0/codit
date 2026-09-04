@@ -11,6 +11,23 @@ import { readTimerSession, writeTimerSession } from './timer-session/store';
 
 const ROOT_ID = 'codit-root';
 
+/**
+ * 문제 제목을 problemId 기준으로 로드한다. 캐시가 있으면 그대로 쓰고(같은
+ * 문제는 페이지가 바뀌어도 제목이 안 바뀜), 없으면 DOM 에서 읽어 1회 저장한다.
+ */
+async function loadProblemTitle(problemId: string): Promise<string | null> {
+    const cached = await readProblemTitle(problemId);
+    if (cached) {
+        return cached;
+    }
+
+    const resolved = resolveProblemTitle(document);
+    if (resolved) {
+        await writeProblemTitle(problemId, resolved);
+    }
+    return resolved;
+}
+
 /** contestProbId 가 확정된 뒤 실제 위젯을 mount 한다(container/Shadow DOM/Timer Session/React). */
 function performMount(problemId: string): void {
     // 1. Codit Root
@@ -46,18 +63,7 @@ function performMount(problemId: string): void {
             await writeTimerSession(problemId, session);
         }
 
-        // 문제 제목은 같은 problemId 인 동안 고정한다 — problemDetail.do 와
-        // solvingProblem.do 에서 표시 텍스트가 다를 수 있어(#37), 페이지를
-        // 옮길 때마다 새로 읽으면 제목이 바뀌어 보인다. 캐시가 있으면 재사용,
-        // 없으면(=다른 문제로 바뀐 경우 포함) DOM 에서 읽어 한 번만 저장한다.
-        let problemTitle = await readProblemTitle(problemId);
-        if (!problemTitle) {
-            const resolved = resolveProblemTitle(document);
-            if (resolved) {
-                problemTitle = resolved;
-                await writeProblemTitle(problemId, resolved);
-            }
-        }
+        const problemTitle = await loadProblemTitle(problemId);
 
         flushSync(() => {
             ReactDOM.createRoot(app).render(
