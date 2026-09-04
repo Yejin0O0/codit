@@ -1,19 +1,23 @@
-import type { TimerSession } from './types';
+import { TIMER_SESSION_VERSION, type TimerSession } from './types';
 
 export function deriveInitialState(
-    _problemId: string,
-    _stored: TimerSession | null,
-    _now: number,
+    problemId: string,
+    stored: TimerSession | null,
+    now: number,
 ): TimerSession {
+    if (stored) {
+        return stored;
+    }
+
     return {
-        version: 1,
-        problemId: '',
-        startedAt: 0,
+        version: TIMER_SESSION_VERSION,
+        problemId,
+        startedAt: now,
         status: 'running',
         stoppedAt: null,
     };
 }
 
-export function markCompleted(session: TimerSession, _now: number): TimerSession {
-    return session;
+export function markCompleted(session: TimerSession, now: number): TimerSession {
+    return { ...session, status: 'stopped', stoppedAt: now };
 }

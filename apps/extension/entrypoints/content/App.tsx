@@ -11,6 +11,8 @@ import { SaveSuccessScreen } from './screens/SaveSuccessScreen';
 import { TagSelectScreen } from './screens/TagSelectScreen';
 import { TimerScreen } from './screens/TimerScreen';
 import { resolveCustomTagInput } from './tag-input';
+import { markCompleted } from './timer-session/session';
+import { removeTimerSession, writeTimerSession } from './timer-session/store';
 import type { TimerSession } from './timer-session/types';
 import { useTimer } from './useTimer';
 import { useWidgetPosition } from './useWidgetPosition';
@@ -32,18 +34,30 @@ function hasMemoStep(result: ResultType | null): boolean {
     return result === 'CORRECT' || result === 'WRONG';
 }
 
-export default function App({ problemId, containerEl, initialSession: _initialSession }: AppProps) {
+/** 복원된 세션이 이미 완료(stopped)면 결과 선택 화면에서 시작한다. */
+function initialScreen(initialSession?: TimerSession): Screen {
+    if (initialSession && initialSession.status === 'stopped') {
+        return 'result';
+    }
+    return 'timer';
+}
+
+export default function App({ problemId, containerEl, initialSession }: AppProps) {
     const { dragHandlers, reclamp } = useWidgetPosition(containerEl);
 
     const [viewState, setViewState] = useState<WidgetViewState>('expanded');
-    const [screen, setScreen] = useState<Screen>('timer');
+    const [screen, setScreen] = useState<Screen>(() => initialScreen(initialSession));
     const [result, setResult] = useState<ResultType | null>(null);
     const [memo, setMemo] = useState('');
     const [memoOpen, setMemoOpen] = useState(false);
     const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
     const [customTags, setCustomTags] = useState<Tag[]>([]);
 
-    const { elapsedSeconds, stop } = useTimer();
+    let timerInit: { startedAt: number; stoppedAt: number | null } | undefined;
+    if (initialSession) {
+        timerInit = { startedAt: initialSession.startedAt, stoppedAt: initialSession.stoppedAt };
+    }
+    const { elapsedSeconds, stop } = useTimer(timerInit);
 
     const pillRef = useRef<HTMLButtonElement>(null);
     const collapseControlRef = useRef<HTMLButtonElement>(null);
@@ -82,6 +96,16 @@ export default function App({ problemId, containerEl, initialSession: _initialSe
     const handleComplete = () => {
         stop();
         setScreen('result');
+        if (initialSession) {
+            void writeTimerSession(problemId, markCompleted(initialSession, Date.now()));
+        }
+    };
+
+    const handleSave = () => {
+        setScreen('success');
+        if (initialSession) {
+            void removeTimerSession(problemId);
+        }
     };
 
     const handleNextFromResult = () => {
@@ -180,7 +204,7 @@ export default function App({ problemId, containerEl, initialSession: _initialSe
                     onSelectedTagIdsChange={setSelectedTagIds}
                     onAddCustomTag={handleAddCustomTag}
                     onBack={() => setScreen(hasMemoStep(result) ? 'memo' : 'result')}
-                    onSave={() => setScreen('success')}
+                    onSave={handleSave}
                     onCollapse={handleCollapse}
                     collapseControlRef={collapseControlRef}
                     dragHandlers={dragHandlers}

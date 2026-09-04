@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom';
 import ReactDOM from 'react-dom/client';
 
 import App from './App';
@@ -60,9 +61,11 @@ export function mountCoditWidget(href: string = window.location.href): boolean {
         if (!stored) {
             await writeTimerSession(problemId, session);
         }
-        ReactDOM.createRoot(app).render(
-            <App problemId={problemId} containerEl={container} initialSession={session} />,
-        );
+        flushSync(() => {
+            ReactDOM.createRoot(app).render(
+                <App problemId={problemId} containerEl={container} initialSession={session} />,
+            );
+        });
     })();
 
     return true;

@@ -195,3 +195,18 @@ export default defineBackground(() => {
 | background는 access level만 | 코드 확인(리뷰 시점, Vitest 대상 아님) |
 | manifest storage만 추가 | 코드 확인 — 이미 #21에서 추가되어 있어 변경 불필요 |
 | 안내 문구·배지 없음 | `[정상] App` 안내 문구 없음 |
+
+---
+
+## Green 완료
+
+27개 시나리오 전부 Green(237/237, 기존 210개 포함 회귀 없음). typecheck/lint/build 통과.
+
+- `timer-session/{types,store,session}.ts` 구현 완료
+- `useTimer.ts` — `init` 입력 추가, 기존 6개 테스트 무변경 통과
+- `App.tsx` — `initialSession` 반영, `handleComplete`/`handleSave`에 write/remove 배선
+- `mount.tsx` — `SessionStore` 조회 → `<App>` render 오케스트레이션. React 스케줄러
+  타이밍 이슈로 `flushSync` 추가(테스트가 마이크로태스크 1틱만 기다리는데 React 19의
+  `createRoot().render()`가 `setImmediate` 기반이라 타이밍이 어긋났음 — `flushSync`로
+  동기 완료 보장)
+- `background.ts` — `browser.storage.session.setAccessLevel(...)` 추가(idempotent, catch로 무시)
