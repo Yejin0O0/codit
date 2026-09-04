@@ -11,6 +11,7 @@ import { SaveSuccessScreen } from './screens/SaveSuccessScreen';
 import { TagSelectScreen } from './screens/TagSelectScreen';
 import { TimerScreen } from './screens/TimerScreen';
 import { resolveCustomTagInput } from './tag-input';
+import type { TimerSession } from './timer-session/types';
 import { useTimer } from './useTimer';
 import { useWidgetPosition } from './useWidgetPosition';
 
@@ -22,6 +23,8 @@ interface AppProps {
     problemId: string;
     /** `#codit-root` element (mount.tsx 주입). 위치·드래그 제어용. 테스트에서 생략 가능. */
     containerEl?: HTMLElement | null;
+    /** mount.tsx 가 복원/생성한 Timer Session. 생략 시 fresh 세션으로 동작(테스트 편의). */
+    initialSession?: TimerSession;
 }
 
 /** 결과가 메모 화면을 거치는가 (HOLD 는 건너뜀) */
@@ -29,7 +32,7 @@ function hasMemoStep(result: ResultType | null): boolean {
     return result === 'CORRECT' || result === 'WRONG';
 }
 
-export default function App({ problemId, containerEl }: AppProps) {
+export default function App({ problemId, containerEl, initialSession: _initialSession }: AppProps) {
     const { dragHandlers, reclamp } = useWidgetPosition(containerEl);
 
     const [viewState, setViewState] = useState<WidgetViewState>('expanded');

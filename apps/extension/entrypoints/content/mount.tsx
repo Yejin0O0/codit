@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { parseContestProbId } from './problem/parse-contest-problem-id';
 import css from './style.css?inline';
+import { deriveInitialState } from './timer-session/session';
+import { readTimerSession, writeTimerSession } from './timer-session/store';
 
 const ROOT_ID = 'codit-root';
 
@@ -50,7 +52,18 @@ export function mountCoditWidget(href: string = window.location.href): boolean {
     // 5. React 실행
     //    #codit-root(container)를 주입해 App 이 위치·드래그를 제어한다.
     //    top:20/right:20 초기 스타일은 useWidgetPosition 이 top/left 로 전환한다.
-    ReactDOM.createRoot(app).render(<App problemId={problemId} containerEl={container} />);
+    //    Timer Session 은 읽기(복원 시도) 뒤에만 App 을 mount 한다 (timer-persistence
+    //    prd ADR-3) — 저장된 세션이 없었을 때만 새로 만들어 저장한다.
+    void (async () => {
+        const stored = await readTimerSession(problemId);
+        const session = deriveInitialState(problemId, stored, Date.now());
+        if (!stored) {
+            await writeTimerSession(problemId, session);
+        }
+        ReactDOM.createRoot(app).render(
+            <App problemId={problemId} containerEl={container} initialSession={session} />,
+        );
+    })();
 
     return true;
 }

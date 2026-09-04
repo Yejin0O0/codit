@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * 반영해 최종 elapsedSeconds 를 Date.now() 기준으로 정확히 고정한다.
  * (일시정지/재개/리셋, reload 복원은 제공하지 않는다)
  */
-export function useTimer() {
+export function useTimer(_init?: { startedAt: number; stoppedAt: number | null }) {
     const startedAtRef = useRef<number | null>(null);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [running, setRunning] = useState(true);
