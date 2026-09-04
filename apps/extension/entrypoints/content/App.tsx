@@ -42,6 +42,16 @@ function initialScreen(initialSession?: TimerSession): Screen {
     return 'timer';
 }
 
+/** initialSession 에서 useTimer 가 받는 최소 입력만 추려낸다. */
+function initialTimerInit(
+    initialSession?: TimerSession,
+): { startedAt: number; stoppedAt: number | null } | undefined {
+    if (!initialSession) {
+        return undefined;
+    }
+    return { startedAt: initialSession.startedAt, stoppedAt: initialSession.stoppedAt };
+}
+
 export default function App({ problemId, containerEl, initialSession }: AppProps) {
     const { dragHandlers, reclamp } = useWidgetPosition(containerEl);
 
@@ -53,11 +63,7 @@ export default function App({ problemId, containerEl, initialSession }: AppProps
     const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
     const [customTags, setCustomTags] = useState<Tag[]>([]);
 
-    let timerInit: { startedAt: number; stoppedAt: number | null } | undefined;
-    if (initialSession) {
-        timerInit = { startedAt: initialSession.startedAt, stoppedAt: initialSession.stoppedAt };
-    }
-    const { elapsedSeconds, stop } = useTimer(timerInit);
+    const { elapsedSeconds, stop } = useTimer(initialTimerInit(initialSession));
 
     const pillRef = useRef<HTMLButtonElement>(null);
     const collapseControlRef = useRef<HTMLButtonElement>(null);
