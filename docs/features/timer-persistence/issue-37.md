@@ -155,3 +155,14 @@ title-detail.html`(problemDetail.do 형식), `mock-problem-title-solving.html`
   케이스 — 셀렉터 충돌로 처음엔 실패, `#codit-root` 안으로 범위 좁혀서 해결)
 
 전체 E2E 15/15 통과(기존 14개 + 신규 1개), 회귀 없음.
+
+## ac-verifier 검증
+
+9개 AC 전부 충족(캐시 우선 확인 순서 — 이번 이슈의 핵심 버그 수정 포인트 —
+포함). 갭 2건 중 실제 마크업 구조(배지 span 앞뒤 텍스트 노드 여러 개, 줄바꿈
+포함) 미테스트만 보완 완료 — `resolve-problem-title.test.ts`에 실제 이슈
+스크린샷 마크업을 그대로 재현한 시나리오 추가. 나머지 1건(storage 빈 문자열
+저장)은 `writeProblemTitle`이 애초에 빈 문자열을 저장하는 경로가 없어 도달
+불가능 — 보완 안 함.
+
+264/264 통과.

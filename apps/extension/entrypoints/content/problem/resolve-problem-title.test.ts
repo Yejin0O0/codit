@@ -23,6 +23,17 @@ describe('resolveProblemTitle', () => {
         expect(resolveProblemTitle(doc)).toBe('[S/W 문제해결 기본] 9일차 - 사칙연산');
     });
 
+    it('[정상] 배지 span 앞뒤로 텍스트 노드가 여러 개 있어도(줄바꿈 포함 실제 마크업 구조) 모두 합쳐 trim한다', () => {
+        const doc = makeDoc(
+            '<p class="problem_title" style="margin:0 240px 30px 110px; line-height:23px;">\n' +
+                '  " 26837. DNA 수열 "\n' +
+                '  <span class="badge badge-a">D3</span>\n' +
+                '</p>',
+        );
+
+        expect(resolveProblemTitle(doc)).toBe('" 26837. DNA 수열 "');
+    });
+
     it('[예외] p.problem_title이 없으면 null', () => {
         const doc = makeDoc('<div>다른 내용</div>');
 
