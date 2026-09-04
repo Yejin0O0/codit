@@ -30,6 +30,10 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public long getAccessTokenExpirySeconds() {
+        return properties.accessTokenExpirySeconds();
+    }
+
     public long getUserId(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(key)

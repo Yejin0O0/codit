@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private static final long TOKEN_EXPIRY_MS = 3_600_000L;
-
     private final UserRepository userRepository;
     private final SocialAccountRepository socialAccountRepository;
     private final GoogleOAuthClient googleOAuthClient;
@@ -45,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseGet(() -> findOrCreateUser(provider, profile));
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
-        long expiresAt = System.currentTimeMillis() + TOKEN_EXPIRY_MS;
+        long expiresAt = System.currentTimeMillis() + jwtTokenProvider.getAccessTokenExpirySeconds() * 1000;
 
         UserProfile userProfile = UserProfile.builder()
                 .id(user.getId())
