@@ -19,13 +19,18 @@ export function useAuth(): {
 
     useEffect(() => {
         chrome.storage.local.get(['accessToken', 'expiresAt']).then((stored: Record<string, unknown>) => {
-            if (stored.accessToken) {
+            const expiresAt = stored.expiresAt as number | undefined;
+            const isExpired = typeof expiresAt === 'number' && expiresAt <= Date.now();
+
+            if (stored.accessToken && !isExpired) {
                 setAuthState((prev) => ({
                     ...prev,
                     status: 'authenticated',
                     accessToken: stored.accessToken as string,
-                    expiresAt: (stored.expiresAt as number) ?? null,
+                    expiresAt: expiresAt ?? null,
                 }));
+            } else if (isExpired) {
+                chrome.storage.local.remove(['accessToken', 'expiresAt']);
             }
         });
     }, []);

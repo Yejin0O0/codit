@@ -79,6 +79,18 @@ describe('useAuth', () => {
         expect(result.current.authState.status).toBe('idle');
     });
 
+    it('마운트 시 저장된 토큰이 만료됐으면 idle 상태를 유지하고 저장소를 비워야 한다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'stale-token',
+            expiresAt: Date.now() - 1000,
+        });
+        const { result } = renderHook(() => useAuth());
+        await act(async () => {});
+        expect(result.current.authState.status).toBe('idle');
+        const stored = await fakeBrowser.storage.local.get(['accessToken', 'expiresAt']);
+        expect(stored.accessToken).toBeUndefined();
+    });
+
     it('마운트 시 chrome.storage.local이 비어있으면 status가 idle이어야 한다', async () => {
         const { result } = renderHook(() => useAuth());
         await act(async () => {});
