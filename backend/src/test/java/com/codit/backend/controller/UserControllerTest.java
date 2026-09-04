@@ -9,9 +9,9 @@ import com.codit.backend.dto.UserProfile;
 import com.codit.backend.exception.AuthErrorCode;
 import com.codit.backend.exception.AuthException;
 import com.codit.backend.exception.GlobalExceptionHandler;
-import com.codit.backend.security.CurrentUserArgumentResolver;
+import com.codit.backend.security.JwtAuthenticationEntryPoint;
 import com.codit.backend.security.JwtTokenProvider;
-import com.codit.backend.security.WebConfig;
+import com.codit.backend.security.SecurityConfig;
 import com.codit.backend.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(UserController.class)
-@Import({WebConfig.class, CurrentUserArgumentResolver.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationEntryPoint.class, GlobalExceptionHandler.class})
 class UserControllerTest {
 
     @Autowired
@@ -55,6 +55,15 @@ class UserControllerTest {
     @DisplayName("Authorization 헤더가 없으면 401을 반환해야 한다")
     void shouldReturn401WhenAuthorizationHeaderMissing() throws Exception {
         mockMvc.perform(get("/api/users/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("토큰이 무효/만료면 401을 반환해야 한다")
+    void shouldReturn401WhenTokenInvalid() throws Exception {
+        when(jwtTokenProvider.getUserId("invalid-token")).thenThrow(new RuntimeException("invalid"));
+
+        mockMvc.perform(get("/api/users/me").header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized());
     }
 
