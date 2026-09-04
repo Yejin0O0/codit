@@ -218,3 +218,14 @@ export default defineBackground(() => {
 발견: `removeTimerSession` 실패 시 App 흐름 테스트 누락 → 추가 완료
 (`App.test.tsx` "[예외] removeTimerSession 이 실패해도 success 화면은 정상
 표시된다"). 238/238 통과.
+
+## E2E (별도 이슈 대신 이 이슈에 바로 추가)
+
+기획 단계엔 없었지만, e2e-infra(#26~#28)에서 만든 인프라(`e2e/fixtures/extension.ts`)를
+그대로 재사용해 실제 브라우저 검증을 추가했다. 새 이슈로 분리하지 않고 이 이슈 브랜치에
+바로 포함.
+
+- `e2e/timer-persistence.spec.ts` — 타이머 진행 중 실제로 몇 초 기다린 뒤(`expect`
+  polling, `waitForTimeout` 미사용) 새로고침해도 0초로 리셋되지 않고 이어지는지 실제
+  Chrome에서 검증(AC-1 핵심 플로우).
+- 전체 E2E 11/11 통과(기존 widget-drag-move 10개 + 신규 1개), 회귀 없음.
