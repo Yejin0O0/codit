@@ -11,6 +11,7 @@ import com.codit.backend.dto.LoginRequest;
 import com.codit.backend.dto.UserProfile;
 import com.codit.backend.exception.AuthErrorCode;
 import com.codit.backend.exception.AuthException;
+import com.codit.backend.security.JwtTokenProvider;
 import com.codit.backend.service.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     private ObjectMapper objectMapper;

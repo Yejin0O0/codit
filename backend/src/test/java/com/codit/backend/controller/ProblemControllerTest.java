@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.codit.backend.controller.dto.IdentifyProblemRequest;
 import com.codit.backend.domain.Problem;
 import com.codit.backend.exception.InvalidRequestException;
+import com.codit.backend.security.JwtTokenProvider;
 import com.codit.backend.service.ProblemService;
 import com.codit.backend.service.ProblemUpsertResult;
 
@@ -29,6 +30,9 @@ class ProblemControllerTest {
 
     @MockitoBean
     private ProblemService problemService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     private ObjectMapper objectMapper;
