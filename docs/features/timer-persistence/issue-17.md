@@ -96,3 +96,22 @@ export function mountCoditWidget(href: string = window.location.href): boolean;
 
 249/249 통과(기존 238개 회귀 없음), typecheck/lint 클린. `resolve-problem-id.ts`,
 `mount.tsx` 커버리지 100%.
+
+## ac-verifier 검증
+
+5개 AC 영역 전부 코드 수준에서 충족 확인. 갭 1건: 지연 등장으로 mount된 뒤
+observer가 실제로 disconnect되어 추가 DOM 변화에 재반응하지 않는지 검증하는
+테스트가 없었음 → 추가 완료(`mount.test.tsx` "[경계] 지연 등장으로 mount된 뒤
+observer가 disconnect되어 추가 DOM 변화에도 root가 하나만 유지된다").
+
+## E2E (별도 이슈 대신 이 이슈에 바로 추가)
+
+`e2e/timer-persistence.spec.ts`에 2개 시나리오 추가 — `e2e/fixtures/mock-solving-
+problem.html`(hidden input 포함, URL엔 contestProbId 없음) 신규.
+
+- `[정상]` problemDetail.do에서 진행 중이던 타이머가 solvingProblem.do로 실제
+  페이지 이동해도 이어짐(AC-5, 시나리오 D)
+- `[정상]` hidden input이 나중에 나타나도(동적 삽입) 관찰 후 위젯이 뜸(AC-3,
+  MutationObserver 지연 등장 경로를 실제 Chrome에서 검증)
+
+전체 E2E 14/14 통과(기존 12개 + 신규 2개), 회귀 없음.

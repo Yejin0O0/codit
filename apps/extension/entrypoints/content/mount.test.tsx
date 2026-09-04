@@ -125,6 +125,19 @@ describe('mountCoditWidget — DOM fallback 식별 (#17)', () => {
         expect(document.getElementById('codit-root')).not.toBeNull();
     });
 
+    it('[경계] 지연 등장으로 mount된 뒤 observer가 disconnect되어 추가 DOM 변화에도 root가 하나만 유지된다', async () => {
+        mountCoditWidget(SOLVING_PROBLEM_URL);
+        appendHiddenInput();
+        await flushMicrotasks();
+        expect(document.querySelectorAll('#codit-root')).toHaveLength(1);
+
+        // mount 이후에도 observer 가 살아있다면 이 변화에 반응해 재시도할 수 있다.
+        document.body.appendChild(document.createElement('div'));
+        await flushMicrotasks();
+
+        expect(document.querySelectorAll('#codit-root')).toHaveLength(1);
+    });
+
     it('[경계] 관찰 중 다른 경로로 #codit-root가 먼저 생기면 추가 mount 없이 disconnect한다', async () => {
         mountCoditWidget(SOLVING_PROBLEM_URL);
 
