@@ -135,3 +135,10 @@ interface TimerScreenProps {
 | **다른 문제로 바뀌면 제목을 다시 읽는다** | `[정상] mountCoditWidget` (캐시 미스 시 갱신) |
 | storage 예외 시 조용히 무시 | `[예외] readProblemTitle`/`writeProblemTitle` |
 | 기존 테스트 회귀 없음 | 기존 `mount.test.tsx`/`App.test.tsx` 그대로 통과 |
+
+---
+
+## Green 완료
+
+263/263 통과(기존 250개 회귀 없음), typecheck/lint 클린. `resolve-problem-title.ts`,
+`problem-title-store.ts` 신규 + `mount.tsx`/`App.tsx`/`TimerScreen.tsx` 통합 완료.

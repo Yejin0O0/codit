@@ -2,7 +2,9 @@ import { flushSync } from 'react-dom';
 import ReactDOM from 'react-dom/client';
 
 import App from './App';
+import { readProblemTitle, writeProblemTitle } from './problem/problem-title-store';
 import { resolveProblemId } from './problem/resolve-problem-id';
+import { resolveProblemTitle } from './problem/resolve-problem-title';
 import css from './style.css?inline';
 import { deriveInitialState } from './timer-session/session';
 import { readTimerSession, writeTimerSession } from './timer-session/store';
@@ -43,9 +45,28 @@ function performMount(problemId: string): void {
         if (!stored) {
             await writeTimerSession(problemId, session);
         }
+
+        // 문제 제목은 같은 problemId 인 동안 고정한다 — problemDetail.do 와
+        // solvingProblem.do 에서 표시 텍스트가 다를 수 있어(#37), 페이지를
+        // 옮길 때마다 새로 읽으면 제목이 바뀌어 보인다. 캐시가 있으면 재사용,
+        // 없으면(=다른 문제로 바뀐 경우 포함) DOM 에서 읽어 한 번만 저장한다.
+        let problemTitle = await readProblemTitle(problemId);
+        if (!problemTitle) {
+            const resolved = resolveProblemTitle(document);
+            if (resolved) {
+                problemTitle = resolved;
+                await writeProblemTitle(problemId, resolved);
+            }
+        }
+
         flushSync(() => {
             ReactDOM.createRoot(app).render(
-                <App problemId={problemId} containerEl={container} initialSession={session} />,
+                <App
+                    problemId={problemId}
+                    problemTitle={problemTitle}
+                    containerEl={container}
+                    initialSession={session}
+                />,
             );
         });
     })();
