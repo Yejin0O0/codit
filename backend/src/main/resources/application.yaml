@@ -23,7 +23,7 @@ server:
 
 jwt:
   secret: ${JWT_SECRET:dev-only-local-secret-key-please-override-in-prod-min-32-bytes}
-  access-token-expiry-seconds: 3600
+  access-token-expiry-seconds: ${JWT_ACCESS_TOKEN_EXPIRY_SECONDS:3600}
 
 google:
   oauth:
