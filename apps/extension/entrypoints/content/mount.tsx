@@ -2,33 +2,15 @@ import { flushSync } from 'react-dom';
 import ReactDOM from 'react-dom/client';
 
 import App from './App';
-import { parseContestProbId } from './problem/parse-contest-problem-id';
+import { resolveProblemId } from './problem/resolve-problem-id';
 import css from './style.css?inline';
 import { deriveInitialState } from './timer-session/session';
 import { readTimerSession, writeTimerSession } from './timer-session/store';
 
 const ROOT_ID = 'codit-root';
 
-/**
- * 현재 페이지가 SWEA 문제 페이지(`contestProbId` 보유)일 때만 Codit 위젯을 mount 한다.
- *
- * contestProbId 가 없으면 아무 DOM 도 만들지 않는다 — `#codit-root` 도, Shadow DOM 도,
- * Timer 도 시작하지 않고 SWEA 화면을 건드리지 않는다.
- *
- * @param href 판별에 쓸 URL (기본값: 현재 페이지)
- * @returns 위젯을 mount 했으면 true
- */
-export function mountCoditWidget(href: string = window.location.href): boolean {
-    const problemId = parseContestProbId(href);
-    if (!problemId) {
-        return false;
-    }
-
-    // 중복 mount 방지
-    if (document.querySelector(`#${ROOT_ID}`)) {
-        return false;
-    }
-
+/** contestProbId 가 확정된 뒤 실제 위젯을 mount 한다(container/Shadow DOM/Timer Session/React). */
+function performMount(problemId: string): void {
     // 1. Codit Root
     const container = document.createElement('div');
     container.id = ROOT_ID;
@@ -67,6 +49,44 @@ export function mountCoditWidget(href: string = window.location.href): boolean {
             );
         });
     })();
+}
 
-    return true;
+/**
+ * 현재 페이지가 SWEA 문제 페이지(`contestProbId` 보유)일 때만 Codit 위젯을 mount 한다.
+ *
+ * contestProbId 를 URL 에서 즉시 못 얻으면(`solvingProblem.do` 등 hidden input 만
+ * 가진 페이지), hidden input 이 나타날 때까지 DOM 을 관찰하다가 식별되는 순간
+ * mount 한다(timer-persistence prd ADR-1). 고정 timeout 없음 — 끝내 식별 안 되면
+ * 계속 관찰만 하고 SWEA 화면은 건드리지 않는다.
+ *
+ * @param href 판별에 쓸 URL (기본값: 현재 페이지)
+ * @returns 이 호출에서 즉시 mount 했으면 true (관찰이 시작됐을 뿐이면 false)
+ */
+export function mountCoditWidget(href: string = window.location.href): boolean {
+    // 중복 mount 방지
+    if (document.querySelector(`#${ROOT_ID}`)) {
+        return false;
+    }
+
+    const problemId = resolveProblemId(document, href);
+    if (problemId) {
+        performMount(problemId);
+        return true;
+    }
+
+    const observer = new MutationObserver(() => {
+        if (document.querySelector(`#${ROOT_ID}`)) {
+            observer.disconnect();
+            return;
+        }
+        const resolved = resolveProblemId(document, window.location.href);
+        if (resolved) {
+            observer.disconnect();
+            performMount(resolved);
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
+
+    return false;
 }

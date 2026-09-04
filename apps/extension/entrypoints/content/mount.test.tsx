@@ -93,3 +93,70 @@ describe('mountCoditWidget — timer-session 복원', () => {
         expect(appDivText()).toContain(`문제 #${PROBLEM_ID}`);
     });
 });
+
+describe('mountCoditWidget — DOM fallback 식별 (#17)', () => {
+    const SOLVING_PROBLEM_URL = 'https://swexpertacademy.com/main/solvingProblem/solvingProblem.do';
+
+    function appendHiddenInput(): void {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.id = 'contestProbId';
+        input.value = PROBLEM_ID;
+        document.body.appendChild(input);
+    }
+
+    it('[정상] URL엔 없고 hidden input엔 있으면 즉시 위젯이 뜬다', () => {
+        appendHiddenInput();
+
+        const mounted = mountCoditWidget(SOLVING_PROBLEM_URL);
+
+        expect(mounted).toBe(true);
+        expect(document.getElementById('codit-root')).not.toBeNull();
+    });
+
+    it('[정상] hidden input이 나중에 나타나면 그 시점에 mount되고, 위젯은 정상 표시된다', async () => {
+        const mounted = mountCoditWidget(SOLVING_PROBLEM_URL);
+        expect(mounted).toBe(false);
+        expect(document.getElementById('codit-root')).toBeNull();
+
+        appendHiddenInput();
+        await flushMicrotasks();
+
+        expect(document.getElementById('codit-root')).not.toBeNull();
+    });
+
+    it('[경계] 관찰 중 다른 경로로 #codit-root가 먼저 생기면 추가 mount 없이 disconnect한다', async () => {
+        mountCoditWidget(SOLVING_PROBLEM_URL);
+
+        const existingRoot = document.createElement('div');
+        existingRoot.id = 'codit-root';
+        document.body.appendChild(existingRoot);
+
+        appendHiddenInput();
+        await flushMicrotasks();
+
+        expect(document.querySelectorAll('#codit-root')).toHaveLength(1);
+        expect(document.getElementById('codit-root')!.shadowRoot).toBeNull();
+    });
+
+    it('[예외] 끝내 식별 안 되면 위젯이 뜨지 않는다', async () => {
+        const mounted = mountCoditWidget(SOLVING_PROBLEM_URL);
+        expect(mounted).toBe(false);
+
+        const unrelated = document.createElement('div');
+        document.body.appendChild(unrelated);
+        await flushMicrotasks();
+
+        expect(document.getElementById('codit-root')).toBeNull();
+    });
+
+    it('[예외] pagehide 발생 시 observer가 disconnect되어 이후 DOM 변화에 반응하지 않는다', async () => {
+        mountCoditWidget(SOLVING_PROBLEM_URL);
+
+        window.dispatchEvent(new Event('pagehide'));
+        appendHiddenInput();
+        await flushMicrotasks();
+
+        expect(document.getElementById('codit-root')).toBeNull();
+    });
+});
