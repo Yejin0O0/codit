@@ -191,3 +191,45 @@ public interface UserService {
 | 기존 issue-2.md AC 5개 (팝업 표시, OAuth 팝업 오픈, DB 생성, 토큰 저장, 화면 전환) | 변경 없음 — 기존 커버 유지 |
 
 `CurrentUserArgumentResolver`는 `UserController.getMyInfo`가 첫 소비처로 실제 사용됨.
+
+---
+
+## 로컬 E2E 검증 시행착오
+
+백엔드 단위 테스트가 전부 통과한 뒤, 실제 크롬 확장 프로그램으로 Google 로그인을 끝까지 시도하며 발견한 3가지 문제와 조치. 자동화된 테스트로는 못 잡는 종류라 기록해둔다.
+
+### 1. `redirect_uri_mismatch` (Google 400 에러)
+
+**증상**: 로그인 버튼 클릭 → Google 계정 선택 화면 전에 `accounts.google.com/signin/oauth/error?authError=...` 400 페이지가 뜸.
+
+**원인**: `chrome.identity.getRedirectURL()`은 `https://<확장 프로그램 ID>.chromiumapp.org/`를 반환하는데, `wxt.config.ts`에 `manifest.key`가 없어서 **압축해제 로드 시 확장 프로그램 ID가 로드 경로의 해시값으로 매번/사람마다 달라짐**. Google Cloud Console에 등록된 리다이렉트 URI와 일치하지 않아 거부됨.
+
+**조치**: `wxt.config.ts`의 `manifest.key`에 고정 공개키를 추가해 ID를 `dcocnpglepbapllbgakbknajbcjpelkp`로 고정. Google Cloud Console의 OAuth 클라이언트에 `https://dcocnpglepbapllbgakbknajbcjpelkp.chromiumapp.org/`를 1회 등록. 이제 팀원 누구든 같은 빌드(`.output/chrome-mv3`, `-dev` 아님)를 로드하면 같은 ID가 나온다.
+
+**주의**: 로드된 확장 프로그램을 "새로고침" 버튼으로 갱신해도 크롬이 이전 ID를 유지하는 경우가 있었음 — `key`를 처음 추가했을 때는 기존 확장 프로그램을 완전히 삭제하고 "압축해제된 확장 프로그램 로드"로 다시 추가해야 새 ID가 반영됐다.
+
+### 2. CORS 에러 (팝업 → 백엔드 fetch 차단)
+
+**증상**: 1번을 해결하고 Google 로그인 절차(계정 선택, 동의)까지는 정상 진행되고 팝업 창이 닫히는데, 확장 프로그램 팝업 화면이 로그인 화면 그대로 남아있음. 백엔드 로그(`bootrun.log`)에 요청 자체가 안 찍힘. 팝업 DevTools(우클릭 → 검사, "Preserve log" 체크 후 확인) 콘솔에서 CORS 에러 확인.
+
+**원인**: `useAuth.ts`가 팝업(`chrome-extension://` origin)에서 `http://localhost:8080`으로 직접 `fetch`하는데, `wxt.config.ts`에 `host_permissions`가 없어서 일반 웹페이지와 동일하게 CORS 제약을 받음. 백엔드엔 CORS 허용 설정이 없어서 브라우저가 응답을 차단.
+
+**조치**: `wxt.config.ts`에 `host_permissions: ['http://localhost:8080/*']` 추가. host_permissions가 있으면 확장 프로그램 컨텍스트의 요청은 CORS 검사 대상에서 제외되므로 백엔드 쪽 CORS 설정은 불필요.
+
+### 3. `AuthException(OAUTH_FAILED)` — 실제 계정으로도 401
+
+**증상**: 1, 2번을 해결하고 실제 Google 계정으로 로그인해도 계속 401 `OAUTH_FAILED`.
+
+**원인**: 백엔드를 `./gradlew bootRun`으로 띄울 때 `backend/.env`를 자동으로 로드하는 장치(dotenv gradle 플러그인 등)가 없어서, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`이 빈 값인 채로 기동됨 → Google 토큰 엔드포인트가 빈 client 자격증명을 거부.
+
+**조치**: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`만 환경변수로 export 후 기동.
+```bash
+export GOOGLE_CLIENT_ID=$(grep '^GOOGLE_CLIENT_ID=' backend/.env | cut -d= -f2-)
+export GOOGLE_CLIENT_SECRET=$(grep '^GOOGLE_CLIENT_SECRET=' backend/.env | cut -d= -f2-)
+./gradlew bootRun
+```
+**주의**: `backend/.env`를 통째로 `source`하면 안 된다 — `.env`의 `DB_PASSWORD`가 로컬 Postgres 실제 설정(기본값 `codit`/`codit`)과 달라서 `password authentication failed for user "codit"`로 기동 자체가 실패한다. DB 관련 값은 `application.yaml` 기본값을 그대로 쓰는 게 로컬 환경에서는 맞다.
+
+### 검증 완료
+
+세 가지 모두 조치 후 실제 Google 계정으로 로그인 → 200 응답 → 백엔드 로그에 `users`, `social_accounts` INSERT 쿼리 확인 → AC("DB에 User + SocialAccount 생성") 실증.
