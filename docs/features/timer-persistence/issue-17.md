@@ -89,3 +89,10 @@ export function mountCoditWidget(href: string = window.location.href): boolean;
 | 여러 탭 공유 | `#16` 인프라로 자동 충족 |
 | 범위 밖 SWEA 경로 미표시 | URL·DOM 없음 예외 케이스로 자연 커버 |
 | 기존 테스트 회귀 없음 | `parse-contest-problem-id.test.ts` 7개, 기존 `mount.test.tsx` 9개 그대로 통과 |
+
+---
+
+## Green 완료
+
+249/249 통과(기존 238개 회귀 없음), typecheck/lint 클린. `resolve-problem-id.ts`,
+`mount.tsx` 커버리지 100%.
