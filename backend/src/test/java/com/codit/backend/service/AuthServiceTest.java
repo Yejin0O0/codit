@@ -26,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -174,6 +175,56 @@ class AuthServiceTest {
         AuthTokenResponse result = authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect");
 
         assertThat(result.getAccessToken()).isEqualTo("mock-jwt-token");
+    }
+
+    @Test
+    @DisplayName("동시 요청이 먼저 같은 이메일로 User를 만들면 그 User를 재사용해야 한다")
+    void loginWithOAuthShouldReuseExistingUserWhenConcurrentInsertViolatesEmailUniqueness() {
+        GoogleProfile profile = GoogleProfile.builder()
+                .sub("google-sub-123")
+                .email("test@gmail.com")
+                .name("Test User")
+                .build();
+        when(googleOAuthClient.getProfile(anyString(), anyString())).thenReturn(profile);
+        when(socialAccountRepository.findByProviderAndProviderId("GOOGLE", "google-sub-123"))
+                .thenReturn(Optional.empty());
+        User winnerUser = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        when(userRepository.findByEmail("test@gmail.com"))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(winnerUser));
+        when(userRepository.save(any(User.class))).thenThrow(new DataIntegrityViolationException("duplicate email"));
+        when(socialAccountRepository.save(any(SocialAccount.class))).thenReturn(SocialAccount.builder().build());
+
+        AuthTokenResponse result = authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect");
+
+        assertThat(result.getUser().getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("동시 요청이 먼저 같은 (provider, providerId)로 SocialAccount를 만들면 그 계정의 User를 사용해야 한다")
+    void loginWithOAuthShouldReuseExistingUserWhenConcurrentInsertViolatesSocialAccountUniqueness() {
+        GoogleProfile profile = GoogleProfile.builder()
+                .sub("google-sub-123")
+                .email("test@gmail.com")
+                .name("Test User")
+                .build();
+        when(googleOAuthClient.getProfile(anyString(), anyString())).thenReturn(profile);
+        when(socialAccountRepository.findByProviderAndProviderId("GOOGLE", "google-sub-123"))
+                .thenReturn(Optional.empty());
+        when(userRepository.findByEmail("test@gmail.com")).thenReturn(Optional.empty());
+        User savedUser = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        User winnerUser = User.builder().id(2L).email("test@gmail.com").nickname("Test User").build();
+        SocialAccount winnerAccount = SocialAccount.builder().user(winnerUser).build();
+        when(socialAccountRepository.save(any(SocialAccount.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate social account"));
+        when(socialAccountRepository.findByProviderAndProviderId("GOOGLE", "google-sub-123"))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(winnerAccount));
+
+        AuthTokenResponse result = authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect");
+
+        assertThat(result.getUser().getId()).isEqualTo(2L);
     }
 
     @Test

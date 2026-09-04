@@ -14,6 +14,7 @@ import com.codit.backend.repository.UserRepository;
 import com.codit.backend.security.JwtTokenProvider;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -60,21 +61,34 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private User findOrCreateUser(String provider, GoogleProfile profile) {
-        User user = userRepository.findByEmail(profile.getEmail()).orElseGet(() -> {
-            User newUser = User.builder()
+        User user = userRepository.findByEmail(profile.getEmail()).orElseGet(() -> createUser(profile));
+        try {
+            socialAccountRepository.save(SocialAccount.builder()
+                    .user(user)
+                    .provider(provider)
+                    .providerId(profile.getSub())
+                    .providerEmail(profile.getEmail())
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청이 먼저 같은 (provider, providerId)로 SocialAccount 를 만든 경우: 그 계정을 사용한다.
+            user = socialAccountRepository.findByProviderAndProviderId(provider, profile.getSub())
+                    .map(SocialAccount::getUser)
+                    .orElseThrow(() -> e);
+        }
+        return user;
+    }
+
+    private User createUser(GoogleProfile profile) {
+        try {
+            return userRepository.save(User.builder()
                     .email(profile.getEmail())
                     .nickname(profile.getName())
                     .role(Role.USER)
                     .createdAt(LocalDateTime.now())
-                    .build();
-            return userRepository.save(newUser);
-        });
-        socialAccountRepository.save(SocialAccount.builder()
-                .user(user)
-                .provider(provider)
-                .providerId(profile.getSub())
-                .providerEmail(profile.getEmail())
-                .build());
-        return user;
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청이 먼저 같은 이메일로 User 를 만든 경우: 그 User 를 재사용한다.
+            return userRepository.findByEmail(profile.getEmail()).orElseThrow(() -> e);
+        }
     }
 }
