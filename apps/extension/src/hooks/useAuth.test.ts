@@ -91,6 +91,21 @@ describe('useAuth', () => {
         expect(stored.accessToken).toBeUndefined();
     });
 
+    it('백엔드 에러 메시지에 "user"가 섞여 있어도 취소로 오분류하지 않아야 한다', async () => {
+        vi.spyOn(chrome.identity, 'getRedirectURL').mockReturnValue('https://abc.chromiumapp.org/');
+        vi.spyOn(chrome.identity, 'launchWebAuthFlow').mockImplementation(() =>
+            Promise.resolve('https://abc.chromiumapp.org/?code=test-code')
+        );
+        vi.spyOn(global, 'fetch').mockRejectedValue(new Error('user profile invalid'));
+
+        const { result } = renderHook(() => useAuth());
+        await act(async () => {
+            await result.current.loginWithGoogle();
+        });
+        expect(result.current.authState.status).toBe('error');
+        expect(result.current.authState.error).not.toBeNull();
+    });
+
     it('마운트 시 chrome.storage.local이 비어있으면 status가 idle이어야 한다', async () => {
         const { result } = renderHook(() => useAuth());
         await act(async () => {});

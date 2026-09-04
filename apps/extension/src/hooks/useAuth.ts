@@ -90,10 +90,10 @@ export function useAuth(): {
             });
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
-            const isCancelled =
-                message.includes('user') ||
-                message.includes('cancel') ||
-                message.includes('did not approve');
+            // chrome.identity.launchWebAuthFlow 가 사용자 취소 시 던지는 정확한 문구만 취소로 판정한다.
+            // 'user'/'cancel' 같은 느슨한 substring은 백엔드 에러 메시지와 우연히 겹쳐
+            // 실제 실패를 취소로 오분류할 수 있다.
+            const isCancelled = message.includes('did not approve');
 
             if (isCancelled) {
                 setAuthState((prev) => ({ ...prev, status: 'idle', error: null }));
