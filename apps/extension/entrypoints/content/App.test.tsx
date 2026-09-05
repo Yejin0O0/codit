@@ -830,3 +830,12 @@ describe('App timer-session', () => {
         expect(screen.getByText('저장되었어요')).toBeInTheDocument();
     });
 });
+
+describe('App problem title (#37)', () => {
+    it('[정상] problemTitle이 있으면 제목만 표시하고 "문제 #{ID}" 텍스트는 없다', () => {
+        render(<App problemId={PROBLEM_ID} problemTitle="26837. DNA 수열" />);
+
+        expect(screen.getByText('26837. DNA 수열')).toBeInTheDocument();
+        expect(screen.queryByText(`문제 #${PROBLEM_ID}`)).not.toBeInTheDocument();
+    });
+});

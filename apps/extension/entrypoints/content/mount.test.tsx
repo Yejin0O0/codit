@@ -5,6 +5,7 @@ import { storage } from 'wxt/utils/storage';
 vi.mock('./style.css?inline', () => ({ default: ':host { display: block; }' }));
 
 import { mountCoditWidget } from './mount';
+import * as titleResolver from './problem/resolve-problem-title';
 import * as sessionStore from './timer-session/store';
 import { TIMER_SESSION_VERSION, type TimerSession } from './timer-session/types';
 
@@ -91,5 +92,135 @@ describe('mountCoditWidget — timer-session 복원', () => {
 
         expect(mounted).toBe(true);
         expect(appDivText()).toContain(`문제 #${PROBLEM_ID}`);
+    });
+});
+
+describe('mountCoditWidget — DOM fallback 식별 (#17)', () => {
+    const SOLVING_PROBLEM_URL = 'https://swexpertacademy.com/main/solvingProblem/solvingProblem.do';
+
+    function appendHiddenInput(): void {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.id = 'contestProbId';
+        input.value = PROBLEM_ID;
+        document.body.appendChild(input);
+    }
+
+    it('[정상] URL엔 없고 hidden input엔 있으면 즉시 위젯이 뜬다', () => {
+        appendHiddenInput();
+
+        const mounted = mountCoditWidget(SOLVING_PROBLEM_URL);
+
+        expect(mounted).toBe(true);
+        expect(document.getElementById('codit-root')).not.toBeNull();
+    });
+
+    it('[정상] hidden input이 나중에 나타나면 그 시점에 mount되고, 위젯은 정상 표시된다', async () => {
+        const mounted = mountCoditWidget(SOLVING_PROBLEM_URL);
+        expect(mounted).toBe(false);
+        expect(document.getElementById('codit-root')).toBeNull();
+
+        appendHiddenInput();
+        await flushMicrotasks();
+
+        expect(document.getElementById('codit-root')).not.toBeNull();
+    });
+
+    it('[경계] 지연 등장으로 mount된 뒤 observer가 disconnect되어 추가 DOM 변화에도 root가 하나만 유지된다', async () => {
+        mountCoditWidget(SOLVING_PROBLEM_URL);
+        appendHiddenInput();
+        await flushMicrotasks();
+        expect(document.querySelectorAll('#codit-root')).toHaveLength(1);
+
+        // mount 이후에도 observer 가 살아있다면 이 변화에 반응해 재시도할 수 있다.
+        document.body.appendChild(document.createElement('div'));
+        await flushMicrotasks();
+
+        expect(document.querySelectorAll('#codit-root')).toHaveLength(1);
+    });
+
+    it('[경계] 관찰 중 다른 경로로 #codit-root가 먼저 생기면 추가 mount 없이 disconnect한다', async () => {
+        mountCoditWidget(SOLVING_PROBLEM_URL);
+
+        const existingRoot = document.createElement('div');
+        existingRoot.id = 'codit-root';
+        document.body.appendChild(existingRoot);
+
+        appendHiddenInput();
+        await flushMicrotasks();
+
+        expect(document.querySelectorAll('#codit-root')).toHaveLength(1);
+        expect(document.getElementById('codit-root')!.shadowRoot).toBeNull();
+    });
+
+    it('[예외] 끝내 식별 안 되면 위젯이 뜨지 않는다', async () => {
+        const mounted = mountCoditWidget(SOLVING_PROBLEM_URL);
+        expect(mounted).toBe(false);
+
+        const unrelated = document.createElement('div');
+        document.body.appendChild(unrelated);
+        await flushMicrotasks();
+
+        expect(document.getElementById('codit-root')).toBeNull();
+    });
+
+    it('[예외] pagehide 발생 시 observer가 disconnect되어 이후 DOM 변화에 반응하지 않는다', async () => {
+        mountCoditWidget(SOLVING_PROBLEM_URL);
+
+        window.dispatchEvent(new Event('pagehide'));
+        appendHiddenInput();
+        await flushMicrotasks();
+
+        expect(document.getElementById('codit-root')).toBeNull();
+    });
+});
+
+describe('mountCoditWidget — 문제 제목 캐싱 (#37)', () => {
+    function appDivText(): string {
+        const root = document.getElementById('codit-root');
+        const appDiv = root!.shadowRoot!.querySelector('div:last-of-type');
+        return appDiv?.textContent ?? '';
+    }
+
+    function appendProblemTitle(text: string): void {
+        const p = document.createElement('p');
+        p.className = 'problem_title';
+        p.textContent = text;
+        document.body.appendChild(p);
+    }
+
+    it('[정상] 캐시된 제목이 있으면 DOM을 다시 읽지 않고 그 값을 쓴다', async () => {
+        await storage.setItem(`session:problem-title:${PROBLEM_ID}`, '캐시된 제목');
+        const resolveSpy = vi.spyOn(titleResolver, 'resolveProblemTitle');
+
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(resolveSpy).not.toHaveBeenCalled();
+        expect(appDivText()).toContain('캐시된 제목');
+    });
+
+    it('[정상] 캐시가 없고 DOM에 제목이 있으면 읽어서 캐시에 저장하고 그 값을 쓴다', async () => {
+        appendProblemTitle('26837. DNA 수열');
+
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(appDivText()).toContain('26837. DNA 수열');
+        expect(await storage.getItem(`session:problem-title:${PROBLEM_ID}`)).toBe(
+            '26837. DNA 수열',
+        );
+    });
+
+    it('[정상] 다른 problemId면 캐시 미스로 새로 읽는다(문제가 바뀌면 갱신됨)', async () => {
+        await storage.setItem(`session:problem-title:${PROBLEM_ID}`, '캐시된 제목');
+        appendProblemTitle('다른 문제 제목');
+        const OTHER_ID = 'OTHER-PROBLEM-ID';
+        const OTHER_URL = `https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=${OTHER_ID}`;
+
+        mountCoditWidget(OTHER_URL);
+        await flushMicrotasks();
+
+        expect(appDivText()).toContain('다른 문제 제목');
     });
 });

@@ -23,6 +23,8 @@ type WidgetViewState = 'expanded' | 'collapsed';
 interface AppProps {
     /** 현재 SWEA 문제의 contestProbId (content script 가 URL 에서 파싱해 주입) */
     problemId: string;
+    /** SWEA 페이지에서 읽은 실제 문제 제목. 없으면 TimerScreen이 problemId로 폴백 표시. */
+    problemTitle?: string | null;
     /** `#codit-root` element (mount.tsx 주입). 위치·드래그 제어용. 테스트에서 생략 가능. */
     containerEl?: HTMLElement | null;
     /** mount.tsx 가 복원/생성한 Timer Session. 생략 시 fresh 세션으로 동작(테스트 편의). */
@@ -52,7 +54,7 @@ function initialTimerInit(
     return { startedAt: initialSession.startedAt, stoppedAt: initialSession.stoppedAt };
 }
 
-export default function App({ problemId, containerEl, initialSession }: AppProps) {
+export default function App({ problemId, problemTitle, containerEl, initialSession }: AppProps) {
     const { dragHandlers, reclamp } = useWidgetPosition(containerEl);
 
     const [viewState, setViewState] = useState<WidgetViewState>('expanded');
@@ -239,6 +241,7 @@ export default function App({ problemId, containerEl, initialSession }: AppProps
         <CoditWidget>
             <TimerScreen
                 problemId={problemId}
+                problemTitle={problemTitle}
                 elapsedSeconds={elapsedSeconds}
                 onComplete={handleComplete}
                 onCollapse={handleCollapse}
