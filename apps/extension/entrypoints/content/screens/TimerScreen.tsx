@@ -8,6 +8,7 @@ import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface TimerScreenProps {
     problemId: string;
+    problemTitle?: string | null;
     elapsedSeconds: number;
     onComplete: () => void;
     onCollapse?: () => void;
@@ -15,8 +16,17 @@ interface TimerScreenProps {
     dragHandlers?: WidgetDragHandlers;
 }
 
+/** 제목이 있으면 제목만, 없으면 problemId 로 폴백한다. */
+function problemLabel(problemId: string, problemTitle?: string | null): string {
+    if (problemTitle) {
+        return problemTitle;
+    }
+    return `문제 #${problemId}`;
+}
+
 export function TimerScreen({
     problemId,
+    problemTitle,
     elapsedSeconds,
     onComplete,
     onCollapse,
@@ -36,7 +46,9 @@ export function TimerScreen({
             }
         >
             <div className="flex flex-col items-center gap-4">
-                <span className="text-muted-foreground text-xs font-medium">문제 #{problemId}</span>
+                <span className="text-muted-foreground text-xs font-medium">
+                    {problemLabel(problemId, problemTitle)}
+                </span>
                 <TimerDisplay seconds={elapsedSeconds} caption="측정 중" />
             </div>
         </PanelShell>

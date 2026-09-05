@@ -2,6 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import App from './App';
+import * as sessionStore from './timer-session/store';
+import { TIMER_SESSION_VERSION, type TimerSession } from './timer-session/types';
 
 const COLLAPSE = 'Codit 타이머 접기';
 const collapseBtn = () => screen.queryByRole('button', { name: COLLAPSE });
@@ -11,6 +13,17 @@ const PROBLEM_ID = 'AZ8R8haaeYnHBITH';
 
 function renderApp() {
     return render(<App problemId={PROBLEM_ID} />);
+}
+
+function makeSession(overrides: Partial<TimerSession> = {}): TimerSession {
+    return {
+        version: TIMER_SESSION_VERSION,
+        problemId: PROBLEM_ID,
+        startedAt: 1_000,
+        status: 'running',
+        stoppedAt: null,
+        ...overrides,
+    };
 }
 
 /** Timer 화면에서 결과 선택 화면까지 진행한다. */
@@ -730,5 +743,99 @@ describe('App pill drag (#20)', () => {
         expect(screen.queryByRole('button', { name: /펼치기/ })).not.toBeNull();
         expect(containerEl.hasAttribute('data-dragging')).toBe(false);
         expect(containerEl.style.left).toBe('800px'); // 840 - 40
+    });
+});
+
+describe('App timer-session', () => {
+    it('[정상] 진행 중 세션을 넘기면 0초가 아니라 실제 경과 시간부터 이어진 타이머 화면으로 시작한다', () => {
+        const session = makeSession({ startedAt: Date.now() - 5_000 });
+        render(<App problemId={PROBLEM_ID} initialSession={session} />);
+
+        expect(screen.getByText('문제 #' + PROBLEM_ID)).toBeInTheDocument();
+        expect(screen.getByText(/00:0[4-6]/)).toBeInTheDocument(); // 약 5초 경과
+    });
+
+    it('[정상] 완료된 세션을 넘기면 결과 선택 화면으로 바로 진입하고 경과 시간이 고정 표시된다', () => {
+        const session = makeSession({
+            status: 'stopped',
+            startedAt: 1_000,
+            stoppedAt: 1_000 + 450_000, // 7분 30초
+        });
+        render(<App problemId={PROBLEM_ID} initialSession={session} />);
+
+        expect(screen.getByText('결과 선택')).toBeInTheDocument();
+        expect(screen.getByText('07:30')).toBeInTheDocument();
+    });
+
+    it('[정상] "완료" 클릭 시 writeTimerSession 이 markCompleted 결과로 호출된다', async () => {
+        const writeSpy = vi.spyOn(sessionStore, 'writeTimerSession').mockResolvedValue(undefined);
+        const session = makeSession({ startedAt: 1_000 });
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={session} />);
+
+        await user.click(screen.getByRole('button', { name: '완료' }));
+
+        expect(writeSpy).toHaveBeenCalledWith(
+            PROBLEM_ID,
+            expect.objectContaining({ problemId: PROBLEM_ID, startedAt: 1_000, status: 'stopped' }),
+        );
+    });
+
+    it('[정상] success 화면 진입 시 removeTimerSession 이 호출된다', async () => {
+        const removeSpy = vi.spyOn(sessionStore, 'removeTimerSession').mockResolvedValue(undefined);
+        const session = makeSession();
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={session} />);
+
+        await user.click(screen.getByRole('button', { name: '완료' }));
+        await user.click(screen.getByText('보류'));
+        await user.click(screen.getByRole('button', { name: '다음' }));
+        await user.click(screen.getByRole('button', { name: 'DFS' }));
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(screen.getByText('저장되었어요')).toBeInTheDocument();
+        expect(removeSpy).toHaveBeenCalledWith(PROBLEM_ID);
+    });
+
+    it('[정상] 세션 복원 후에도 안내 문구·배지가 없다', () => {
+        const session = makeSession({ startedAt: Date.now() - 5_000 });
+        render(<App problemId={PROBLEM_ID} initialSession={session} />);
+
+        expect(screen.queryByText(/이어서|복원/)).not.toBeInTheDocument();
+    });
+
+    it('[예외] writeTimerSession 이 실패해도 화면 흐름은 정상 진행된다', async () => {
+        vi.spyOn(sessionStore, 'writeTimerSession').mockRejectedValue(new Error('quota'));
+        const session = makeSession({ startedAt: 1_000 });
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={session} />);
+
+        await user.click(screen.getByRole('button', { name: '완료' }));
+
+        expect(screen.getByText('결과 선택')).toBeInTheDocument();
+    });
+
+    it('[예외] removeTimerSession 이 실패해도 success 화면은 정상 표시된다', async () => {
+        vi.spyOn(sessionStore, 'removeTimerSession').mockRejectedValue(new Error('quota'));
+        const session = makeSession();
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={session} />);
+
+        await user.click(screen.getByRole('button', { name: '완료' }));
+        await user.click(screen.getByText('보류'));
+        await user.click(screen.getByRole('button', { name: '다음' }));
+        await user.click(screen.getByRole('button', { name: 'DFS' }));
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(screen.getByText('저장되었어요')).toBeInTheDocument();
+    });
+});
+
+describe('App problem title (#37)', () => {
+    it('[정상] problemTitle이 있으면 제목만 표시하고 "문제 #{ID}" 텍스트는 없다', () => {
+        render(<App problemId={PROBLEM_ID} problemTitle="26837. DNA 수열" />);
+
+        expect(screen.getByText('26837. DNA 수열')).toBeInTheDocument();
+        expect(screen.queryByText(`문제 #${PROBLEM_ID}`)).not.toBeInTheDocument();
     });
 });

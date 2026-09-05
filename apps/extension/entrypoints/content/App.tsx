@@ -11,6 +11,9 @@ import { SaveSuccessScreen } from './screens/SaveSuccessScreen';
 import { TagSelectScreen } from './screens/TagSelectScreen';
 import { TimerScreen } from './screens/TimerScreen';
 import { resolveCustomTagInput } from './tag-input';
+import { markCompleted } from './timer-session/session';
+import { removeTimerSession, writeTimerSession } from './timer-session/store';
+import type { TimerSession } from './timer-session/types';
 import { useTimer } from './useTimer';
 import { useWidgetPosition } from './useWidgetPosition';
 
@@ -20,8 +23,12 @@ type WidgetViewState = 'expanded' | 'collapsed';
 interface AppProps {
     /** 현재 SWEA 문제의 contestProbId (content script 가 URL 에서 파싱해 주입) */
     problemId: string;
+    /** SWEA 페이지에서 읽은 실제 문제 제목. 없으면 TimerScreen이 problemId로 폴백 표시. */
+    problemTitle?: string | null;
     /** `#codit-root` element (mount.tsx 주입). 위치·드래그 제어용. 테스트에서 생략 가능. */
     containerEl?: HTMLElement | null;
+    /** mount.tsx 가 복원/생성한 Timer Session. 생략 시 fresh 세션으로 동작(테스트 편의). */
+    initialSession?: TimerSession;
 }
 
 /** 결과가 메모 화면을 거치는가 (HOLD 는 건너뜀) */
@@ -29,18 +36,36 @@ function hasMemoStep(result: ResultType | null): boolean {
     return result === 'CORRECT' || result === 'WRONG';
 }
 
-export default function App({ problemId, containerEl }: AppProps) {
+/** 복원된 세션이 이미 완료(stopped)면 결과 선택 화면에서 시작한다. */
+function initialScreen(initialSession?: TimerSession): Screen {
+    if (initialSession && initialSession.status === 'stopped') {
+        return 'result';
+    }
+    return 'timer';
+}
+
+/** initialSession 에서 useTimer 가 받는 최소 입력만 추려낸다. */
+function initialTimerInit(
+    initialSession?: TimerSession,
+): { startedAt: number; stoppedAt: number | null } | undefined {
+    if (!initialSession) {
+        return undefined;
+    }
+    return { startedAt: initialSession.startedAt, stoppedAt: initialSession.stoppedAt };
+}
+
+export default function App({ problemId, problemTitle, containerEl, initialSession }: AppProps) {
     const { dragHandlers, reclamp } = useWidgetPosition(containerEl);
 
     const [viewState, setViewState] = useState<WidgetViewState>('expanded');
-    const [screen, setScreen] = useState<Screen>('timer');
+    const [screen, setScreen] = useState<Screen>(() => initialScreen(initialSession));
     const [result, setResult] = useState<ResultType | null>(null);
     const [memo, setMemo] = useState('');
     const [memoOpen, setMemoOpen] = useState(false);
     const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
     const [customTags, setCustomTags] = useState<Tag[]>([]);
 
-    const { elapsedSeconds, stop } = useTimer();
+    const { elapsedSeconds, stop } = useTimer(initialTimerInit(initialSession));
 
     const pillRef = useRef<HTMLButtonElement>(null);
     const collapseControlRef = useRef<HTMLButtonElement>(null);
@@ -79,6 +104,16 @@ export default function App({ problemId, containerEl }: AppProps) {
     const handleComplete = () => {
         stop();
         setScreen('result');
+        if (initialSession) {
+            void writeTimerSession(problemId, markCompleted(initialSession, Date.now()));
+        }
+    };
+
+    const handleSave = () => {
+        setScreen('success');
+        if (initialSession) {
+            void removeTimerSession(problemId);
+        }
     };
 
     const handleNextFromResult = () => {
@@ -177,7 +212,7 @@ export default function App({ problemId, containerEl }: AppProps) {
                     onSelectedTagIdsChange={setSelectedTagIds}
                     onAddCustomTag={handleAddCustomTag}
                     onBack={() => setScreen(hasMemoStep(result) ? 'memo' : 'result')}
-                    onSave={() => setScreen('success')}
+                    onSave={handleSave}
                     onCollapse={handleCollapse}
                     collapseControlRef={collapseControlRef}
                     dragHandlers={dragHandlers}
@@ -206,6 +241,7 @@ export default function App({ problemId, containerEl }: AppProps) {
         <CoditWidget>
             <TimerScreen
                 problemId={problemId}
+                problemTitle={problemTitle}
                 elapsedSeconds={elapsedSeconds}
                 onComplete={handleComplete}
                 onCollapse={handleCollapse}
