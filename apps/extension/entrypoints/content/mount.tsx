@@ -2,12 +2,31 @@ import { flushSync } from 'react-dom';
 import ReactDOM from 'react-dom/client';
 
 import App from './App';
+import { readProblemTitle, writeProblemTitle } from './problem/problem-title-store';
 import { resolveProblemId } from './problem/resolve-problem-id';
+import { resolveProblemTitle } from './problem/resolve-problem-title';
 import css from './style.css?inline';
 import { deriveInitialState } from './timer-session/session';
 import { readTimerSession, writeTimerSession } from './timer-session/store';
 
 const ROOT_ID = 'codit-root';
+
+/**
+ * 문제 제목을 problemId 기준으로 로드한다. 캐시가 있으면 그대로 쓰고(같은
+ * 문제는 페이지가 바뀌어도 제목이 안 바뀜), 없으면 DOM 에서 읽어 1회 저장한다.
+ */
+async function loadProblemTitle(problemId: string): Promise<string | null> {
+    const cached = await readProblemTitle(problemId);
+    if (cached) {
+        return cached;
+    }
+
+    const resolved = resolveProblemTitle(document);
+    if (resolved) {
+        await writeProblemTitle(problemId, resolved);
+    }
+    return resolved;
+}
 
 /** contestProbId 가 확정된 뒤 실제 위젯을 mount 한다(container/Shadow DOM/Timer Session/React). */
 function performMount(problemId: string): void {
@@ -43,9 +62,17 @@ function performMount(problemId: string): void {
         if (!stored) {
             await writeTimerSession(problemId, session);
         }
+
+        const problemTitle = await loadProblemTitle(problemId);
+
         flushSync(() => {
             ReactDOM.createRoot(app).render(
-                <App problemId={problemId} containerEl={container} initialSession={session} />,
+                <App
+                    problemId={problemId}
+                    problemTitle={problemTitle}
+                    containerEl={container}
+                    initialSession={session}
+                />,
             );
         });
     })();

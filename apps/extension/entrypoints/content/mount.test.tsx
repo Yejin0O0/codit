@@ -5,6 +5,7 @@ import { storage } from 'wxt/utils/storage';
 vi.mock('./style.css?inline', () => ({ default: ':host { display: block; }' }));
 
 import { mountCoditWidget } from './mount';
+import * as titleResolver from './problem/resolve-problem-title';
 import * as sessionStore from './timer-session/store';
 import { TIMER_SESSION_VERSION, type TimerSession } from './timer-session/types';
 
@@ -171,5 +172,55 @@ describe('mountCoditWidget — DOM fallback 식별 (#17)', () => {
         await flushMicrotasks();
 
         expect(document.getElementById('codit-root')).toBeNull();
+    });
+});
+
+describe('mountCoditWidget — 문제 제목 캐싱 (#37)', () => {
+    function appDivText(): string {
+        const root = document.getElementById('codit-root');
+        const appDiv = root!.shadowRoot!.querySelector('div:last-of-type');
+        return appDiv?.textContent ?? '';
+    }
+
+    function appendProblemTitle(text: string): void {
+        const p = document.createElement('p');
+        p.className = 'problem_title';
+        p.textContent = text;
+        document.body.appendChild(p);
+    }
+
+    it('[정상] 캐시된 제목이 있으면 DOM을 다시 읽지 않고 그 값을 쓴다', async () => {
+        await storage.setItem(`session:problem-title:${PROBLEM_ID}`, '캐시된 제목');
+        const resolveSpy = vi.spyOn(titleResolver, 'resolveProblemTitle');
+
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(resolveSpy).not.toHaveBeenCalled();
+        expect(appDivText()).toContain('캐시된 제목');
+    });
+
+    it('[정상] 캐시가 없고 DOM에 제목이 있으면 읽어서 캐시에 저장하고 그 값을 쓴다', async () => {
+        appendProblemTitle('26837. DNA 수열');
+
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(appDivText()).toContain('26837. DNA 수열');
+        expect(await storage.getItem(`session:problem-title:${PROBLEM_ID}`)).toBe(
+            '26837. DNA 수열',
+        );
+    });
+
+    it('[정상] 다른 problemId면 캐시 미스로 새로 읽는다(문제가 바뀌면 갱신됨)', async () => {
+        await storage.setItem(`session:problem-title:${PROBLEM_ID}`, '캐시된 제목');
+        appendProblemTitle('다른 문제 제목');
+        const OTHER_ID = 'OTHER-PROBLEM-ID';
+        const OTHER_URL = `https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=${OTHER_ID}`;
+
+        mountCoditWidget(OTHER_URL);
+        await flushMicrotasks();
+
+        expect(appDivText()).toContain('다른 문제 제목');
     });
 });
