@@ -1,3 +1,5 @@
+import PopupApp from '../../src/components/PopupApp';
+
 export default function App() {
-    return <div>Codit Extension</div>;
+    return <PopupApp />;
 }
