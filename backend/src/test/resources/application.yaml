@@ -12,3 +12,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+
+jwt:
+  secret: test-only-secret-key-for-context-loads-min-32-bytes
+  access-token-expiry-seconds: 3600
