@@ -40,12 +40,15 @@ export function useAuth(): {
         await Promise.resolve();
         try {
             const redirectUri = chrome.identity.getRedirectURL();
+            const state = crypto.randomUUID();
+
             const authUrl = new URL('https://accounts.google.com/o/oauth2/auth');
             authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID);
             authUrl.searchParams.set('redirect_uri', redirectUri);
             authUrl.searchParams.set('response_type', 'code');
             authUrl.searchParams.set('scope', 'openid email profile');
             authUrl.searchParams.set('access_type', 'offline');
+            authUrl.searchParams.set('state', state);
 
             const redirectUrl = await chrome.identity.launchWebAuthFlow({
                 url: authUrl.toString(),
@@ -58,6 +61,12 @@ export function useAuth(): {
             }
 
             const url = new URL(redirectUrl);
+            const returnedState = url.searchParams.get('state');
+
+            if (returnedState !== state) {
+                throw new Error('OAuth state mismatch');
+            }
+
             const code = url.searchParams.get('code');
 
             if (!code) {

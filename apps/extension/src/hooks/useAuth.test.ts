@@ -26,9 +26,11 @@ describe('useAuth', () => {
     });
 
     it('로그인 성공 후 status가 authenticated가 되고 토큰이 chrome.storage.local에 저장되어야 한다', async () => {
-        const mockRedirectUrl = 'https://abc.chromiumapp.org/?code=test-code';
         vi.spyOn(chrome.identity, 'getRedirectURL').mockReturnValue('https://abc.chromiumapp.org/');
-        vi.spyOn(chrome.identity, 'launchWebAuthFlow').mockImplementation(() => Promise.resolve(mockRedirectUrl));
+        vi.spyOn(chrome.identity, 'launchWebAuthFlow').mockImplementation(async ({ url }) => {
+            const state = new URL(url as string).searchParams.get('state') ?? '';
+            return `https://abc.chromiumapp.org/?code=test-code&state=${state}`;
+        });
         const mockUser = { id: 1, email: 'test@gmail.com', nickname: 'Test User', role: 'USER' };
         vi.spyOn(global, 'fetch').mockResolvedValue({
             ok: true,
@@ -93,9 +95,10 @@ describe('useAuth', () => {
 
     it('백엔드 에러 메시지에 "user"가 섞여 있어도 취소로 오분류하지 않아야 한다', async () => {
         vi.spyOn(chrome.identity, 'getRedirectURL').mockReturnValue('https://abc.chromiumapp.org/');
-        vi.spyOn(chrome.identity, 'launchWebAuthFlow').mockImplementation(() =>
-            Promise.resolve('https://abc.chromiumapp.org/?code=test-code')
-        );
+        vi.spyOn(chrome.identity, 'launchWebAuthFlow').mockImplementation(async ({ url }) => {
+            const state = new URL(url as string).searchParams.get('state') ?? '';
+            return `https://abc.chromiumapp.org/?code=test-code&state=${state}`;
+        });
         vi.spyOn(global, 'fetch').mockRejectedValue(new Error('user profile invalid'));
 
         const { result } = renderHook(() => useAuth());
