@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
+    @Transactional
     public AuthTokenResponse loginWithOAuth(String provider, String code, String redirectUri) {
         if (!"GOOGLE".equals(provider)) {
             throw new AuthException(AuthErrorCode.UNSUPPORTED_PROVIDER);
