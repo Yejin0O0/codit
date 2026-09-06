@@ -15,33 +15,33 @@
 
 ## 3. 기술 결정
 
-### ADR-1. 유형 태그는 프론트 문자열 id를 그대로 저장한다 (백엔드 Tag 테이블 없음)
+### ADR-1. 유형 태그는 `tag` 테이블의 숫자 id로 저장한다 (`@ManyToMany`)
 
 **Context**
 
 `POST /api/attempts`는 사용자가 선택한 유형 태그를 함께 저장한다. 코드베이스 현황:
 
-- 백엔드에 `Tag` 엔티티·테이블·`GET /api/tags`가 없다.
-- 프론트는 `apps/extension/lib/tag-catalog.ts`에 25종을 하드코딩하며 id는 kebab-case 문자열(`'bfs'`, `'greedy'`)이다. FE 결과 기록 화면은 이미 `selectedTagIds: string[]`로 이 문자열 id를 들고 있다.
-- `docs/handoff/frontend-handoff.md §8-C`가 "tagId[]/name[] 중 무엇을 보낼지 팀 확정 필요, 확정 전 임의 구현 금지"라고 명시한다.
+- **백엔드 태그 도메인이 이미 있다** — 이슈 #40 / PR #41(`feature/tag-catalog`, 담당: 지은): `Tag` 엔티티(`id` Long, `name`, `normalizedName` unique, `category`), `GET /api/tags`(`[{ id: number, name, category }]`), `POST /api/tags`(커스텀 태그 upsert → `{ id, name, category: "CUSTOM" }`), `data.sql`로 25종 시딩. `packages/shared-types`의 `Tag`도 `{ id: number, name, category }`로 갱신.
+- 프론트는 아직 `apps/extension/lib/tag-catalog.ts`(문자열 id)를 쓰지만, "[FE] Tag API Integration" 이슈에서 `GET /api/tags`의 숫자 id로 교체 예정(`frontend-handoff.md §9`).
+- `docs/handoff/frontend-handoff.md §8-C`의 "tagId[]/name[] 팀 확정 필요"는 이슈 #40이 **숫자 id로 확정**하며 해소됐다.
 
 **Decision**
 
-프론트가 보낸 문자열 태그 id 배열을 그대로 저장한다. 이 이슈에서 백엔드 `Tag` 엔티티·`GET /api/tags`는 만들지 않는다. `Attempt`는 `attempt_tag(attempt_id, tag_id VARCHAR)` 조인 테이블(`@ElementCollection`)로 태그 id 목록을 보관한다. 최소 1개 필수. 서버는 형식만 검사하고(빈 문자열/공백 거부), 카탈로그 실재 여부는 강제하지 않는다.
+`POST /api/attempts`는 `tagIds: number[]`(예: `[4, 6]`)를 받는다. `Attempt`는 `Tag`와 `@ManyToMany` 조인 테이블 `attempt_tag(attempt_id BIGINT, tag_id BIGINT)`로 연결한다. 최소 1개 필수. 저장 시 각 `tagId`를 `tagRepository.findAllById()`로 조회해 하나라도 없으면 `400`(부분 저장 안 함). 커스텀 태그는 FE가 먼저 `POST /api/tags`로 만들어 받은 id를 그대로 넘기므로 이 이슈에서 별도 처리가 없다.
 
 **Alternatives**
 
-- **백엔드 Tag 테이블 + 숫자 id (안 B)**: `GET /api/tags`·25종 시딩·FE 문자열→숫자 id 마이그레이션까지 이 이슈가 떠안는다. `frontend-handoff.md §9`가 "Tag API Integration"을 별도 이슈로 권고했고 §8-C가 숫자 id 여부를 팀 미확정으로 남긴 상태라, 이 이슈가 그 결정을 선점하게 된다.
+- **FE 문자열 id 그대로 저장 (안 A)**: 이슈 #40 전에는 유효한 안이었으나, 이제 백엔드 Tag 테이블이 숫자 id로 존재하므로 문자열 id를 저장하면 `tag` 테이블과 조인 불가·통계 집계 불가. 나중에 마이그레이션 부채가 된다.
 - **태그 표시명(name) 저장 (안 C)**: `docs/decisions/tag-catalog-single-source-of-truth.md`가 "표시명이 소리 없이 drift 되는 구조"를 명시적으로 경계했다. name을 원천 저장하면 카탈로그에서 표시명을 고칠 때 과거 기록과 어긋난다.
 
 **Consequences**
 
-- (+) 이 이슈 범위가 `POST /api/attempts` 하나로 유지된다. Tag 도메인 구축·마이그레이션 없음.
-- (+) FE가 이미 들고 있는 `selectedTagIds`(문자열)를 변환 없이 그대로 전송 → FE 통합 이슈가 가벼워진다.
-- (+) `problemId`를 자연키 문자열로 저장하는 problem-identification과 같은 철학.
-- (-) FK 무결성이 없다. 오타·존재하지 않는 id도 저장될 수 있다.
-- (-) 백엔드 `Tag` 테이블이 나중에 생기면 `attempt_tag` 문자열 id → 숫자 id 마이그레이션이 필요하다. 카탈로그 id 안정성이 전제.
-- (-) 카테고리·표시명 관리가 계속 프론트에 남는다.
+- (+) `tag` 테이블 FK로 참조 무결성 확보. 통계에서 태그별 집계가 join으로 가능.
+- (+) 커스텀 태그(FR-011)가 저절로 해결됨 — attempts는 태그 종류를 구분하지 않고 id만 저장.
+- (+) 태그 형식이 이슈 #40의 api-contract와 일치 (숫자 id).
+- (-) **PR #41(tag-catalog)이 develop에 머지돼야** 이 이슈를 시작할 수 있다 (`Tag` 엔티티·`TagRepository` 의존).
+- (-) FE는 문자열 카탈로그 → 서버 숫자 id로 전환이 필요하다 (별도 FE 이슈 몫).
+- (-) 저장마다 `tagId` 유효성 조회(1회 `findAllById`)가 추가된다.
 
 ### ADR-2. result enum은 `CORRECT | WRONG | HOLD`
 
@@ -116,8 +116,8 @@ result 값이 코드베이스 3곳에서 다르다.
 
 ## 4. Out of Scope
 
-- **유형 태그 조회·생성 백엔드** (`GET /api/tags`, `Tag` 엔티티, 25종 시딩) — 별도 이슈. 이 기능은 문자열 태그 id를 받기만 한다 (ADR-1).
-- **커스텀 태그**(FR-011) 백엔드 처리 — FE `customTags` 상태는 있으나, 서버 저장 시 커스텀 태그를 일반 태그 id와 어떻게 구분·검증할지는 이 이슈에서 정하지 않는다. 우선 FE가 최종적으로 보내는 문자열 id 배열만 저장한다.
+- **유형 태그 조회·생성 백엔드** (`GET /api/tags`, `POST /api/tags`, `Tag` 엔티티, 25종 시딩) — 이슈 #40 / PR #41이 담당. 이 기능은 그 `tag` 테이블을 숫자 id로 참조만 한다 (ADR-1).
+- **커스텀 태그**(FR-011) 백엔드 처리 — 이슈 #40의 `POST /api/tags`가 담당. FE가 커스텀 태그를 먼저 생성해 받은 숫자 id를 넘기므로, attempts는 태그 종류를 구분하지 않고 id만 저장한다.
 - **타이머/스톱워치 자체** (FR-002/003) — 백엔드 API 없음. `elapsedTime`은 값으로만 받는다.
 - **Attempt 수정 API** (`PATCH /api/attempts/{id}`) — 결과·메모 변경 시나리오(원본 명세 7.3). MVP 이후 또는 대시보드.
 - **Attempt 조회·목록·통계 API** — 대시보드 범위.
@@ -136,4 +136,4 @@ result 값이 코드베이스 3곳에서 다르다.
 | result | 풀이 결과. `CORRECT`(정답) / `WRONG`(오답) / `HOLD`(보류·포기) 중 하나 (ADR-2) |
 | elapsedTime | "완료" 버튼 클릭까지 걸린 소요 시간(초). 프론트 스톱워치가 계산해 전달. 제한 시간이 아니라 경과 시간 |
 | memo | 결과에 대한 자유 텍스트 메모. 선택 입력 |
-| 유형 태그 | 문제 유형 분류(구현/DFS/그리디 등). 현재 프론트 `lib/tag-catalog.ts`에 25종 하드코딩(string id). 백엔드 `GET /api/tags`는 미구현 |
+| tagIds | 사용자가 선택한 유형 태그의 숫자 id 배열 (`GET /api/tags` 응답의 `id`). 1개 이상. 이슈 #40의 `tag` 테이블 참조 (ADR-1) |
