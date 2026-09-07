@@ -55,8 +55,7 @@
 
 - Storybook 스토리 전부 최종 상태로. Playground 시드 = 확정값. `Foundations/Colors`·`Type` 갱신
 - `docs/ui/design-system.md ## 기초` 채우기 (ADR 1~8 요약)
-- `docs/ui/design-system-worklog.md` 삭제 (durable 내용 흡수 후)
-- `docs/ui/_worklog-assets/` 정리
+- `docs/ui/design-system-worklog.md` + `_worklog-assets/` 삭제 (durable 내용 흡수 후) ✅ Phase 5
 
 ## AC (GitHub 이슈)
 

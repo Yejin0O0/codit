@@ -220,8 +220,7 @@ color   (primary / 뉴트럴 램프 / 의미색 success·warning·destructive / 
 - `docs/ui/design-system.md`를 2섹션으로 재구성:
   - `## 기초` — 토큰 값·스케일·원칙·SWEA 공존 규칙 (이 스킬 소유). Phase 2~3 결정 반영
   - `## feature별 인벤토리` — 기존 컴포넌트 표 (fe-ui-design 소유). **기존 내용 100% 보존**, 헤더만 삽입. 스왑한 컴포넌트가 있으면 그 행만 사실 정정
-- `docs/ui/design-system-worklog.md` — durable 내용(로고 분석 §3 등)을 `## 기초`로 흡수 후 **삭제**. `_worklog-assets/` 중 draft.html 외 임시물 정리
-- `docs/handoff/frontend-handoff.md` 등에 남은 병행 컨텍스트가 worklog §9에 있으면 이관 확인
+- 임시 기획 산출물(worklog·draft.html 등)은 durable 내용을 `## 기초`·`host-audit-swea.md`·`brand/README.md`로 흡수한 뒤 삭제
 
 ---
 
@@ -325,7 +324,7 @@ Phase 6의 `@ac-verifier` 입력, 또는 독립 실행.
 |---|---|
 | 아키텍처 제약 (OKLCH / `:host`·`:root` / 인라인 SVG / 2 Surface / v1 고정 라이트) | `docs/ui/ui-architecture.md` |
 | SWEA 팔레트 + 공존 규칙 + hue 회피 밴드 | `docs/ui/host-audit-swea.md` |
-| 로고 사용 맵·규격·색 | `docs/ui/brand/README.md` (SoT). C 마크 A·B안은 `design-system-worklog.md §3` |
+| 로고 사용 맵·규격·색 | `docs/ui/brand/README.md` (SoT) |
 | 현재 토큰 SoT | `apps/extension/styles/tokens.css` |
 | Surface 전용 스타일 | `apps/extension/entrypoints/content/style.css` · `entrypoints/page/style.css` |
 | shadcn 설정 | `apps/extension/components.json` |

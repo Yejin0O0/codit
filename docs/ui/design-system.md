@@ -12,47 +12,74 @@
 
 ## 기초
 
-> `/design-system` 스킬 소유. 아직 v1 리스킨 전 — 토큰 값은 shadcn `neutral` 기본값. 리스킨 시 이 섹션이 확정 팔레트·스케일로 채워진다.
+> `/design-system` 스킬 소유. v1 리스킨 확정 (2026-09-07, 이슈 #45). 근거·트레이드오프 전문: [`docs/features/design-system/prd.md`](../features/design-system/prd.md) ADR-1~8.
+> SoT는 `apps/extension/styles/tokens.css`. 이 표는 요약 — 값이 갈리면 tokens.css가 정답.
+> 카탈로그·튜닝: `pnpm --filter @codit/extension storybook` (`Foundations/Playground`).
 
 ### UI Library
 
-- **shadcn/ui** (복사형 — 라이브러리 의존이 아니라 레포가 소스를 소유한다)
-  - style: `new-york`
-  - base color: `neutral`
-- **보조 프리미티브**: Base UI — Toggle 계열에서 shadcn/Radix가 제약될 경우의 후보
-
-> dependency 절감 목적으로 공통 interactive primitive를 CUSTOM으로 재구현하지 않는다.
-
----
+- **shadcn/ui** (복사형 — 레포가 소스를 소유). style `new-york`. 라이브러리 교체 안 함 (Shadow DOM 제약).
+- **팔레트 방법론**: Radix Colors 12-step (`iris` 브랜드 + `mauve` 뉴트럴 + `green`/`amber`/`red` 의미).
+- dependency 절감 — 공통 interactive primitive를 CUSTOM으로 재구현하지 않는다. 아이콘 = 인라인 SVG only.
 
 ### 테마 정책
 
 | 항목 | 결정 |
 |------|------|
-| 다크모드 | v1 미지원. 고정 라이트 테마. `.dark` variant는 라이브러리 호환용 선언만 |
-| 테마 독립성 | 위젯은 호스트 페이지 테마와 무관하게 자체 테마를 확정 |
-| 토큰 선언 위치 | Shadow Root 스코프 (문서 루트에만 존재하는 정의에 의존하지 않음) |
+| 다크모드 | **v1 미지원.** 고정 라이트. `.dark` variant는 dormant(라이브러리 호환 선언). v2 = Surface 오버라이드 값 교체 |
+| 2계층 | 공통 베이스(`tokens.css :root`) + Surface 오버라이드(`:host` 위젯 / `:root` 페이지, elevation·밀도만) |
+| 테마 독립성 | 위젯은 호스트(SWEA) 테마와 무관하게 자체 라이트 확정 |
 
----
+### 색 토큰 (OKLCH — tokens.css 참조)
 
-### 디자인 토큰
+| 토큰 | hex | Radix | 용도 |
+|------|-----|-------|------|
+| `--primary` / `-foreground` | `#5B5BD6` / `#FFF` | iris-9 | 주요 버튼·링크·포커스링·로고 C. 흰 5.3:1 |
+| `--ring` | `#9B9EF0` | iris-8 | 포커스 링 3px |
+| `--accent` / `-foreground` | `#F1EEFE` / `#5753C6` | iris-3 / -11 | hover 배경 / 그 위 텍스트 |
+| `--background` | `#FAF9FC` | mauve-2 | 페이지·위젯 바탕 |
+| `--foreground` | `#1A1523` | mauve-12 | 본문·제목·타이머 |
+| `--card` / `--popover` | `#F1EFEF` | — | 카드·위젯 표면 (회색 패널 — SWEA 흰 페이지 위 분리). ≈ muted (알려진 트레이드오프) |
+| `--muted` / `--secondary` | `#F1EFF5` | mauve-3 | 보조 표면·스켈레톤 / secondary 버튼·미선택 칩 |
+| `--muted-foreground` | `#65636E` | mauve-11 | 캡션·날짜·step. ~5:1 |
+| `--secondary-foreground` | `#211E28` | mauve-12 | |
+| `--border` | `#D8D3E0` | mauve-7 | 카드·구분선·미선택 토글 |
+| `--input` | `#C4BDD2` | mauve-8 | 입력창 테두리 (누를 수 있게 진하게) |
+| `--success` / `-foreground` | `#30A46C` / `#FFF` | green-9 | 정답 — 토글·배지·완료 체크 |
+| `--warning` / `-foreground` | `#FFC53D` / `#4F3422` | amber-9 / -12 | 보류 |
+| `--destructive` / `-foreground` | `#E5484D` / `#FFF` | red-9 | 오답·삭제 |
+| `--brand-wordmark-from/to` | `#8FB5FB` / `#A193FA` | — | "Codit" 워드마크 그라데이션 (`@utility brand-wordmark`) |
 
-| 토큰 | 값 | 용도 | 첫 사용 Feature |
-|------|-----|------|----------------|
-| shadcn 표준 CSS 변수 | `neutral` 팔레트 (OKLCH) | `background` `foreground` `primary` `muted` `border` `ring` `card` 등 | timer |
-| `--success` | (라이트 팔레트 내 green 계열) | 결과 = 정답 | timer |
-| `--warning` | (라이트 팔레트 내 amber 계열) | 결과 = 보류 | timer |
-| `--destructive` | shadcn 표준 | 결과 = 오답 (재사용) | timer |
-| `--radius` | `0.625rem` | 공통 radius | timer |
-| 위젯 프레임 폭 | `320px` (고정) | 위젯 컨테이너 | timer |
-| 폰트 | 시스템 스택 (`-apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif`) | 위젯 전체. 위젯이 `font-family`·`font-size` 자체 확정 | timer |
-| 기본 폰트 크기 | `14px` | 위젯 전체 | timer |
-| Extension Page 컨테이너 max-width (auth) | `≈ 400px` (구현 시 확정) | Auth 카드 중앙 정렬 컨테이너 | auth |
-| Extension Page 컨테이너 max-width (history) | `≈ 720px` (구현 시 확정) | Problem List / Detail 중앙 정렬 컨테이너 | problem-history |
-| 위젯 collapsed pill 크기 | 높이 ≈ 40px (`h-10`) — 읽고 누를 수 있는 크기, 초소형 금지 | `CollapsedTimer` — expanded 320px 프레임과 같은 top-right anchor 에서 축소 렌더 | timer-persistence |
+**SWEA 공존**: `--primary` hue ~240° — SWEA 파랑(`#4590E3` ~211°) 회피 밴드 밖(경계). 상세 [`host-audit-swea.md`](./host-audit-swea.md).
 
-> 구체 색상값은 shadcn `neutral` 프리셋을 따르며, `--success`/`--warning`은 구현 시 라이트 팔레트에 맞춰 확정한다.
-> (v1 리스킨 시 `/design-system` Phase 2~3에서 전 토큰 값 확정 — 색·타이포·간격·radius·elevation·motion·z.)
+### 스케일
+
+| 종류 | 값 | 근거 |
+|------|-----|------|
+| radius | `--radius: 0.625rem`(10) + sm6/md8/lg10/xl14 · pill `rounded-full` | shadcn new-york |
+| 간격 | Tailwind 4px 베이스. `gap` 우선. 위젯 프레임 안쪽 `px-4 py-4`(16) | Tailwind |
+| 타이포 | 시스템 스택(웹폰트 X) · 본문 14px · **한글 line-height 1.6** · size xs12/sm13/base14/lg16/xl20/2xl24/4xl36(타이머) · weight 400/500/600/700 | Tailwind + Apple HIG |
+| elevation | `@theme` `--shadow-2xs~xl`. **위젯 프레임 = `shadow-lg`** (primary 틴트 — "Codit 패널" 각인, SWEA 분리) | Material 3 |
+| motion | `--ease-out`/`--ease-in-out`, `--duration-fast120/base200/slow300`. **idle 위젯 무애니.** `prefers-reduced-motion` 전역 0 | Material 3 |
+| z-index | `--z-widget 999999`(mount.tsx JS와 동기) / `--z-overlay` / `--z-toast` | — |
+| 위젯 프레임 폭 | `320px` 고정 · collapsed pill `h-10`(40) | timer / timer-persistence |
+| Extension Page max-width | auth ≈ 400px / history ≈ 720px (구현 시) | auth / problem-history |
+
+### 컴포넌트 사용 규칙 (variant → 역할)
+
+| 역할 | 컴포넌트 / variant | 규칙 |
+|------|------|------|
+| 주요 진행 액션 (완료·다음·저장) | `Button` `default` | **화면당 1개.** 하단, 위젯 full-width |
+| 뒤로·취소 | `Button` `outline` | **테두리 유지.** primary 옆이면 왼쪽 |
+| 보조 액션 (드묾) | `Button` `secondary` | |
+| 파괴적 | `Button` `destructive` | 확인 다이얼로그 동반 |
+| 인라인 텍스트 링크 | `Button` `link` | 문장 안에서만 |
+| 결과 선택/표시 | `ResultToggleGroup` / `ResultBadge` | 정답 success / 오답 destructive / 보류 warning, 채운 배경 |
+| 결과 필터 탭 | `ResultFilterToggleGroup` | **중립색** segmented — 의미색은 배지에만 |
+| 태그 | `TagToggleGroup`(미선택 secondary / 선택 primary) · `TagChipList`(secondary) | |
+| 화면 프레임 | `PanelShell`(위젯) / `ExtensionPageShell`(페이지) | |
+
+**Do / Don't**: 화면당 primary 1개 · 의미색은 결과에만(필터·중립 배지 X) · idle 위젯 저채도(primary는 버튼·링크·마크에만, 큰 표면 X) · 클릭 타깃 ≥ 36px(pill 40).
 
 ---
 

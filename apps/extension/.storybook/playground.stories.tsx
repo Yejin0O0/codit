@@ -43,15 +43,16 @@ const COLOR_KEYS = [
 ] as const;
 type ColorKey = (typeof COLOR_KEYS)[number];
 
+// 확정값 — prd.md ADR-1 (Playground 튜닝 2026-09-07). tokens.css 와 동기.
 const CONFIRMED: Record<ColorKey, string> = {
-    primary: '#6E56CF',
+    primary: '#5B5BD6',
     'primary-foreground': '#FFFFFF',
-    ring: '#A594F9',
+    ring: '#9B9EF0',
     accent: '#F1EEFE',
-    'accent-foreground': '#6550B9',
+    'accent-foreground': '#5753C6',
     background: '#FAF9FC',
     foreground: '#1A1523',
-    card: '#FFFFFF',
+    card: '#F1EFEF',
     muted: '#F1EFF5',
     'muted-foreground': '#65636E',
     secondary: '#F1EFF5',
@@ -67,11 +68,11 @@ const CONFIRMED: Record<ColorKey, string> = {
 };
 
 const PRESETS: Record<string, Partial<Record<ColorKey, string>>> = {
-    'Radix 기반 (추천)': CONFIRMED,
-    'primary 진하게': { ...CONFIRMED, primary: '#654DC4', ring: '#8B77E8' },
-    'primary 더 파랑 (iris)': { ...CONFIRMED, primary: '#5B5BD6', ring: '#9B9EF0', 'accent-foreground': '#5753C6' },
+    '확정 (v1)': CONFIRMED,
+    'primary violet (원안)': { ...CONFIRMED, primary: '#6E56CF', ring: '#A594F9', 'accent-foreground': '#6550B9' },
+    'card 순백': { ...CONFIRMED, card: '#FFFFFF' },
     '구분 더 강하게': { ...CONFIRMED, background: '#F6F4FA', border: '#CBC3D8', input: '#B4AAC8', 'muted-foreground': '#5C5A66' },
-    '현재 (shadcn neutral)': {
+    'shadcn neutral (리스킨 전)': {
         primary: '#343434', 'primary-foreground': '#FBFBFB', ring: '#B4B4B4', accent: '#F7F7F7', 'accent-foreground': '#343434',
         background: '#FFFFFF', foreground: '#252525', card: '#FFFFFF', muted: '#F7F7F7', 'muted-foreground': '#8E8E8E',
         secondary: '#F7F7F7', 'secondary-foreground': '#343434', border: '#EBEBEB', input: '#EBEBEB',
