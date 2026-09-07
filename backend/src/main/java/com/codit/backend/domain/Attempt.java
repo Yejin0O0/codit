@@ -10,7 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -47,7 +47,7 @@ public class Attempt {
     private List<Tag> tags = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     public Attempt(Long userId, String problemId, int elapsedTime, AttemptResult result, String memo, List<Tag> tags) {
         this.userId = userId;
@@ -56,6 +56,6 @@ public class Attempt {
         this.result = result;
         this.memo = memo;
         this.tags = new ArrayList<>(tags);
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
     }
 }

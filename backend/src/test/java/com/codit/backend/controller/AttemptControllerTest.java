@@ -1,5 +1,6 @@
 package com.codit.backend.controller;
 
+import static org.hamcrest.Matchers.endsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -106,6 +107,19 @@ class AttemptControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.elapsedTime").value(500))
                 .andExpect(jsonPath("$.memo").value("메모 내용"));
+    }
+
+    @Test
+    void shouldSerializeCreatedAtAsUtcInstant() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        given(attemptService.createAttempt(any(), any())).willReturn(sampleAttempt());
+
+        mockMvc.perform(post("/api/attempts")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body("CORRECT", List.of(6L), null)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.createdAt").value(endsWith("Z")));
     }
 
     @Test

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.codit.backend.controller.dto.CreateTagRequest;
 import com.codit.backend.controller.dto.TagResponse;
-import com.codit.backend.domain.Tag;
 import com.codit.backend.service.TagService;
 import com.codit.backend.service.TagUpsertResult;
 
@@ -28,7 +27,7 @@ public class TagController {
     @GetMapping
     public ResponseEntity<List<TagResponse>> getTags() {
         List<TagResponse> tags = tagService.getAllTags().stream()
-            .map(this::toResponse)
+            .map(TagResponse::from)
             .toList();
         return ResponseEntity.ok(tags);
     }
@@ -37,10 +36,6 @@ public class TagController {
     public ResponseEntity<TagResponse> createTag(@RequestBody CreateTagRequest request) {
         TagUpsertResult result = tagService.upsertTag(request.name());
         HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
-        return ResponseEntity.status(status).body(toResponse(result.tag()));
-    }
-
-    private TagResponse toResponse(Tag tag) {
-        return new TagResponse(tag.getId(), tag.getName(), tag.getCategory());
+        return ResponseEntity.status(status).body(TagResponse.from(result.tag()));
     }
 }

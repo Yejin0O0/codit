@@ -13,6 +13,7 @@ import com.codit.backend.domain.Tag;
 import com.codit.backend.exception.InvalidRequestException;
 import com.codit.backend.repository.AttemptRepository;
 import com.codit.backend.repository.TagRepository;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -208,6 +209,15 @@ class AttemptServiceTest {
 
         assertThatThrownBy(() -> attemptService.createAttempt(1L, command("CORRECT", List.of(1L, 999L), null)))
                 .isInstanceOf(InvalidRequestException.class);
+        verify(attemptRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectWhenTagIdsContainsNullElement() {
+        assertThatThrownBy(() -> attemptService.createAttempt(1L,
+                command("CORRECT", Arrays.asList(1L, null), null)))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("빈 값");
         verify(attemptRepository, never()).save(any());
     }
 }

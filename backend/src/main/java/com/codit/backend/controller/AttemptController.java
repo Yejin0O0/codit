@@ -36,7 +36,7 @@ public class AttemptController {
 
     private AttemptResponse toResponse(Attempt attempt) {
         List<TagResponse> tags = attempt.getTags().stream()
-                .map(tag -> new TagResponse(tag.getId(), tag.getName(), tag.getCategory()))
+                .map(TagResponse::from)
                 .toList();
         return new AttemptResponse(
                 attempt.getId(), attempt.getProblemId(), attempt.getElapsedTime(),

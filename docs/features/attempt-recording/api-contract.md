@@ -65,6 +65,7 @@ Content-Type: application/json
 | `elapsedTime` 누락 / 음수 | 400 | `{ "code": "INVALID_REQUEST", "message": "elapsedTime은 0 이상이어야 합니다." }` |
 | `result` 누락 / `CORRECT`·`WRONG`·`HOLD` 외의 값 | 400 | `{ "code": "INVALID_REQUEST", "message": "result는 CORRECT, WRONG, HOLD 중 하나여야 합니다." }` |
 | `tagIds` 누락 / 빈 배열 | 400 | `{ "code": "INVALID_REQUEST", "message": "태그를 1개 이상 선택해야 합니다." }` |
+| `tagIds`에 `null` 원소 포함 (예: `[6, null]`) | 400 | `{ "code": "INVALID_REQUEST", "message": "..." }` |
 | `tagIds`에 `tag` 테이블에 없는 id 포함 | 400 | `{ "code": "INVALID_REQUEST", "message": "존재하지 않는 태그가 포함되어 있습니다." }` (부분 저장 없음) |
 | 유효한 인증 토큰 없음 (없음/위조/만료) | 401 | `{ "code": "UNAUTHENTICATED", "message": "..." }` (`JwtAuthenticationFilter` + `JwtAuthenticationEntryPoint` 자동) |
 

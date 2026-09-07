@@ -1,7 +1,7 @@
 package com.codit.backend.controller.dto;
 
 import com.codit.backend.domain.AttemptResult;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record AttemptResponse(
@@ -11,6 +11,6 @@ public record AttemptResponse(
         AttemptResult result,
         List<TagResponse> tags,
         String memo,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
 }

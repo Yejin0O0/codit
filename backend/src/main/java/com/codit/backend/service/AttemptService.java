@@ -7,6 +7,7 @@ import com.codit.backend.exception.InvalidRequestException;
 import com.codit.backend.repository.AttemptRepository;
 import com.codit.backend.repository.TagRepository;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +41,9 @@ public class AttemptService {
     private List<Tag> resolveTags(List<Long> tagIds) {
         if (tagIds == null || tagIds.isEmpty()) {
             throw new InvalidRequestException("태그를 1개 이상 선택해야 합니다.");
+        }
+        if (tagIds.stream().anyMatch(Objects::isNull)) {
+            throw new InvalidRequestException("태그 id에 빈 값이 포함될 수 없습니다.");
         }
         List<Long> distinctTagIds = tagIds.stream().distinct().toList();
         List<Tag> tags = tagRepository.findAllById(distinctTagIds);
