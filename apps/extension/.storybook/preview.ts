@@ -5,6 +5,11 @@ import './storybook.css';
 const preview: Preview = {
     parameters: {
         layout: 'centered',
+        options: {
+            storySort: {
+                order: ['시작하기', 'Foundations', ['기초', 'Playground'], 'Primitives', 'Codit', 'Widget'],
+            },
+        },
         controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
         backgrounds: {
             options: {

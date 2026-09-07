@@ -155,6 +155,7 @@ function Playground() {
     });
     const [screen, setScreen] = useState('결과 선택');
     const [result, setResult] = useState<'CORRECT' | 'WRONG' | 'HOLD' | null>('CORRECT');
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         try {
@@ -184,9 +185,59 @@ function Playground() {
         `/* body/문단 line-height: ${scale.lh} (한글) */`,
     ].join('\n');
 
+    const setToken = (k: ColorKey, v: string) => {
+        const n = v.trim();
+        if (!/^#[0-9a-fA-F]{6}$/.test(n)) return;
+        setTokens((t) => ({ ...t, [k]: n.toUpperCase() }));
+    };
+    const copyCss = () => {
+        navigator.clipboard?.writeText(cssExport).then(
+            () => setCopied(true),
+            () => setCopied(false),
+        );
+        setTimeout(() => setCopied(false), 1800);
+    };
+
     return (
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', fontFamily: 'system-ui', flexWrap: 'wrap' }}>
-            <div style={{ width: 300, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div
+                style={{
+                    width: 320,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                    maxHeight: 'calc(100vh - 40px)',
+                    overflowY: 'auto',
+                    paddingRight: 6,
+                }}
+            >
+                {/* sticky action bar */}
+                <div
+                    style={{
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 1,
+                        background: '#fff',
+                        display: 'flex',
+                        gap: 6,
+                        padding: '8px 0',
+                        borderBottom: '1px solid #e5e5ea',
+                    }}
+                >
+                    <button
+                        onClick={copyCss}
+                        style={{ font: '600 12px system-ui', padding: '8px 12px', borderRadius: 7, border: 0, background: copied ? '#0a7' : '#6E56CF', color: '#fff', cursor: 'pointer' }}
+                    >
+                        {copied ? '복사됨 ✓' : 'CSS 복사'}
+                    </button>
+                    <button
+                        onClick={() => { setTokens({ ...CONFIRMED }); setScale(DEFAULT_SCALE); }}
+                        style={{ font: '500 12px system-ui', padding: '8px 10px', borderRadius: 7, border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}
+                    >
+                        추천값으로 초기화
+                    </button>
+                </div>
+
                 <div>
                     <strong style={{ fontSize: 13 }}>프리셋</strong>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
@@ -226,33 +277,49 @@ function Playground() {
                 </div>
 
                 <div>
-                    <strong style={{ fontSize: 13 }}>색 토큰</strong>
+                    <strong style={{ fontSize: 13 }}>색 토큰 <span style={{ fontWeight: 400, color: '#888', fontSize: 11 }}>— 스와치 클릭(피커) 또는 hex 직접 입력</span></strong>
                     {COLOR_KEYS.map((k) => {
                         const pair = PAIRS.find((p) => p[0] === k);
                         const r = pair ? ratio(tokens[pair[0]], tokens[pair[1]]) : null;
                         return (
-                            <div key={k} style={{ display: 'grid', gridTemplateColumns: '22px 1fr auto', gap: 7, alignItems: 'center', padding: '3px 0' }}>
-                                <input type="color" value={tokens[k].toLowerCase()} onChange={(e) => setTokens((t) => ({ ...t, [k]: e.target.value.toUpperCase() }))} style={{ width: 22, height: 22, padding: 0, border: '1px solid #ccc', borderRadius: 5 }} />
-                                <span style={{ font: '500 10.5px ui-monospace' }}>
+                            <div key={k} style={{ display: 'grid', gridTemplateColumns: '28px 1fr 88px 34px', gap: 7, alignItems: 'center', padding: '4px 0' }}>
+                                <input
+                                    type="color"
+                                    aria-label={`--${k} 색상 피커`}
+                                    value={tokens[k].toLowerCase()}
+                                    onChange={(e) => setToken(k, e.target.value)}
+                                    style={{ width: 28, height: 28, padding: 0, border: '1px solid #bbb', borderRadius: 6, cursor: 'pointer' }}
+                                />
+                                <span style={{ font: '500 10.5px ui-monospace', lineHeight: 1.25 }}>
                                     --{k}
                                     {USE_NOTE[k] && <span style={{ display: 'block', color: '#888', fontFamily: 'system-ui', fontSize: 9.5 }}>{USE_NOTE[k]}</span>}
                                 </span>
-                                <span style={{ font: '600 9px system-ui', color: r == null ? 'transparent' : r >= pair![2] ? '#0a7' : '#c33' }}>
-                                    {r == null ? '' : `${r.toFixed(1)}${r >= pair![2] ? ' ✓' : ' ✗'}`}
+                                <input
+                                    type="text"
+                                    aria-label={`--${k} hex`}
+                                    defaultValue={tokens[k]}
+                                    key={tokens[k]}
+                                    onBlur={(e) => setToken(k, e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && setToken(k, (e.target as HTMLInputElement).value)}
+                                    style={{ font: '500 11px ui-monospace', padding: '5px 6px', border: '1px solid #ccc', borderRadius: 5, textTransform: 'uppercase', width: 82 }}
+                                />
+                                <span style={{ font: '600 9px system-ui', color: r == null ? 'transparent' : r >= pair![2] ? '#0a7' : '#c33', textAlign: 'right' }}>
+                                    {r == null ? '' : `${r.toFixed(1)}${r >= pair![2] ? '✓' : '✗'}`}
                                 </span>
                             </div>
                         );
                     })}
                 </div>
 
-                <div>
-                    <strong style={{ fontSize: 13 }}>CSS 내보내기</strong>
-                    <textarea readOnly value={cssExport} onFocus={(e) => e.currentTarget.select()} style={{ width: '100%', height: 140, font: '400 10px ui-monospace', marginTop: 5 }} />
-                    <button onClick={() => { setTokens({ ...CONFIRMED }); setScale(DEFAULT_SCALE); }} style={{ font: '500 11px system-ui', marginTop: 6, padding: '5px 9px', cursor: 'pointer' }}>추천값으로 초기화</button>
-                </div>
+                <details>
+                    <summary style={{ font: '600 12px system-ui', cursor: 'pointer' }}>CSS 원문 보기</summary>
+                    <textarea readOnly value={cssExport} onFocus={(e) => e.currentTarget.select()} style={{ width: '100%', height: 200, font: '400 10px ui-monospace', marginTop: 5 }} />
+                </details>
             </div>
 
-            <div style={previewStyle}>
+            <div className="pg-preview" style={previewStyle}>
+                {/* 실제 PanelShell/Card 는 그림자가 Tailwind 클래스라 토큰이 아님 → 미리보기에서만 오버라이드 */}
+                <style>{`.pg-preview [data-slot="card"] { box-shadow: ${SHADOWS[`${scale.shadowStrength}-${scale.shadowTint}`]}; }`}</style>
                 <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
                     {['타이머', '결과 선택', '메모', '태그', '저장 완료'].map((s) => (
                         <button key={s} onClick={() => setScreen(s)} style={{ font: '500 11px system-ui', padding: '5px 9px', borderRadius: 6, border: '1px solid #ccc', background: screen === s ? '#eee' : '#fff', cursor: 'pointer' }}>{s}</button>
