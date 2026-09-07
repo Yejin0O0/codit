@@ -11,14 +11,18 @@ import static org.mockito.Mockito.when;
 
 import com.codit.backend.client.GoogleOAuthClient;
 import com.codit.backend.client.GoogleProfile;
+import com.codit.backend.domain.RefreshToken;
 import com.codit.backend.domain.SocialAccount;
 import com.codit.backend.domain.User;
 import com.codit.backend.dto.AuthTokenResponse;
+import com.codit.backend.dto.TokenRefreshResponse;
 import com.codit.backend.exception.AuthErrorCode;
 import com.codit.backend.exception.AuthException;
+import com.codit.backend.repository.RefreshTokenRepository;
 import com.codit.backend.repository.SocialAccountRepository;
 import com.codit.backend.repository.UserRepository;
 import com.codit.backend.security.JwtTokenProvider;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,6 +46,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -237,5 +244,121 @@ class AuthServiceTest {
                 () -> authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect"));
 
         assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.OAUTH_FAILED);
+    }
+
+    @Test
+    @DisplayName("OAuth 로그인 성공 시 Refresh Token을 DB에 저장한다")
+    void loginWithOAuthShouldSaveRefreshTokenToDatabaseOnSuccess() {
+        GoogleProfile profile = GoogleProfile.builder()
+                .sub("google-sub-123").email("test@gmail.com").name("Test User").build();
+        when(googleOAuthClient.getProfile(anyString(), anyString())).thenReturn(profile);
+        when(socialAccountRepository.findByProviderAndProviderId(anyString(), anyString()))
+                .thenReturn(Optional.empty());
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        User savedUser = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        when(socialAccountRepository.save(any(SocialAccount.class))).thenReturn(SocialAccount.builder().build());
+
+        authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect");
+
+        verify(refreshTokenRepository).save(any(RefreshToken.class));
+    }
+
+    @Test
+    @DisplayName("만료됐지만 서명이 유효한 Access Token으로 refresh 호출 시 새 Access Token을 반환하고 Refresh Token을 교체한다")
+    void refreshShouldReturnNewAccessTokenAndRotateRefreshTokenWhenExpiredAccessTokenGiven() {
+        User user = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        RefreshToken storedRefreshToken = RefreshToken.builder()
+                .user(user).token("old-refresh-token").expiresAt(LocalDateTime.now().plusDays(7)).build();
+        when(jwtTokenProvider.getUserIdIgnoreExpiry("expired-access-token")).thenReturn(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(refreshTokenRepository.findByUser(user)).thenReturn(Optional.of(storedRefreshToken));
+        when(jwtTokenProvider.generateAccessToken(1L)).thenReturn("new-access-token");
+        when(jwtTokenProvider.getAccessTokenExpirySeconds()).thenReturn(3600L);
+
+        TokenRefreshResponse result = authService.refresh("expired-access-token");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getAccessToken()).isEqualTo("new-access-token");
+        verify(refreshTokenRepository).save(any(RefreshToken.class));
+    }
+
+    @Test
+    @DisplayName("Bearer 토큰 서명이 유효하지 않으면 refresh가 UNAUTHENTICATED를 던진다")
+    void refreshShouldThrowUnauthenticatedWhenTokenSignatureIsInvalid() {
+        when(jwtTokenProvider.getUserIdIgnoreExpiry("invalid-token"))
+                .thenThrow(new AuthException(AuthErrorCode.UNAUTHENTICATED));
+
+        AuthException exception = assertThrows(AuthException.class,
+                () -> authService.refresh("invalid-token"));
+
+        assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.UNAUTHENTICATED);
+    }
+
+    @Test
+    @DisplayName("해당 userId의 Refresh Token이 DB에 없으면 refresh가 REFRESH_TOKEN_NOT_FOUND를 던진다")
+    void refreshShouldThrowRefreshTokenNotFoundWhenNoRefreshTokenInDb() {
+        User user = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        when(jwtTokenProvider.getUserIdIgnoreExpiry("access-token")).thenReturn(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(refreshTokenRepository.findByUser(user)).thenReturn(Optional.empty());
+
+        AuthException exception = assertThrows(AuthException.class,
+                () -> authService.refresh("access-token"));
+
+        assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.REFRESH_TOKEN_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("Refresh Token의 expiresAt이 과거이면 refresh가 REFRESH_TOKEN_EXPIRED를 던진다")
+    void refreshShouldThrowRefreshTokenExpiredWhenRefreshTokenIsExpired() {
+        User user = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        RefreshToken expiredRefreshToken = RefreshToken.builder()
+                .user(user).token("expired-refresh-token").expiresAt(LocalDateTime.now().minusDays(1)).build();
+        when(jwtTokenProvider.getUserIdIgnoreExpiry("access-token")).thenReturn(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(refreshTokenRepository.findByUser(user)).thenReturn(Optional.of(expiredRefreshToken));
+
+        AuthException exception = assertThrows(AuthException.class,
+                () -> authService.refresh("access-token"));
+
+        assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
+    }
+
+    @Test
+    @DisplayName("유효한 Access Token으로 logout 호출 시 DB에서 Refresh Token을 삭제한다")
+    void logoutShouldDeleteRefreshTokenFromDatabaseWhenValidAccessTokenGiven() {
+        User user = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        when(jwtTokenProvider.getUserIdIgnoreExpiry("access-token")).thenReturn(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        authService.logout("access-token");
+
+        verify(refreshTokenRepository).deleteByUser(user);
+    }
+
+    @Test
+    @DisplayName("DB에 Refresh Token이 없어도 logout이 오류 없이 완료된다")
+    void logoutShouldCompleteWithoutErrorWhenNoRefreshTokenInDb() {
+        User user = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        when(jwtTokenProvider.getUserIdIgnoreExpiry("access-token")).thenReturn(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        authService.logout("access-token");
+
+        // 구현이 deleteByUser를 호출해야 한다 (JPA는 대상 없으면 조용히 완료)
+        verify(refreshTokenRepository).deleteByUser(user);
+    }
+
+    @Test
+    @DisplayName("Bearer 토큰 서명이 유효하지 않으면 logout이 UNAUTHENTICATED를 던진다")
+    void logoutShouldThrowUnauthenticatedWhenTokenSignatureIsInvalid() {
+        when(jwtTokenProvider.getUserIdIgnoreExpiry("invalid-token"))
+                .thenThrow(new AuthException(AuthErrorCode.UNAUTHENTICATED));
+
+        AuthException exception = assertThrows(AuthException.class,
+                () -> authService.logout("invalid-token"));
+
+        assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.UNAUTHENTICATED);
     }
 }

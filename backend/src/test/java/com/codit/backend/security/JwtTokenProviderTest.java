@@ -42,4 +42,26 @@ class JwtTokenProviderTest {
         assertThatThrownBy(() -> jwtTokenProvider.getUserId(tamperedToken))
                 .isInstanceOf(RuntimeException.class);
     }
+
+    @Test
+    @DisplayName("만료됐지만 서명이 유효한 토큰이면 getUserIdIgnoreExpiry가 userId를 반환한다")
+    void getUserIdIgnoreExpiryShouldReturnUserIdWhenTokenExpiredButSignatureValid() {
+        JwtTokenProvider expiredProvider = new JwtTokenProvider(new JwtProperties(SECRET, -10));
+        String expiredToken = expiredProvider.generateAccessToken(99L);
+
+        long userId = jwtTokenProvider.getUserIdIgnoreExpiry(expiredToken);
+
+        assertThat(userId).isEqualTo(99L);
+    }
+
+    @Test
+    @DisplayName("서명이 유효하지 않으면 getUserIdIgnoreExpiry가 예외를 던진다")
+    void getUserIdIgnoreExpiryShouldThrowWhenTokenSignatureIsInvalid() {
+        JwtTokenProvider otherProvider = new JwtTokenProvider(
+                new JwtProperties("different-secret-key-for-testing-min-32-bytes", 3600));
+        String tokenWithWrongSignature = otherProvider.generateAccessToken(42L);
+
+        assertThatThrownBy(() -> jwtTokenProvider.getUserIdIgnoreExpiry(tokenWithWrongSignature))
+                .isInstanceOf(RuntimeException.class);
+    }
 }

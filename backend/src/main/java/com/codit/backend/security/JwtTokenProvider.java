@@ -1,6 +1,10 @@
 package com.codit.backend.security;
 
+import com.codit.backend.exception.AuthErrorCode;
+import com.codit.backend.exception.AuthException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
@@ -41,5 +45,20 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload();
         return Long.parseLong(claims.getSubject());
+    }
+
+    public long getUserIdIgnoreExpiry(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return Long.parseLong(claims.getSubject());
+        } catch (ExpiredJwtException e) {
+            return Long.parseLong(e.getClaims().getSubject());
+        } catch (JwtException e) {
+            throw new AuthException(AuthErrorCode.UNAUTHENTICATED);
+        }
     }
 }
