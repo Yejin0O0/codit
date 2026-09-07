@@ -115,6 +115,10 @@ public class AttemptController {
 `AttemptService.createAttempt`가 아래 조건에서 `InvalidRequestException`을 던진다.
 `GlobalExceptionHandler`(develop 기존)가 `400 { "code": "INVALID_REQUEST", "message": ... }`로 변환한다.
 
+컨트롤러 진입 전 Jackson 역직렬화가 실패하는 요청(`elapsedTime`·`tagIds` 타입 불일치, 깨진 JSON)은
+서비스 검증에 도달하지 못하므로, `GlobalExceptionHandler`에 `HttpMessageNotReadableException` 핸들러를
+추가해 동일하게 `400 { "code": "INVALID_REQUEST", "message": "요청 형식이 올바르지 않습니다." }`를 보장한다.
+
 | 조건 | 예외 |
 |------|------|
 | `problemId`가 `null`이거나 공백만 | `InvalidRequestException` |
@@ -125,6 +129,7 @@ public class AttemptController {
 | `tagIds`가 `null`이거나 빈 배열 | `InvalidRequestException` |
 | `tagIds`에 `null` 원소가 하나라도 있음 | `InvalidRequestException` |
 | `tagIds`에 `tag` 테이블에 없는 id가 하나라도 있음 | `InvalidRequestException` (이때 `attemptRepository.save`는 호출되지 않음) |
+| `elapsedTime` / `tagIds` 타입 불일치 또는 깨진 JSON | `HttpMessageNotReadableException` (`GlobalExceptionHandler`에서 `400 { "code": "INVALID_REQUEST" }` 변환) |
 
 인증 실패(토큰 없음/위조/만료)는 이 이슈의 코드가 아니라 `JwtAuthenticationFilter` +
 `JwtAuthenticationEntryPoint`가 `401 { "code": "UNAUTHENTICATED" }`로 자동 처리한다.
@@ -168,6 +173,8 @@ public class AttemptController {
 - [예외] `AttemptService.createAttempt` — should reject when tagIds contains a null element
 - [예외] `AttemptController POST /api/attempts` — should return 401 when the request has no authentication
 - [예외] `AttemptController POST /api/attempts` — should return 400 with a non-empty code and message when the service throws InvalidRequestException
+- [예외] `AttemptController POST /api/attempts` — should return 400 with the contract error body when elapsedTime is not a number
+- [예외] `AttemptController POST /api/attempts` — should return 400 with the contract error body when tagIds contains a non-numeric value
 
 ---
 
@@ -179,7 +186,7 @@ public class AttemptController {
 | AC-2 (userId는 JWT에서 추출·저장) | [정상] should store userId passed as parameter / [정상] Controller passes principal userId / [보안] Controller ignores body userId |
 | AC-3 (result 누락/오류 → 400) | [예외] result is null / [예외] result not one of CORRECT,WRONG,HOLD / [예외] Controller 400 with non-empty code·message |
 | AC-4 (tagIds 0개 → 400) | [예외] tagIds is empty / [예외] tagIds is null |
-| AC-5 (없는 tagId → 400, 생성 안 됨) | [예외] tagIds contains id not in tag table (and save not called) / [예외] tagIds contains a null element |
+| AC-5 (없는 tagId → 400, 생성 안 됨) | [예외] tagIds contains id not in tag table (and save not called) / [예외] tagIds contains a null element / [예외] Controller 400 contract body when tagIds contains a non-numeric value |
 | AC-6 (memo null 저장 가능) | [정상] save when memo is null / [정상] CORRECT with null memo |
-| AC-7 (elapsedTime 음수 → 400) | [예외] elapsedTime is negative / [예외] elapsedTime is null / [경계] elapsedTime exactly 0 |
+| AC-7 (elapsedTime 음수 → 400) | [예외] elapsedTime is negative / [예외] elapsedTime is null / [경계] elapsedTime exactly 0 / [예외] Controller 400 contract body when elapsedTime is not a number |
 | AC-8 (미인증 → 401) | [예외] Controller 401 when no authentication |

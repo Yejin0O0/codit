@@ -67,6 +67,7 @@ Content-Type: application/json
 | `tagIds` 누락 / 빈 배열 | 400 | `{ "code": "INVALID_REQUEST", "message": "태그를 1개 이상 선택해야 합니다." }` |
 | `tagIds`에 `null` 원소 포함 (예: `[6, null]`) | 400 | `{ "code": "INVALID_REQUEST", "message": "..." }` |
 | `tagIds`에 `tag` 테이블에 없는 id 포함 | 400 | `{ "code": "INVALID_REQUEST", "message": "존재하지 않는 태그가 포함되어 있습니다." }` (부분 저장 없음) |
+| 요청 본문 타입 불일치 / 깨진 JSON (예: `"elapsedTime": "abc"`, `"tagIds": [true]`) | 400 | `{ "code": "INVALID_REQUEST", "message": "요청 형식이 올바르지 않습니다." }` (`HttpMessageNotReadableException` 핸들러) |
 | 유효한 인증 토큰 없음 (없음/위조/만료) | 401 | `{ "code": "UNAUTHENTICATED", "message": "..." }` (`JwtAuthenticationFilter` + `JwtAuthenticationEntryPoint` 자동) |
 
 메시지 문구는 구현 시 조정 가능. `code`와 상태코드는 계약이다.
@@ -77,6 +78,10 @@ Content-Type: application/json
 수동으로 수행하고 `InvalidRequestException`을 던진다(지은 `ProblemService` 패턴과 동일).
 `tagIds` 실재 검증은 `tagRepository.findAllById(tagIds)` 결과 개수를 요청 개수와 비교한다.
 `GlobalExceptionHandler`가 `InvalidRequestException` → `400 { code: "INVALID_REQUEST" }`로 변환한다(develop 기존 핸들러).
+
+컨트롤러 메서드 진입 전 Jackson 역직렬화가 실패하는 경우(`elapsedTime`·`tagIds` 타입 불일치, 깨진 JSON)는
+`AttemptService` 검증까지 도달하지 못하므로, `GlobalExceptionHandler`에 `HttpMessageNotReadableException`
+핸들러를 추가해 동일하게 `400 { code: "INVALID_REQUEST" }`를 보장한다(모든 엔드포인트 공통 적용).
 
 ---
 
@@ -129,7 +134,7 @@ Content-Type: application/json
 
 | Status | 조건 | 응답 바디 |
 |--------|------|-----------|
-| 400 | `problemId` / `elapsedTime` / `result` / `tagIds` 형식·필수 위반, 존재하지 않는 `tagId` | `{ "code": "INVALID_REQUEST", "message": "..." }` |
+| 400 | `problemId` / `elapsedTime` / `result` / `tagIds` 형식·필수 위반, 존재하지 않는 `tagId`, 요청 본문 타입 불일치·깨진 JSON | `{ "code": "INVALID_REQUEST", "message": "..." }` |
 | 401 | 유효한 인증 토큰 없음 | `{ "code": "UNAUTHENTICATED", "message": "..." }` |
 
 ## 인증

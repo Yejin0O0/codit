@@ -176,4 +176,36 @@ class AttemptControllerTest {
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
     }
+
+    @Test
+    void shouldReturn400WithContractErrorWhenElapsedTimeIsNotANumber() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+
+        String rawJson = "{\"problemId\":\"" + PROBLEM_ID
+                + "\",\"elapsedTime\":\"abc\",\"result\":\"CORRECT\",\"tagIds\":[6],\"memo\":null}";
+
+        mockMvc.perform(post("/api/attempts")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rawJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").isNotEmpty());
+    }
+
+    @Test
+    void shouldReturn400WithContractErrorWhenTagIdsContainsNonNumericValue() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+
+        String rawJson = "{\"problemId\":\"" + PROBLEM_ID
+                + "\",\"elapsedTime\":342,\"result\":\"CORRECT\",\"tagIds\":[true],\"memo\":null}";
+
+        mockMvc.perform(post("/api/attempts")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rawJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").isNotEmpty());
+    }
 }
