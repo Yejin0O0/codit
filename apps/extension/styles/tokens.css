@@ -67,6 +67,20 @@
     color: transparent;
 }
 
+/*
+ * idle 위젯 저산만 — 사용자가 reduced-motion 을 원하면 모든 전환 제거. prd.md ADR-6.
+ * 세 Surface(content/page/popup)가 이 파일을 import 하므로 여기 한 곳에 둔다.
+ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
 .dark {
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
