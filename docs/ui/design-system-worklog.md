@@ -71,8 +71,13 @@ Codit 익스텐션 UI를 **싹 리스킨**한다. 그 작업을 **`design-system
 
 ## 3. 로고 분석
 
+> **확정 (2026-09-07)**: 로고 채택 완료. 사용 맵·규격은 [`docs/ui/brand/README.md`](brand/README.md)가 SoT.
+> `codit-logo-icon.png`(마크, 344×352 RGBA) / `codit-logo-lockup.png`(마크+워드마크, 1881×836).
+> 확장 아이콘 5종은 `apps/extension/public/icon/`에 생성됨. 제품 UI 안(BrandHeader·pill)은
+> 인라인 SVG 트레이스 — Phase 4f.
+
 원본 파일: `docs/ui/brand/codit-logo-icon.png` (아이콘), `docs/ui/brand/codit-logo-lockup.png` (아이콘+워드마크)
-**둘 다 ChatGPT 생성 래스터.** 3D 베벨·그라데이션·AI 노이즈 → **그대로 사용 불가.** 색·컨셉 레퍼런스로만.
+렌더된 래스터(3D 베벨·그라데이션). 확장 아이콘·파비콘·문서엔 그대로, **제품 UI 안에서는 평면 인라인 SVG로 트레이스**한다 (16px에서 베벨·그림자 뭉개짐 + Shadow DOM).
 
 | 요소 | 픽셀 샘플 (근사) |
 |------|----------------|

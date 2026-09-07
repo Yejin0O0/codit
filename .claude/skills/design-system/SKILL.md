@@ -81,7 +81,7 @@ Phase 6  [GATE]  back-half 위임 (@ac-verifier → /tdd-refactor → /security-
 - 현재 토큰 — `apps/extension/styles/tokens.css`
 - 기존 인벤토리 (보존 대상) — `docs/ui/design-system.md`
 - `package.json` · `apps/extension/components.json`
-- 로고 원본·분석 — `docs/ui/brand/` + `docs/ui/design-system-worklog.md §3`
+- 로고 — `docs/ui/brand/README.md` (사용 맵·규격·색 SoT) + `docs/ui/brand/*.png` (원본)
 - SWEA 팔레트 + 공존 규칙 — `docs/ui/host-audit-swea.md`
 - 하드코딩 색 커버리지 — `grep -rnE '#[0-9a-fA-F]{3,8}|rgb\(|hsl\(' apps/extension/{components,entrypoints,features} --include='*.tsx' --include='*.css'`
 
@@ -193,7 +193,7 @@ color   (primary / 뉴트럴 램프 / 의미색 success·warning·destructive / 
 | 4c | `entrypoints/popup/*.css` 정리 | WXT scaffold hex 제거. 실제 Codit 화면 아님 |
 | 4d | shadcn 프리미티브 (`components/ui/*.tsx`) | 토큰값 넘어 형태 변경 결정한 경우만. 제자리 Edit |
 | 4e | EXTEND/CUSTOM 조합 | `PanelShell`·`ResultToggleGroup`·`CoditWidget`·`CollapsedTimer` 등. 제자리 Edit |
-| 4f | 로고 SVG 교체 | `brand-header.tsx`·`collapsed-timer.tsx` 인라인 `<path>`. Phase 1에서 고른 C 마크 |
+| 4f | 로고 SVG 교체 | `brand-header.tsx`·`collapsed-timer.tsx` 인라인 `<path>` (마름모 placeholder → C 마크 트레이스). 워드마크 = 그라데이션 텍스트. + `page.html`/`gallery.html` 파비콘. 확장 아이콘(`public/icon/`)은 이미 교체됨. 규격: `docs/ui/brand/README.md` |
 
 **코드 변경 방식**: 기존 파일 **제자리 `Edit`**. 삭제+재생성 아님. rename은 `git mv`. 죽은 코드는 그 커밋 안에서 즉시 제거.
 
@@ -314,7 +314,7 @@ Phase 6의 `@ac-verifier` 입력, 또는 독립 실행.
 |---|---|
 | 아키텍처 제약 (OKLCH / `:host`·`:root` / 인라인 SVG / 2 Surface / v1 고정 라이트) | `docs/ui/ui-architecture.md` |
 | SWEA 팔레트 + 공존 규칙 + hue 회피 밴드 | `docs/ui/host-audit-swea.md` |
-| 로고 분석 + C 마크 A·B안 | `docs/ui/design-system-worklog.md §3` (Phase 5에서 `design-system.md ## 기초`로 이전) |
+| 로고 사용 맵·규격·색 | `docs/ui/brand/README.md` (SoT). C 마크 A·B안은 `design-system-worklog.md §3` |
 | 현재 토큰 SoT | `apps/extension/styles/tokens.css` |
 | Surface 전용 스타일 | `apps/extension/entrypoints/content/style.css` · `entrypoints/page/style.css` |
 | shadcn 설정 | `apps/extension/components.json` |
