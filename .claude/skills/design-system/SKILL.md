@@ -24,7 +24,7 @@ Codit 익스텐션 UI의 **기초 레이어**(디자인 토큰 값 + 컴포넌�
 
 | | `design-system` (이 스킬) | `fe-ui-design` |
 |---|---|---|
-| 담당 | 기초 레이어 — 토큰 값·스케일·원칙·SWEA 공존 규칙 + 갤러리 + 시각 QA 하네스 | feature별 — 와이어프레임·컴포넌트 트리·UI State |
+| 담당 | 기초 레이어 — 토큰 값·스케일·컴포넌트 사용 규칙(variant→역할)·SWEA 공존 규칙 + 갤러리 + 시각 QA 하네스 | feature별 — 와이어프레임·화면 배치·컴포넌트 트리·UI State |
 | `docs/ui/design-system.md` | `## 기초` 섹션 (소유) | `## feature별 인벤토리` 섹션 (소유) |
 | 코드 작성 | O — 토큰·컴포넌트 스킨·로고 SVG | X — 설계 문서만 |
 | 실행 시점 | 리스킨/개편 시 | 새 feature TDD 사이클 진입 시 |
@@ -125,12 +125,13 @@ Phase 6  [GATE]  back-half 위임 (@ac-verifier → /tdd-refactor → /security-
 
 ---
 
-### Phase 2 — 토큰 세트 제안
+### Phase 2 — 토큰 세트 + 사용 규칙 제안
 
-Phase 1 답변을 반영해 **전 토큰 값**을 제안한다. 순서:
+Phase 1 답변을 반영해 **전 토큰 값 + 컴포넌트 사용 규칙**을 제안한다. 순서:
 
 ```
 color   (primary / 뉴트럴 램프 / 의미색 success·warning·destructive / background·card·border / ring)
+  → 컴포넌트 사용 규칙  (variant→역할 매핑 + 조합 규칙 — 아래)
   → typography  (font stack / size 스케일 / line-height / weight / letter-spacing)
   → spacing     (베이스 4 vs 8px + 스케일)
   → radius      (--radius + sm/md/lg/xl 파생)
@@ -138,6 +139,17 @@ color   (primary / 뉴트럴 램프 / 의미색 success·warning·destructive / 
   → motion      (duration / easing — idle 위젯 무애니 원칙)
   → z-index     (위젯 / 오버레이 / 토스트)
 ```
+
+**컴포넌트 사용 규칙** — 라이브러리(shadcn/Radix)는 고정이지만 "어떤 역할에 어떤 variant"는
+디자인 시스템이 정한다. 예:
+
+- Button: `default`(주요 진행 액션, 화면당 1개) / `ghost` or `outline`(뒤로·보조) / `destructive`(파괴적) / `link`(인라인 텍스트)
+- 의미색은 결과 표시(`ResultBadge`·`ResultToggleGroup`)에만. 필터 탭·중립 배지는 뉴트럴
+- 태그 칩 = `secondary` variant (선택 시 `primary`)
+- 화면 프레임 = `PanelShell`(위젯) / `ExtensionPageShell`(페이지) 고정
+
+산출: `design-system.md ## 기초`의 **"컴포넌트 사용 규칙"** 섹션. 화면별 `/fe-ui-design`이
+이 표를 참조해 배치한다. 컴포넌트 **내부**(props·cva 구조)는 건드리지 않는다 — 사용 규칙만.
 
 각 항목 표기:
 

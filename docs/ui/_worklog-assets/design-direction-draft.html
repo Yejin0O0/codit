@@ -1,133 +1,116 @@
-<!doctype html><html><head><meta charset="utf8"><title>Codit DS direction</title>
+<!doctype html><html><head><meta charset="utf8"><title>Codit DS v1 — 색 방향</title>
 <style>
   *{box-sizing:border-box}
   body{margin:0;font:14px/1.5 -apple-system,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:#f4f5f7;color:#1c1e26}
   h1{font-size:18px;margin:0 0 4px}
-  h2{font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin:28px 0 10px}
-  .wrap{max-width:1180px;margin:0 auto;padding:24px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin:28px 0 10px}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px}
   .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
-  .sw{width:104px;height:76px;border-radius:8px;border:1px solid rgba(0,0,0,.08);padding:7px;display:flex;flex-direction:column;justify-content:flex-end;font-size:11px;color:#111;font-weight:600}
-  .sw small{font-weight:400;opacity:.7;display:block}
-  .card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:16px}
+  .sw{width:120px;height:78px;border-radius:8px;border:1px solid rgba(0,0,0,.1);padding:8px;display:flex;flex-direction:column;justify-content:flex-end;font-size:11px;font-weight:600}
+  .sw small{font-weight:400;opacity:.75;display:block}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .stage{border-radius:12px;padding:22px;position:relative;overflow:hidden}
-  .stage .lbl{position:absolute;top:8px;left:12px;font-size:11px;font-weight:700;opacity:.5}
-  /* SWEA fake bg */
-  .swea{background:#fff;border:1px solid #dee0e3}
-  .swea .code{font:12px/1.6 ui-monospace,monospace;color:#111;background:#fff}
-  .swea .kw{color:#7b3fe4;font-weight:700}.swea .str{color:#b5299e}
-  .swea .band{background:#e3edf5;padding:6px 10px;border-radius:6px;font-size:12px;color:#334;margin-bottom:8px}
-  .swea .btn{background:#4590e3;color:#fff;border:0;padding:6px 14px;border-radius:6px;font-size:12px}
-  /* widget mock */
-  .wgt{width:300px;border-radius:14px;padding:14px;font-size:13px}
-  .wgt .t{font-variant-numeric:tabular-nums;font-size:30px;font-weight:700;letter-spacing:.02em}
-  .wgt .hd{display:flex;align-items:center;gap:7px;font-weight:600;margin-bottom:8px;font-size:12px}
-  .wgt .seg{display:flex;gap:6px;margin-top:10px}
-  .wgt .seg button{flex:1;border:0;padding:7px 0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
-  .light-w{background:#fbfaff;border:1px solid #e7e3f5;box-shadow:0 12px 32px -8px rgba(60,50,120,.28),0 2px 8px rgba(0,0,0,.08)}
-  .light-w .t{color:#2a2440}.light-w .hd{color:#6c5ce7}
-  .dark-w{background:#1e2030;border:1px solid #2f3247;box-shadow:0 16px 40px -8px rgba(0,0,0,.45)}
-  .dark-w .t{color:#f2f1fa}.dark-w .hd{color:#a99bff}.dark-w{color:#c7c9d9}
-  .mark{width:22px;height:22px;flex:none}
-  .gt{background:linear-gradient(90deg,#6e9bf0,#8b7bf0);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:26px}
+  .stage{border-radius:12px;padding:20px;position:relative;background:#fff;border:1px solid #dee0e3}
+  .stage .lbl{font-size:11px;font-weight:700;opacity:.5;margin-bottom:8px}
+  .band{background:#e3edf5;padding:6px 10px;border-radius:6px;font-size:12px;color:#334;margin-bottom:8px}
+  .code{font:12px/1.6 ui-monospace,monospace;color:#111}
+  .kw{color:#7b3fe4;font-weight:700}.str{color:#b5299e}
+  .sweabtn{background:#4590e3;color:#fff;border:0;padding:6px 14px;border-radius:6px;font-size:12px;margin:8px 0}
+  /* Codit widget mock — v1 light */
+  .wgt{width:300px;margin-left:auto;background:#fbfbfe;border:1px solid #e2e3ec;border-radius:14px;padding:14px;
+       box-shadow:0 12px 32px -8px rgba(60,50,120,.24), 0 2px 8px rgba(20,20,40,.08)}
+  .wgt .hd{display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:10px;font-size:12px;color:#2a2c3a}
+  .wgt .t{font-variant-numeric:tabular-nums;font-size:34px;font-weight:700;letter-spacing:.02em;color:#2a2c3a;text-align:center}
+  .wgt .cap{text-align:center;color:#6b7085;font-size:11px;margin-top:2px}
+  .wgt .seg{display:flex;gap:6px;margin:12px 0}
+  .wgt .seg button{flex:1;border:1px solid #e2e3ec;background:#fff;padding:8px 0;border-radius:8px;font-size:12px;font-weight:600;color:#3a3d4f;cursor:pointer}
+  .wgt .seg button.on-c{background:#059669;border-color:#059669;color:#fff}
+  .wgt .primary{width:100%;background:#6c5ce7;color:#fff;border:0;padding:9px 0;border-radius:9px;font-size:13px;font-weight:600}
+  .mark{width:20px;height:20px;flex:none}
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;color:#fff}
+  .gt{background:linear-gradient(90deg,#7c9df0,#a193fa);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;font-size:24px}
 </style></head><body><div class="wrap">
-<h1>Codit 디자인 시스템 — 방향 검토</h1>
-<div style="color:#6b7280">로고 색 + SWEA 팔레트 + 위젯 라이트/다크 비교. 확정 아님, 눈으로 방향 잡기용.</div>
+<h1>Codit 디자인 시스템 v1 — 색 방향 (Phase 2 ①)</h1>
+<div style="color:#6b7280">Q1=C 통일 라이트. 이 페이지는 눈으로 방향 잡기용, 확정 아님. 실제 검증은 갤러리 스크린샷.</div>
 
-<h2>1. 원본 로고</h2>
-<div class="card" style="display:flex;gap:20px;align-items:center">
-  <img src="codit-logo-src.png" style="width:120px;height:120px;border-radius:22px">
-  <img src="codit-logo-src2.png" style="height:90px">
-  <div style="font-size:12px;color:#555">
-    아이콘 배경 그라데이션 <b>#A5BEFA → #C5BBFA</b> (페리윙클→라벤더)<br>
-    워드마크 그라데이션 <b>#8FB5FB(파랑) → #A193FA(바이올렛)</b><br>
-    그린 체크 <b>#A7F8CE</b> (파스텔 민트)<br>
-    → 부드럽고 파스텔·그라데이션 중심. 하드한 개발자툴 톤 아님.
-  </div>
+<h2>1. primary — 인디고 바이올렛</h2>
+<div class="row">
+  <div class="sw" style="background:#6c5ce7;color:#fff">#6C5CE7<small style="color:#fff">--primary (HSL ~250°)</small></div>
+  <div class="sw" style="background:#5d4de0;color:#fff">#5D4DE0<small style="color:#fff">대안 (대비 여유)</small></div>
+  <div class="sw" style="background:#8b7cf0;color:#fff">#8B7CF0<small style="color:#fff">--ring</small></div>
+  <div class="sw" style="background:#edebfc">#EDEBFC<small>--accent (subtle)</small></div>
+  <div class="sw" style="background:#4a3fb0;color:#fff">#4A3FB0<small style="color:#fff">--accent-foreground</small></div>
 </div>
 
-<h2>2. SWEA 팔레트 (위젯이 얹히는 바탕)</h2>
+<h2>2. 뉴트럴 램프 — 쿨(바이올렛 틴트)</h2>
 <div class="row">
-  <div class="sw" style="background:#ffffff">#FFFFFF<small>page/editor bg</small></div>
-  <div class="sw" style="background:#f6f6f6">#F6F6F6<small>surface</small></div>
-  <div class="sw" style="background:#e3edf5">#E3EDF5<small>section band</small></div>
-  <div class="sw" style="background:#dee0e3">#DEE0E3<small>border</small></div>
-  <div class="sw" style="background:#4590e3;color:#fff">#4590E3<small style="color:#fff">accent blue (hue~212)</small></div>
-  <div class="sw" style="background:#2599e0;color:#fff">#2599E0<small style="color:#fff">"Pass"</small></div>
-  <div class="sw" style="background:#292b2c;color:#fff">#292B2C<small style="color:#fff">text</small></div>
-</div>
-<div class="row">
-  <div class="sw" style="background:#ffe161">#FFE161<small>난이도 D1-2</small></div>
-  <div class="sw" style="background:#6bcb77;color:#fff">#6BCB77<small style="color:#fff">난이도 D3-4</small></div>
-  <div class="sw" style="background:#4d96ff;color:#fff">#4D96FF<small style="color:#fff">난이도 D5-6</small></div>
-  <div class="sw" style="background:#ff6b6b;color:#fff">#FF6B6B<small style="color:#fff">난이도 D7-8</small></div>
+  <div class="sw" style="background:#fbfbfe">#FBFBFE<small>--background</small></div>
+  <div class="sw" style="background:#ffffff">#FFFFFF<small>--card</small></div>
+  <div class="sw" style="background:#f1f2f8">#F1F2F8<small>--muted / secondary</small></div>
+  <div class="sw" style="background:#e2e3ec">#E2E3EC<small>--border</small></div>
+  <div class="sw" style="background:#6b7085;color:#fff">#6B7085<small style="color:#fff">--muted-foreground</small></div>
+  <div class="sw" style="background:#3a3d4f;color:#fff">#3A3D4F<small style="color:#fff">--secondary-foreground</small></div>
+  <div class="sw" style="background:#2a2c3a;color:#fff">#2A2C3A<small style="color:#fff">--foreground</small></div>
 </div>
 
-<h2>3. 제안 — Codit UI 팔레트 (primary = 바이올렛, SWEA 파랑 회피)</h2>
+<h2>3. 의미색 — SWEA 배지보다 채도↑</h2>
 <div class="row">
-  <div class="sw" style="background:#6c5ce7;color:#fff">#6C5CE7<small style="color:#fff">--primary (hue~255)</small></div>
-  <div class="sw" style="background:#5b4bd6;color:#fff">#5B4BD6<small style="color:#fff">primary-hover</small></div>
-  <div class="sw" style="background:#eeebfc">#EEEBFC<small>primary-subtle</small></div>
-  <div class="sw" style="background:#12b981;color:#fff">#12B981<small style="color:#fff">--success (로고 민트 rhyme)</small></div>
-  <div class="sw" style="background:#e8992f;color:#fff">#E8992F<small style="color:#fff">--warning</small></div>
-  <div class="sw" style="background:#e5484d;color:#fff">#E5484D<small style="color:#fff">--destructive</small></div>
+  <div class="sw" style="background:#059669;color:#fff">#059669<small style="color:#fff">--success (정답)</small></div>
+  <div class="sw" style="background:#e0850b;color:#3d2c00">#E0850B<small>--warning (보류)</small></div>
+  <div class="sw" style="background:#dc2626;color:#fff">#DC2626<small style="color:#fff">--destructive (오답)</small></div>
 </div>
-<div class="row">
-  <div class="sw" style="background:#f8f8fb">#F8F8FB<small>bg</small></div>
-  <div class="sw" style="background:#eef0f5">#EEF0F5<small>muted</small></div>
-  <div class="sw" style="background:#d9dce5">#D9DCE5<small>border</small></div>
-  <div class="sw" style="background:#9aa0b4;color:#fff">#9AA0B4<small style="color:#fff">muted-fg</small></div>
-  <div class="sw" style="background:#3a3f52;color:#fff">#3A3F52<small style="color:#fff">fg</small></div>
-  <div class="sw" style="background:#1e2030;color:#fff">#1E2030<small style="color:#fff">dark surface</small></div>
+<div class="row" style="margin-top:8px">
+  <span class="badge" style="background:#059669">정답</span>
+  <span class="badge" style="background:#dc2626">오답</span>
+  <span class="badge" style="background:#e0850b;color:#3d2c00">보류</span>
+  <span style="font-size:11px;color:#6b7280;align-self:center">← Codit &nbsp;&nbsp;&nbsp; SWEA 배지 →</span>
+  <span class="badge" style="background:#6bcb77">D3-4</span>
+  <span class="badge" style="background:#ffe161;color:#5a4a00">D1-2</span>
 </div>
 
-<h2>4. 위젯: 라이트 vs 다크 (SWEA 흰 배경 + 코드 에디터 위)</h2>
+<h2>4. SWEA 문제 페이지 위 위젯 (통일 라이트)</h2>
 <div class="cols">
-  <div class="stage swea"><div class="lbl">SWEA + 라이트 위젯</div>
+  <div class="stage">
+    <div class="lbl">SWEA solvingProblem.do + Codit 위젯</div>
     <div class="band">문제 풀이</div>
     <div class="code"><span class="kw">for</span>(<span class="kw">int</span> i=0;i&lt;n;i++){<br>&nbsp;&nbsp;System.out.<span class="kw">println</span>(<span class="str">"#%d"</span>);<br>}</div>
-    <div style="margin:10px 0"><button class="btn">제출</button></div>
-    <div class="wgt light-w" style="margin-left:auto">
-      <div class="hd"><svg class="mark" viewBox="0 0 24 24" fill="none"><path d="M17 4.5H9A6.5 6.5 0 0 0 9 17.5h5" stroke="#6c5ce7" stroke-width="3.4" stroke-linecap="round"/><path d="M13.5 11.5l3 3 5-6" stroke="#12b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Codit</div>
-      <div class="t">12:34</div>
-      <div class="seg">
-        <button style="background:#12b981;color:#fff">정답</button>
-        <button style="background:#eef0f5;color:#3a3f52">오답</button>
-        <button style="background:#eef0f5;color:#3a3f52">보류</button>
+    <button class="sweabtn">제출</button>
+    <div class="wgt">
+      <div class="hd">
+        <svg class="mark" viewBox="0 0 24 24" fill="none"><path d="M17 4.8 8.6 4.8A7 7 0 0 0 8.6 18.8 8.8 8.8 0 0 0 15 18.8" stroke="#6c5ce7" stroke-width="3.2" stroke-linecap="round"/><path d="M12.5 11.6 15.4 14.5 21 8.5" stroke="#059669" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Codit
       </div>
+      <div class="t">12:34</div>
+      <div class="cap">측정 중</div>
+      <button class="primary">완료</button>
     </div>
   </div>
-  <div class="stage swea"><div class="lbl">SWEA + 다크 위젯</div>
+  <div class="stage">
+    <div class="lbl">결과 선택 화면</div>
     <div class="band">문제 풀이</div>
-    <div class="code"><span class="kw">for</span>(<span class="kw">int</span> i=0;i&lt;n;i++){<br>&nbsp;&nbsp;System.out.<span class="kw">println</span>(<span class="str">"#%d"</span>);<br>}</div>
-    <div style="margin:10px 0"><button class="btn">제출</button></div>
-    <div class="wgt dark-w" style="margin-left:auto">
-      <div class="hd"><svg class="mark" viewBox="0 0 24 24" fill="none"><path d="M17 4.5H9A6.5 6.5 0 0 0 9 17.5h5" stroke="#a99bff" stroke-width="3.4" stroke-linecap="round"/><path d="M13.5 11.5l3 3 5-6" stroke="#3ddc97" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Codit</div>
-      <div class="t">12:34</div>
-      <div class="seg">
-        <button style="background:#3ddc97;color:#08301f">정답</button>
-        <button style="background:#2f3247;color:#c7c9d9">오답</button>
-        <button style="background:#2f3247;color:#c7c9d9">보류</button>
+    <div class="code" style="opacity:.5"><span class="kw">for</span>(<span class="kw">int</span> i=0;i&lt;n;i++){ ... }</div>
+    <button class="sweabtn">제출</button>
+    <div class="wgt">
+      <div class="hd">
+        <svg class="mark" viewBox="0 0 24 24" fill="none"><path d="M17 4.8 8.6 4.8A7 7 0 0 0 8.6 18.8 8.8 8.8 0 0 0 15 18.8" stroke="#6c5ce7" stroke-width="3.2" stroke-linecap="round"/><path d="M12.5 11.6 15.4 14.5 21 8.5" stroke="#059669" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Codit · 결과 선택
       </div>
+      <div class="t" style="font-size:26px">12:34</div>
+      <div class="cap">풀이 시간</div>
+      <div class="seg">
+        <button class="on-c">정답</button>
+        <button>오답</button>
+        <button>보류</button>
+      </div>
+      <button class="primary">다음</button>
     </div>
   </div>
 </div>
 
-<h2>5. C 마크 SVG 초안 (2안)</h2>
-<div class="card" style="display:flex;gap:36px;align-items:center">
-  <div style="text-align:center">
-    <svg width="60" height="60" viewBox="0 0 24 24" fill="none"><path d="M17 4.5H9A6.5 6.5 0 0 0 9 17.5h5" stroke="#6c5ce7" stroke-width="3.4" stroke-linecap="round"/><path d="M13.5 11.5l3 3 5-6" stroke="#12b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div style="font-size:12px;color:#666">A. 라운드 C + 체크 (stroke)</div>
-  </div>
-  <div style="text-align:center">
-    <svg width="60" height="60" viewBox="0 0 24 24"><path d="M15 3 20 3 20 8 15 8 15 6 9 6A3 3 0 0 0 6 9L6 15A3 3 0 0 0 9 18L15 18 15 16 20 16 20 21 15 21 15 19 8 19A5 5 0 0 1 3 14L3 10A5 5 0 0 1 8 5L15 5Z" fill="#6c5ce7"/><path d="M11 12.5l2.2 2.2L18 9.5l1.6 1.6-6.4 7.2L9.4 14.1Z" fill="#12b981"/></svg>
-    <div style="font-size:12px;color:#666">B. 기하학 C + 체크 (로고 근사, 채움)</div>
-  </div>
-  <div style="text-align:center;background:#1e2030;padding:14px;border-radius:12px">
-    <svg width="60" height="60" viewBox="0 0 24 24" fill="none"><path d="M17 4.5H9A6.5 6.5 0 0 0 9 17.5h5" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><path d="M13.5 11.5l3 3 5-6" stroke="#3ddc97" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div style="font-size:12px;color:#aaa">다크 배경</div>
-  </div>
-  <div><span class="gt">Codit</span><div style="font-size:12px;color:#666">워드마크: 그라데이션 텍스트</div></div>
+<h2>5. 워드마크 (그라데이션 텍스트)</h2>
+<div class="stage" style="display:flex;gap:16px;align-items:center">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M17 4.8 8.6 4.8A7 7 0 0 0 8.6 18.8 8.8 8.8 0 0 0 15 18.8" stroke="#6c5ce7" stroke-width="3.2" stroke-linecap="round"/><path d="M12.5 11.6 15.4 14.5 21 8.5" stroke="#059669" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span class="gt">Codit</span>
+  <span style="font-size:12px;color:#6b7280">stroke C(옥타곤 트레이스) + 민트 체크 / 워드마크는 로고 그라데이션</span>
 </div>
 
 </div></body></html>
