@@ -87,8 +87,8 @@ Phase 6  [GATE]  back-half 위임 (@ac-verifier → /tdd-refactor → /security-
 
 **부트스트랩** (하네스 없을 때만):
 
-- `apps/extension/entrypoints/gallery/` — 스켈레톤 (현재 컴포넌트 그대로 나열, 리스킨 전). `import.meta.env.DEV` 가드로 프로덕션 번들 제외
-- `e2e/design-system.spec.ts` — 위젯 스크린샷 + `getComputedStyle` 대비 단언
+- `apps/extension/entrypoints/gallery/` — WXT page entrypoint. 현재 컴포넌트 그대로 나열(리스킨 전). dev 빌드에 `gallery.html`로 포함되며 manifest엔 링크 안 됨 (e2e가 빌드 산출물을 스크린샷하므로 빌드에 있어야 함)
+- `e2e/design-system.spec.ts` — 갤러리·위젯 스크린샷 + canvas sRGB화 대비 단언 + `DS_REVIEW=1` walkthrough
 - **before baseline**: `pnpm --filter @codit/extension build && pnpm test:e2e e2e/design-system.spec.ts` → 현재(shadcn neutral) 상태를 스냅샷으로 커밋
 
 > 하네스가 이미 있으면 이 단계 스킵. `/design-system verify`로 baseline만 재생성.
@@ -246,9 +246,19 @@ pnpm --filter @codit/extension build
 pnpm test:e2e e2e/design-system.spec.ts
 ```
 
-- 스크린샷 diff (before/after 나란히) — **로컬 자문용**. headful Chrome이라 머신 의존 → CI 회귀 가드로 신뢰하지 않음
-- `getComputedStyle` 기반 대비 단언 — **CI 가드**. 계산된 색상값은 결정적
+- 스크린샷 diff (before/after 나란히) — **로컬 자문용**. headful Chrome이라 머신 의존 → CI 회귀 가드로 신뢰하지 않음. 초 단위로 바뀌는 타이머 숫자는 mask 처리됨
+- canvas sRGB화 → WCAG 대비 단언 — **CI 가드**. 계산된 색상값은 결정적
 - typecheck·lint·test·build 결과
+
+**수동 검토가 필요할 때** (자동 스크린샷이 너무 빨라 페이지 전환을 못 볼 때):
+
+```
+DS_REVIEW=1 pnpm test:e2e e2e/design-system.spec.ts -g "수동 검토" --headed
+```
+
+갤러리 → 위젯 각 화면(타이머/결과선택/메모/태그/collapsed)에서 Playwright Inspector가
+멈춘다. 눈으로 확인한 뒤 Resume. 갤러리는 정적 페이지라 `pnpm dev:ext` 후
+`chrome-extension://{id}/gallery.html`을 직접 열어 스크롤하며 봐도 된다.
 
 Phase 6의 `@ac-verifier` 입력, 또는 독립 실행.
 
@@ -258,10 +268,10 @@ Phase 6의 `@ac-verifier` 입력, 또는 독립 실행.
 
 | 파일 | 역할 |
 |---|---|
-| `apps/extension/entrypoints/gallery/` | 부품 카탈로그 — 토큰 스와치 + 프리미티브 + EXTEND/CUSTOM 전부를 한 스크롤에. 실제 Shadow DOM/토큰 조건. `import.meta.env.DEV` 가드 |
-| `e2e/design-system.spec.ts` | 갤러리 + 위젯 3화면(타이머중/결과선택/저장완료) + 접힌 pill 스크린샷. `getComputedStyle` 대비 단언. `e2e/fixtures/extension.ts` 재사용 |
+| `apps/extension/entrypoints/gallery/` | 부품 카탈로그 — 토큰 스와치 + 대비 쌍 + radius + 프리미티브 + Codit 조합을 한 스크롤에. WXT page entrypoint(`:root` 스코프, Extension Page 계열). manifest 어디에도 링크 안 됨. dev 빌드에 `gallery.html`로 포함(~41KB) — 스토어 배포 시 제외 검토 |
+| `e2e/design-system.spec.ts` (+ `-snapshots/`) | 갤러리 풀페이지 + 위젯 expanded(타이머)/collapsed(pill) 스크린샷(타이머 숫자 mask) + canvas 대비 단언 + `DS_REVIEW=1` 수동 walkthrough. `e2e/fixtures/extension.ts` 재사용 |
 
-> `scripts/check-contrast.mjs` 같은 자작 OKLCH→sRGB 변환은 만들지 않는다 — 부정확 위험. 대비는 브라우저 `getComputedStyle`로 spec 안에서 계산한다.
+> `scripts/check-contrast.mjs` 같은 자작 OKLCH→sRGB 변환은 만들지 않는다 — 부정확 위험. 대비는 브라우저 canvas(`ctx.fillStyle`)로 임의 CSS 색을 sRGB 바이트화해 spec 안에서 계산한다.
 
 > Extension Page auth/history는 현재 mock(`App.tsx` placeholder) → v1 검증은 **위젯 + 갤러리**만 의미 있음. 실화면 구현 시 자동으로 리스킨된 토큰 적용.
 

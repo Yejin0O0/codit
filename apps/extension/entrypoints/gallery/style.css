@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+/*
+ * 디자인 시스템 갤러리 — semantic token 값은 styles/tokens.css 단일 파일에서 공급한다.
+ * 갤러리는 자체 document(Extension Page 계열)라 :root -> :host 치환 없이 :root 로 적용된다.
+ * 이 페이지는 dev/QA 전용 — manifest 어디에서도 링크되지 않는다.
+ */
+@import '../../styles/tokens.css';
+
+@custom-variant dark (&:is(.dark *));
+
+html,
+body,
+#root {
+    min-height: 100vh;
+}
+
+body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    color-scheme: light;
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo',
+        'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+    * {
+        border-color: var(--border);
+        outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+}
