@@ -6,6 +6,7 @@
     "build:ext": "pnpm --filter @codit/extension build",
     "typecheck": "pnpm -r typecheck",
     "prepare": "husky",
+    "pretest:e2e": "pnpm --filter @codit/extension build",
     "test:e2e": "playwright test"
   },
   "packageManager": "pnpm@9.15.9",

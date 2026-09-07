@@ -12,3 +12,12 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+  # data.sql 자동 실행은 슬라이스 테스트(@DataJpaTest)에서 스키마 생성보다 먼저 돌아
+  # "테이블 없음" 오류가 나므로 테스트에서는 끄고, 필요한 테스트에서 @Sql로 명시 실행한다.
+  sql:
+    init:
+      mode: never
+
+jwt:
+  secret: test-only-secret-key-for-context-loads-min-32-bytes
+  access-token-expiry-seconds: 3600
