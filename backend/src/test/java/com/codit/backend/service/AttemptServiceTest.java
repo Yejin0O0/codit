@@ -137,6 +137,17 @@ class AttemptServiceTest {
         assertThat(result.getTags()).hasSize(1);
     }
 
+    @Test
+    void shouldAcceptDuplicateTagIdsAndLinkEachDistinctTagOnce() {
+        given(tagRepository.findAllById(List.of(1L))).willReturn(List.of(tag("구현")));
+        given(attemptRepository.save(any(Attempt.class))).willAnswer(inv -> inv.getArgument(0));
+
+        Attempt result = attemptService.createAttempt(1L, command("CORRECT", List.of(1L, 1L), null));
+
+        assertThat(result).isNotNull();
+        assertThat(result.getTags()).hasSize(1);
+    }
+
     // ── 예외 ──────────────────────────────────────────────
 
     @Test

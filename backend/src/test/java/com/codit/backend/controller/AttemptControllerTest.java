@@ -91,6 +91,41 @@ class AttemptControllerTest {
     }
 
     @Test
+    void shouldSerializeElapsedTimeAndMemoIntoResponseBody() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        Tag tag = new Tag("DFS", "dfs", "CORE");
+        ReflectionTestUtils.setField(tag, "id", 6L);
+        Attempt attempt = new Attempt(1L, PROBLEM_ID, 500, AttemptResult.WRONG, "메모 내용", List.of(tag));
+        ReflectionTestUtils.setField(attempt, "id", 7L);
+        given(attemptService.createAttempt(any(), any())).willReturn(attempt);
+
+        mockMvc.perform(post("/api/attempts")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body("WRONG", List.of(6L), "메모 내용")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.elapsedTime").value(500))
+                .andExpect(jsonPath("$.memo").value("메모 내용"));
+    }
+
+    @Test
+    void shouldIgnoreUserIdInRequestBodyAndUseJwtUserId() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        given(attemptService.createAttempt(eq(1L), any())).willReturn(sampleAttempt());
+
+        String rawJson = "{\"userId\":999,\"problemId\":\"" + PROBLEM_ID
+                + "\",\"elapsedTime\":342,\"result\":\"CORRECT\",\"tagIds\":[6],\"memo\":null}";
+
+        mockMvc.perform(post("/api/attempts")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rawJson))
+                .andExpect(status().isCreated());
+
+        verify(attemptService).createAttempt(eq(1L), any());
+    }
+
+    @Test
     void shouldReturnTagsWithIdNameCategoryInResponseBody() throws Exception {
         given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
         given(attemptService.createAttempt(any(), any())).willReturn(sampleAttempt());
@@ -114,7 +149,7 @@ class AttemptControllerTest {
     }
 
     @Test
-    void shouldReturn400WithCodeInvalidRequestWhenServiceThrowsInvalidRequestException() throws Exception {
+    void shouldReturn400WithNonEmptyCodeAndMessageWhenServiceThrowsInvalidRequestException() throws Exception {
         given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
         given(attemptService.createAttempt(any(), any()))
                 .willThrow(new InvalidRequestException("result는 CORRECT, WRONG, HOLD 중 하나여야 합니다."));
@@ -124,6 +159,7 @@ class AttemptControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body("BANANA", List.of(6L), null)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").isNotEmpty());
     }
 }

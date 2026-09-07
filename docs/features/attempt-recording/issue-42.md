@@ -143,11 +143,14 @@ public class AttemptController {
 - [정상] `AttemptController POST /api/attempts` — should return 201 with saved attempt body (id, problemId, elapsedTime, result, tags, memo, createdAt) when authenticated and request is valid
 - [정상] `AttemptController POST /api/attempts` — should pass the authentication principal userId to the service
 - [정상] `AttemptController POST /api/attempts` — should return tags as objects with id, name, category in the response body
+- [정상] `AttemptController POST /api/attempts` — should serialize elapsedTime and memo into the response body
+- [보안] `AttemptController POST /api/attempts` — should ignore a userId field in the request body and use the JWT userId
 
 ### 경계
 
 - [경계] `AttemptService.createAttempt` — should accept elapsedTime of exactly 0
 - [경계] `AttemptService.createAttempt` — should accept exactly one tagId (minimum count)
+- [경계] `AttemptService.createAttempt` — should accept duplicate tag ids and link each distinct tag once
 
 ### 예외
 
@@ -161,7 +164,7 @@ public class AttemptController {
 - [예외] `AttemptService.createAttempt` — should reject when tagIds is empty
 - [예외] `AttemptService.createAttempt` — should reject and not call attemptRepository.save when tagIds contains an id not present in the tag table
 - [예외] `AttemptController POST /api/attempts` — should return 401 when the request has no authentication
-- [예외] `AttemptController POST /api/attempts` — should return 400 with code INVALID_REQUEST when the service throws InvalidRequestException
+- [예외] `AttemptController POST /api/attempts` — should return 400 with a non-empty code and message when the service throws InvalidRequestException
 
 ---
 
@@ -169,9 +172,9 @@ public class AttemptController {
 
 | AC | 커버 시나리오 |
 | --- | --- |
-| AC-1 (유효 요청 → 201 + 저장 결과) | [정상] createAttempt CORRECT / [정상] Controller 201 with body |
-| AC-2 (userId는 JWT에서 추출·저장) | [정상] should store userId passed as parameter / [정상] Controller passes principal userId |
-| AC-3 (result 누락/오류 → 400) | [예외] result is null / [예외] result not one of CORRECT,WRONG,HOLD / [예외] Controller 400 INVALID_REQUEST |
+| AC-1 (유효 요청 → 201 + 저장 결과) | [정상] createAttempt CORRECT / [정상] Controller 201 with body / [정상] Controller serialize elapsedTime·memo |
+| AC-2 (userId는 JWT에서 추출·저장) | [정상] should store userId passed as parameter / [정상] Controller passes principal userId / [보안] Controller ignores body userId |
+| AC-3 (result 누락/오류 → 400) | [예외] result is null / [예외] result not one of CORRECT,WRONG,HOLD / [예외] Controller 400 with non-empty code·message |
 | AC-4 (tagIds 0개 → 400) | [예외] tagIds is empty / [예외] tagIds is null |
 | AC-5 (없는 tagId → 400, 생성 안 됨) | [예외] tagIds contains id not in tag table (and save not called) |
 | AC-6 (memo null 저장 가능) | [정상] save when memo is null / [정상] CORRECT with null memo |

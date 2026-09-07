@@ -35,8 +35,9 @@ public class AttemptService {
             throw new InvalidRequestException("태그를 1개 이상 선택해야 합니다.");
         }
 
-        List<Tag> tags = tagRepository.findAllById(tagIds);
-        if (tags.size() != tagIds.size()) {
+        List<Long> distinctTagIds = tagIds.stream().distinct().toList();
+        List<Tag> tags = tagRepository.findAllById(distinctTagIds);
+        if (tags.size() != distinctTagIds.size()) {
             throw new InvalidRequestException("존재하지 않는 태그가 포함되어 있습니다.");
         }
 
