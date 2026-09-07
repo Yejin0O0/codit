@@ -45,6 +45,12 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+// javac 가 .java 소스를 읽을 때 쓰는 인코딩. 미지정 시 플랫폼 기본 charset
+// (Windows 한글 = MS949)으로 읽혀 소스의 한글 문자열 리터럴이 컴파일 시점에 깨진다.
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 	systemProperty 'file.encoding', 'UTF-8'
@@ -52,4 +58,5 @@ tasks.named('test') {
 
 tasks.named('bootRun') {
 	jvmArgs '-Dfile.encoding=UTF-8'
+	// TODO: Dockerfile / 배포 스크립트 추가 시 java -jar 실행에도 -Dfile.encoding=UTF-8 명시 필요
 }
