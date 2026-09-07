@@ -52,12 +52,18 @@ export function CollapsedTimer({
             onClick={handleClick}
         >
             <svg
-                viewBox="0 0 16 16"
+                viewBox="0 0 24 24"
                 aria-hidden="true"
-                fill="currentColor"
+                fill="none"
                 className="text-primary size-5"
             >
-                <path d="M8 0 16 8 8 16 0 8Z" />
+                {/* C 마크 — pill 은 단색(체크 생략). docs/ui/brand/README.md */}
+                <path
+                    d="M16.8 6.2A7.5 7.5 0 1 0 16.8 17.8"
+                    stroke="currentColor"
+                    strokeWidth="3.4"
+                    strokeLinecap="round"
+                />
             </svg>
             <span className="sr-only">{srLabel}</span>
             <span className="text-base font-medium tabular-nums">{formatDuration(seconds)}</span>

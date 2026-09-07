@@ -50,6 +50,21 @@
     --z-widget: 999999;
     --z-overlay: 2147483000;
     --z-toast: 2147483001;
+
+    /* 브랜드 워드마크 그라데이션 — 로고 락업(#8FB5FB → #A193FA). docs/ui/brand/README.md */
+    --brand-wordmark-from: oklch(0.7725 0.1091 262.19);
+    --brand-wordmark-to: oklch(0.7182 0.1472 288.35);
+}
+
+/* "Codit" 워드마크 — 그라데이션 텍스트. BrandHeader 전용. */
+@utility brand-wordmark {
+    background-image: linear-gradient(
+        90deg,
+        var(--brand-wordmark-from),
+        var(--brand-wordmark-to)
+    );
+    background-clip: text;
+    color: transparent;
 }
 
 .dark {

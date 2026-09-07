@@ -4,8 +4,8 @@ import { BrandHeader } from '@/components/codit/brand-header';
 
 /**
  * 브랜드 자산. 원본 = `docs/ui/brand/` (SoT). 사용 맵·색·규격은 `docs/ui/brand/README.md`.
- * 인앱 인라인 SVG(BrandHeader·CollapsedTimer)는 아직 placeholder 마름모 — Phase 4f에서
- * stroke C 옥타곤 + 민트 체크로 트레이스한다.
+ * 인앱 인라인 SVG(BrandHeader·CollapsedTimer) = 원호형 stroke C(iris) + 민트 체크.
+ * 워드마크 = `brand-wordmark` 그라데이션 텍스트.
  */
 const meta: Meta = {
     title: 'Foundations/브랜드',
@@ -51,17 +51,16 @@ export const 로고: Story = {
                 </div>
             </div>
 
-            <div style={{ ...box, borderColor: '#f0c8c8', background: '#fdf3f3' }}>
-                <h3 style={{ margin: '0 0 12px', fontSize: 13, color: '#a94442', textTransform: 'uppercase', letterSpacing: '.06em' }}>
-                    인앱 인라인 SVG — 아직 placeholder (Phase 4f 교체 대상)
+            <div style={box}>
+                <h3 style={{ margin: '0 0 12px', fontSize: 13, color: '#65636e', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                    인앱 인라인 SVG — BrandHeader (iris C + 민트 체크 + 그라데이션 워드마크)
                 </h3>
                 <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
                     <BrandHeader variant="full" />
                     <BrandHeader variant="compact" />
                 </div>
-                <p style={{ margin: '12px 0 0', color: '#a94442', fontSize: 12 }}>
-                    마름모 ▷◁ = placeholder. 목표: stroke C(라운드 옥타곤 트레이스) + 민트 체크,
-                    워드마크는 그라데이션 텍스트. pill은 16px 단색.
+                <p style={{ margin: '12px 0 0', color: '#65636e', fontSize: 12 }}>
+                    원호형 stroke C — 16px pill 판독 우선. pill(`CollapsedTimer`)은 단색 C, 체크 생략.
                 </p>
             </div>
         </div>
