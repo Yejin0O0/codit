@@ -81,7 +81,7 @@ Vitest가 보고하는 **Tests 수**와 `issue-{N}.md`의 **체크박스(`- [ ]`
 UI 컴포넌트를 구현할 때는 시각적 스펙을 먼저 파악한다.
 
 1. `docs/features/{feature명}/ui-design.md`가 있으면 읽어서 와이어프레임·컴포넌트 트리·UI State를 확인한다.
-2. `docs/ui/design-system.md`가 있으면 읽어서 shadcn/ui 컴포넌트 사용 방식과 디자인 토큰을 확인한다.
+2. `docs/ui/design-system.md`가 있으면 읽는다 — `## 기초`에서 디자인 토큰(색·간격·radius 등), `## feature별 인벤토리`에서 shadcn/ui 컴포넌트 사용 방식을 확인한다.
 3. 둘 다 없으면 기존 컴포넌트(`apps/extension/entrypoints/`)에서 유사한 패턴을 찾아 참고한다.
 
 디자인 문서가 없으면 이 단계를 건너뛰고 기존 컴포넌트 패턴만 따른다.
