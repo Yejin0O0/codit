@@ -85,4 +85,39 @@ describe('useTimer', () => {
 
         expect(vi.getTimerCount()).toBe(0);
     });
+
+    it('[정상] 진행 중 세션을 넘기면 0초가 아니라 실제 경과 시간부터 이어진다', () => {
+        now = 5_000;
+        const { result } = renderHook(() => useTimer({ startedAt: 2_000, stoppedAt: null }));
+
+        expect(result.current.elapsedSeconds).toBe(3);
+    });
+
+    it('[정상] 완료된 세션을 넘기면 elapsedSeconds 가 고정값이고 시간이 지나도 안 바뀐다', () => {
+        now = 10_000;
+        const { result } = renderHook(() => useTimer({ startedAt: 2_000, stoppedAt: 9_000 }));
+
+        expect(result.current.elapsedSeconds).toBe(7);
+
+        act(() => {
+            now = 20_000;
+            vi.advanceTimersByTime(1_000);
+        });
+
+        expect(result.current.elapsedSeconds).toBe(7);
+    });
+
+    it('[경계] 완료된 세션의 startedAt === stoppedAt 이면 elapsedSeconds 는 0으로 고정되고 시간이 지나도 안 바뀐다', () => {
+        now = 10_000;
+        const { result } = renderHook(() => useTimer({ startedAt: 3_000, stoppedAt: 3_000 }));
+
+        expect(result.current.elapsedSeconds).toBe(0);
+
+        act(() => {
+            now = 15_000;
+            vi.advanceTimersByTime(1_000);
+        });
+
+        expect(result.current.elapsedSeconds).toBe(0);
+    });
 });

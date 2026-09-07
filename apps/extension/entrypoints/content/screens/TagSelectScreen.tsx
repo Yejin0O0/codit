@@ -1,8 +1,11 @@
+import type { Ref } from 'react';
+
 import { PanelShell } from '@/components/codit/panel-shell';
 import { Button } from '@/components/ui/button';
 
 import { TagPicker } from '../components/TagPicker';
 import type { Tag, TagCategory } from '../mockData';
+import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface TagSelectScreenProps {
     step: string;
@@ -14,6 +17,9 @@ interface TagSelectScreenProps {
     onAddCustomTag: (name: string) => void;
     onBack: () => void;
     onSave: () => void;
+    onCollapse?: () => void;
+    collapseControlRef?: Ref<HTMLButtonElement>;
+    dragHandlers?: WidgetDragHandlers;
 }
 
 export function TagSelectScreen({
@@ -26,6 +32,9 @@ export function TagSelectScreen({
     onAddCustomTag,
     onBack,
     onSave,
+    onCollapse,
+    collapseControlRef,
+    dragHandlers,
 }: TagSelectScreenProps) {
     const canSave = selectedTagIds.length >= 1;
 
@@ -33,6 +42,9 @@ export function TagSelectScreen({
         <PanelShell
             title="태그 선택"
             step={step}
+            onCollapse={onCollapse}
+            collapseControlRef={collapseControlRef}
+            dragHandlers={dragHandlers}
             footer={
                 <>
                     <Button type="button" variant="outline" className="flex-1" onClick={onBack}>

@@ -403,6 +403,14 @@ expanded subtree 의 subtree-local state 에 두면, collapse 로 그 subtree �
 - **브라우저 재시작 후 복원** (`chrome.storage.local` + 브라우저 세션 마커 / 만료 정책)
   — 후속 feature
 - **cross-device 동기화 / 백엔드 저장 / Attempt Save API(`POST /api/attempts`) 연동**
+  (참고 — `#16`/`#17` 완료 시점 논의: `chrome.storage.session`은 기기 로컬이라
+  같은 사용자가 다른 PC에서 같은 문제를 열면 독립된 새 세션(0초)으로 시작한다.
+  다만 이건 데이터 정합성 문제가 아니다 — Attempt Save API가 붙어도 진행 중
+  세션은 전송되지 않고 "완료" 시점에만 결과가 1회성으로 저장되는 append-only
+  모델이 될 것으로 예상되어, 기기 간 last-write-wins 같은 충돌 지점 자체가
+  없다. 같은 문제를 여러 기기에서 동시에 풀 때 시도 이력이 여러 건 남는 게
+  맞는지는 데이터 정합성이 아니라 UX/제품 결정 사항 — Attempt Save API 설계
+  시 참고.)
 - **"흐름 이탈"(중도 포기·뒤로가기 등) 시 세션 삭제** 조건 정의 — 삭제는 success
   도달로만 한정
 - **이미 열린 여러 탭 간 상태 전이 실시간 동기화** (`storage.onChanged` 기반)

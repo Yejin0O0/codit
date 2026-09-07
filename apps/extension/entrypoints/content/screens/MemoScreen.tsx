@@ -1,9 +1,12 @@
+import type { Ref } from 'react';
+
 import { PanelShell } from '@/components/codit/panel-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 import { MemoField } from '../components/MemoField';
 import { RESULT_LABELS, type ResultType } from '../screens';
+import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface MemoScreenProps {
     /** HOLD 는 이 화면에 진입하지 않는다 */
@@ -15,6 +18,9 @@ interface MemoScreenProps {
     onMemoOpenChange: (open: boolean) => void;
     onBack: () => void;
     onNext: () => void;
+    onCollapse?: () => void;
+    collapseControlRef?: Ref<HTMLButtonElement>;
+    dragHandlers?: WidgetDragHandlers;
 }
 
 export function MemoScreen({
@@ -26,11 +32,17 @@ export function MemoScreen({
     onMemoOpenChange,
     onBack,
     onNext,
+    onCollapse,
+    collapseControlRef,
+    dragHandlers,
 }: MemoScreenProps) {
     return (
         <PanelShell
             title="메모"
             step={step}
+            onCollapse={onCollapse}
+            collapseControlRef={collapseControlRef}
+            dragHandlers={dragHandlers}
             footer={
                 <>
                     <Button type="button" variant="outline" className="flex-1" onClick={onBack}>
