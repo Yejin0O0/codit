@@ -16,25 +16,25 @@ Q1=C(통일 라이트 + Surface 오버라이드 2계층) · Q2=B(레이아웃은
 
 ---
 
-## ADR-1. 색 토큰 — Radix Colors 기반 [확정 · 개발자 승인 2026-09-07]
+## ADR-1. 색 토큰 — Radix Colors 기반 [확정 · 개발자 승인 2026-09-07, Playground 튜닝]
 
-**근거**: Radix Colors 12-step 스케일. `violet`(브랜드) + `mauve`(바이올렛 틴트 뉴트럴, Radix가 violet에 페어링 권장) + `green`/`amber`/`red`(의미). step 선택은 Radix 관례(9=solid, 11=보조 텍스트, 12=제목). 전 fg/bg 쌍 WCAG 2.2 AA 통과(측정).
+**근거**: Radix Colors 12-step. `iris`(브랜드 — 개발자가 violet 대신 iris 선택, Playground SWEA 배경 확인) + `mauve`(뉴트럴) + `green`/`amber`/`red`(의미). step 관례(9=solid, 11=보조 텍스트, 12=제목). 전 fg/bg 쌍 WCAG 2.2 AA 통과(Playground 측정).
 
 | 토큰 | 값 | Radix | 대비 |
 |---|---|---|---|
-| `--primary` | `#6E56CF` | violet-9 | 흰 텍스트 5.4:1 |
+| `--primary` | `#5B5BD6` | iris-9 | 흰 텍스트 5.3:1 |
 | `--primary-foreground` | `#FFFFFF` | | |
-| `--ring` | `#A594F9` | violet-a8 계열 | 포커스 링 |
-| `--accent` | `#F1EEFE` | violet-3 | hover 배경 |
-| `--accent-foreground` | `#6550B9` | violet-11 | 5.4:1 on accent |
-| `--background` | `#FDFCFE` | mauve-1 | |
-| `--foreground` | `#1A1523` | mauve-12 | 17:1 on bg |
-| `--card` `--popover` | `#FFFFFF` | | 순백 → 틴트 bg 위에서 뜸 |
-| `--muted` `--secondary` | `#F4F2F7` | mauve-3 | |
-| `--muted-foreground` | `#6F6D78` | mauve-11 | 4.6:1 on muted |
-| `--secondary-foreground` | `#211E28` | mauve-12 계열 | 14.8:1 |
-| `--border` | `#E3DFEA` | mauve-6 | |
-| `--input` | `#D7D0E0` | mauve-7 | |
+| `--ring` | `#9B9EF0` | iris-8 계열 | 포커스 링 |
+| `--accent` | `#F1EEFE` | iris/violet-3 | hover 배경 |
+| `--accent-foreground` | `#5753C6` | iris-11 | ≥4.5 on accent |
+| `--background` | `#FAF9FC` | mauve-2 | |
+| `--foreground` | `#1A1523` | mauve-12 | ~16:1 on bg / card |
+| `--card` `--popover` | `#F1EFEF` | 웜 라이트그레이 (개발자 선택 — 순백 대신) | SWEA 흰 페이지 위에서 회색 패널로 분리 |
+| `--muted` `--secondary` | `#F1EFF5` | mauve-3 | |
+| `--muted-foreground` | `#65636E` | mauve-11 계열 | ~5:1 on muted |
+| `--secondary-foreground` | `#211E28` | mauve-12 계열 | ~14:1 |
+| `--border` | `#D8D3E0` | mauve-7 (강화) | |
+| `--input` | `#C4BDD2` | mauve-8 | 입력창이 "누를 수 있는 것"으로 읽히게 |
 | `--success` | `#30A46C` | green-9 | 흰 3.2:1 (채운 UI) |
 | `--success-foreground` | `#FFFFFF` | | |
 | `--warning` | `#FFC53D` | amber-9 | |
@@ -42,13 +42,17 @@ Q1=C(통일 라이트 + Surface 오버라이드 2계층) · Q2=B(레이아웃은
 | `--destructive` | `#E5484D` | red-9 | 흰 3.9:1 (채운 UI) |
 | `--destructive-foreground` | `#FFFFFF` | | |
 
-**Surface 오버라이드 (2계층)**: 위 값은 공통 베이스. 위젯(`:host`)은 SWEA 흰 배경 위에 뜨므로 `--background`를 mauve-2(`#FBFAFC`)로 살짝 더 틴트해 대비 확보 가능 — 4a에서 확정. Extension Page(`:root`)는 베이스 그대로.
+`--radius: 0.625rem` (10px) 유지. 위젯 그림자·줄간격은 ADR-5·2 참조 (Playground: med + violet, lh 1.6).
 
-**SWEA 공존**: `--primary` HSL hue ~253° — SWEA 파랑(`#4590E3`, ~211°) 회피 밴드 밖. 에디터 보라 syntax(~280°)와도 이격.
+**알려진 트레이드오프 (개발자 인지 후 확정)**:
+- `--card` `#F1EFEF` ≈ `--muted`/`--secondary` `#F1EFF5` → 카드 ↔ 보조 표면 명도 거의 동일. Extension Page(bg `#FAF9FC`)에선 카드가 약하게 분리. **위젯 우선 선택** (SWEA 흰 페이지 위 분리 우선).
+- `--primary` iris HSL hue ~240° — SWEA 파랑(`#4590E3`, ~211°) 회피 밴드 [190°, 235°] **경계 밖**. violet(`#6E56CF`, ~253°)보다 SWEA에 가까우나 Playground 확인 후 채택.
+
+**Surface 오버라이드 (2계층)**: 위 값은 공통 베이스. 위젯(`:host`) / Extension Page(`:root`)에서 elevation·밀도만 오버라이드. v2 다크는 이 레이어 값 교체.
 
 ---
 
-## ADR-2. 타이포그래피 [결정 포인트 — 제안]
+## ADR-2. 타이포그래피 [확정 · 개발자 승인 2026-09-07]
 
 **근거**: Tailwind type scale + Apple HIG(대형 헤딩 letter-spacing 타이트닝) + 한글 가독성.
 
@@ -78,7 +82,7 @@ Q1=C(통일 라이트 + Surface 오버라이드 2계층) · Q2=B(레이아웃은
 
 - 4px 베이스. 스텝: 4·6·8·12·16·20·24·32
 - **`gap` 우선, per-element margin 지양** (ui-architecture "layout does the spacing")
-- 위젯 프레임 안쪽 여백: `p-4`(16px) — 가독성 위해 현행 14px에서 상향 제안
+- 위젯 프레임 안쪽 여백: `p-4`(16px) — 현행 14px에서 상향 (Playground 확정)
 - 화면 요소 간 세로 간격: `gap-3`(12px) 기본, 섹션 간 `gap-4`(16px)
 
 ---
@@ -93,7 +97,7 @@ Q1=C(통일 라이트 + Surface 오버라이드 2계층) · Q2=B(레이아웃은
 
 ---
 
-## ADR-5. elevation [결정 포인트 — 제안]
+## ADR-5. elevation [확정 · 개발자 승인 2026-09-07 (Playground med·violet)]
 
 **근거**: Material 3 elevation 레벨. 위젯은 SWEA 흰 배경에서 확실히 떠야 함 → 브랜드 틴트 그림자.
 
@@ -128,15 +132,15 @@ Q1=C(통일 라이트 + Surface 오버라이드 2계층) · Q2=B(레이아웃은
 
 ---
 
-## ADR-8. 컴포넌트 사용 규칙 [결정 포인트 — 제안]
+## ADR-8. 컴포넌트 사용 규칙 [확정 · 개발자 승인 2026-09-07]
 
 **근거**: GitHub Primer / Atlassian 형식 (variant→역할 표 + do/don't). 라이브러리(shadcn/Radix)는 고정, "어떤 역할에 무엇"만 디자인 시스템이 정한다.
 
 | 역할 | 컴포넌트 / variant | 규칙 |
 |---|---|---|
 | 주요 진행 액션 (완료·다음·저장) | `Button` `default` (bg-primary) | **화면당 1개.** 하단, 위젯은 full-width |
-| 뒤로·취소 | `Button` `ghost` | primary와 나란히 두면 왼쪽. (현행 `outline` → `ghost`로 변경 제안 — 위계 낮춤) |
-| 보조 액션 (드묾) | `Button` `outline` | |
+| 뒤로·취소 | `Button` `outline` | primary와 나란히 두면 왼쪽. **테두리 유지** (개발자 확정 — ghost 반려) |
+| 보조 액션 (드묾) | `Button` `secondary` | |
 | 파괴적 (기록 삭제) | `Button` `destructive` | 확인 다이얼로그 동반 |
 | 인라인 텍스트 링크 (로그인↔회원가입) | `Button` `link` | 문장 안에서만 |
 | 결과 선택 | `ResultToggleGroup` | 정답=`success` / 오답=`destructive` / 보류=`warning`, 채운 배경 |
@@ -158,7 +162,7 @@ Q1=C(통일 라이트 + Surface 오버라이드 2계층) · Q2=B(레이아웃은
 
 ## 검증 (Phase 4 · Phase 6)
 
-- `e2e/design-system.spec.ts` 대비 단언 — 전 쌍 AA (텍스트 4.5 / 채운 UI 3.0)
-- 갤러리·위젯 스크린샷 — 승인된 팔레트와 일치
+- Storybook `@storybook/addon-a11y`(axe) — 전 스토리 대비 AA
+- `e2e/design-system.spec.ts` 위젯 스크린샷 — 승인 팔레트와 일치 (로컬 자문)
 - `pnpm typecheck·lint·test·build` green
 - 레이아웃 불변 (이 스킬 범위 — 레이아웃 재설계는 후속 이슈)
