@@ -1,5 +1,6 @@
 import type { Ref } from 'react';
 
+import { CoditMark } from '@/components/codit/codit-mark';
 import { Button } from '@/components/ui/button';
 import { formatDuration } from '@/lib/format-duration';
 import { cn } from '@/lib/utils';
@@ -51,20 +52,8 @@ export function CollapsedTimer({
             onPointerDown={dragHandlers?.onPointerDown}
             onClick={handleClick}
         >
-            <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                fill="none"
-                className="text-primary size-5"
-            >
-                {/* C 마크 — pill 은 단색(체크 생략). docs/ui/brand/README.md */}
-                <path
-                    d="M16.8 6.2A7.5 7.5 0 1 0 16.8 17.8"
-                    stroke="currentColor"
-                    strokeWidth="3.4"
-                    strokeLinecap="round"
-                />
-            </svg>
+            {/* C 마크 — pill 은 단색(체크 생략). docs/ui/brand/README.md */}
+            <CoditMark className="text-primary" />
             <span className="sr-only">{srLabel}</span>
             <span className="text-base font-medium tabular-nums">{formatDuration(seconds)}</span>
             {status === 'stopped' ? (

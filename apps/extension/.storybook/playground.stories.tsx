@@ -13,10 +13,14 @@ import { TimerScreen } from '@/entrypoints/content/screens/TimerScreen';
 import { CORE_TAGS, TAG_CATEGORIES } from '@/lib/tag-catalog';
 
 /**
- * 디자인 토큰을 실시간으로 조정하며 **실제 Codit 컴포넌트**에 적용해보는 플레이그라운드.
+ * 디자인 토큰을 실시간으로 조정하며 **실제 Codit 컴포넌트**에 적용해보는 what-if 플레이그라운드.
  * 색·radius·여백·그림자·타이포를 바꾸면 오른쪽 위젯 화면 전체에 즉시 반영된다.
- * `/design-system` Phase 2 의 결정 도구. 확정값은 아래 "CSS 내보내기"로 복사해 개발자가 Claude 에게 전달.
+ * 후속 토큰 튜닝 도구 — 조정값은 "CSS 복사"로 내보내 개발자가 Claude 에게 전달.
  * (mockup 이 아니라 `entrypoints/content/screens/*` 실물을 렌더한다.)
+ *
+ * ⚠ 아래 CONFIRMED / SHADOWS 는 색 피커가 리터럴 hex 를 요구해서 둔 **미리보기용 스냅샷**이다.
+ *   토큰의 SoT 는 `styles/tokens.css` 하나뿐 — ADR 로 토큰이 바뀌면 이 스냅샷도 같이 갱신해야 한다.
+ *   (마지막 동기화: 2026-09-07, prd.md ADR-1)
  */
 
 const COLOR_KEYS = [
@@ -43,7 +47,7 @@ const COLOR_KEYS = [
 ] as const;
 type ColorKey = (typeof COLOR_KEYS)[number];
 
-// 확정값 — prd.md ADR-1 (Playground 튜닝 2026-09-07). tokens.css 와 동기.
+// v1 스냅샷 (hex) — SoT 는 styles/tokens.css. 여기 값은 미리보기 baseline 일 뿐 (docstring ⚠ 참고).
 const CONFIRMED: Record<ColorKey, string> = {
     primary: '#5B5BD6',
     'primary-foreground': '#FFFFFF',
@@ -100,6 +104,7 @@ interface Scale {
 }
 const DEFAULT_SCALE: Scale = { radius: 10, pad: 16, shadowStrength: 'med', shadowTint: 'violet', lh: 1.6 };
 
+// 'med-violet' = tokens.css --shadow-lg 의 미리보기 복제 (oklab→srgb 변환만 다름). --shadow-lg 바뀌면 갱신.
 const SHADOWS: Record<string, string> = {
     'soft-violet': '0 10px 26px -12px color-mix(in srgb, var(--primary) 24%, transparent), 0 2px 8px -2px color-mix(in srgb, var(--foreground) 8%, transparent)',
     'med-violet': '0 16px 40px -12px color-mix(in srgb, var(--primary) 28%, transparent), 0 4px 12px -2px color-mix(in srgb, var(--foreground) 10%, transparent)',

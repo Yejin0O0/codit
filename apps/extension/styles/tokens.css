@@ -19,13 +19,15 @@
     --foreground: oklch(0.2087 0.0281 300.38); /* #1A1523 */
     --card: oklch(0.9537 0.0021 17.2); /* #F1EFEF — SWEA 흰 페이지 위 회색 패널 분리 */
     --card-foreground: oklch(0.2087 0.0281 300.38);
-    --popover: oklch(0.9537 0.0021 17.2);
-    --popover-foreground: oklch(0.2087 0.0281 300.38);
+    /* popover 표면은 card 와 동일 계열로 묶어둔다 — 리브랜딩 시 함께 이동 */
+    --popover: var(--card);
+    --popover-foreground: var(--card-foreground);
     --primary: oklch(0.5403 0.1841 278.28); /* #5B5BD6 iris-9 */
     --primary-foreground: oklch(1 0 0);
     --secondary: oklch(0.9554 0.0082 301.35); /* #F1EFF5 mauve-3 */
     --secondary-foreground: oklch(0.2428 0.0193 298.69); /* #211E28 */
-    --muted: oklch(0.9554 0.0082 301.35);
+    /* muted 표면은 secondary 와 동일 — 함께 이동 */
+    --muted: var(--secondary);
     --muted-foreground: oklch(0.5053 0.0174 294.11); /* #65636E */
     --accent: oklch(0.9561 0.0215 294.59); /* #F1EEFE */
     --accent-foreground: oklch(0.5111 0.1739 279.84); /* #5753C6 iris-11 */
@@ -63,7 +65,10 @@
         var(--brand-wordmark-from),
         var(--brand-wordmark-to)
     );
+    /* WebKit 은 최신 버전도 -webkit- 접두사를 요구할 수 있다. browserslist 미설정이라 수동 fallback. */
+    -webkit-background-clip: text;
     background-clip: text;
+    -webkit-text-fill-color: transparent;
     color: transparent;
 }
 
@@ -86,13 +91,13 @@
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
+    --popover: var(--card);
+    --popover-foreground: var(--card-foreground);
     --primary: oklch(0.922 0 0);
     --primary-foreground: oklch(0.205 0 0);
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
+    --muted: var(--secondary);
     --muted-foreground: oklch(0.708 0 0);
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);

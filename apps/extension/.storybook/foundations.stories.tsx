@@ -33,8 +33,8 @@ const COLOR_TOKENS: [string, string][] = [
 
 const TYPE_SCALE: [string, string, string][] = [
     ['text-xs', '12px', '캡션·메타·step'],
-    ['text-sm', '14px', '보조'],
-    ['text-base', '14px', '본문 기본 (위젯 :host)'],
+    ['text-sm', '14px', '보조 · 위젯 :host 상속 본문'],
+    ['text-base', '16px', '본문 기본'],
     ['text-lg', '18px', '화면 제목'],
     ['text-xl', '20px', '강조'],
     ['text-2xl', '24px', ''],

@@ -1,21 +1,25 @@
 import { test, expect } from './fixtures/extension';
 
 /**
- * 위젯 실조건 시각 회귀 (`/design-system` 스킬).
+ * 위젯 실조건 스모크 + (opt-in) 시각 회귀 — `/design-system` 스킬.
  *
  * Storybook(`pnpm --filter @codit/extension storybook`)이 컴포넌트 카탈로그 + a11y(대비)를
  * 담당한다. 이 스펙은 Storybook이 못 하는 것만 본다: **빌드된 확장을 실제 Chrome에 로드,
- * Shadow DOM + `:root→:host` 토큰 치환 + 실제 SWEA 페이지 마운트** 조건의 위젯 스크린샷.
+ * Shadow DOM + `:root→:host` 토큰 치환 + 실제 SWEA 페이지 마운트** 조건.
  *
- * headful Chrome이라 스냅샷은 머신 의존(`-win32` 등) → **로컬 자문용**. CI 회귀 가드 아님.
- * 초 단위로 바뀌는 타이머 숫자는 mask. 의도된 시각 변화는 `--update-snapshots`로 갱신.
+ * - 기본(항상 실행): 위젯이 실제 SWEA 페이지에 마운트되고 스킨이 적용되는지 스모크.
+ * - `DS_SNAP=1` 일 때만: `toHaveScreenshot` 시각 회귀. headful Chrome이라 스냅샷은
+ *   머신 의존(`-win32` 등) → **커밋하지 않는다**. 로컬에서 `--update-snapshots`로 생성해
+ *   자기 머신 기준으로만 비교. 렌더 환경을 고정(Docker/Linux)하기 전엔 CI 게이트 아님.
  */
 
 const MOCK_PROBLEM_URL =
     'https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=DS-WIDGET-001';
 
-test.describe('design-system — 위젯 스크린샷 (실 Shadow DOM · 로컬 자문)', () => {
-    test('expanded — 타이머 화면', async ({ context }) => {
+const SNAP = !!process.env.DS_SNAP;
+
+test.describe('design-system — 위젯 실조건 (실 Shadow DOM)', () => {
+    test('expanded — 타이머 화면이 실 페이지에 마운트되고 스킨이 적용된다', async ({ context }) => {
         const page = await context.newPage();
         await page.goto(MOCK_PROBLEM_URL);
 
@@ -24,18 +28,20 @@ test.describe('design-system — 위젯 스크린샷 (실 Shadow DOM · 로컬 �
         await expect(clock).toBeVisible();
         await expect(widget.getByRole('button', { name: '완료' })).toBeVisible();
 
+        test.skip(!SNAP, 'DS_SNAP=1 로 실행 (스냅샷은 머신 의존 · 미커밋)');
         await expect(widget).toHaveScreenshot('widget-timer.png', { mask: [clock] });
     });
 
-    test('collapsed — pill', async ({ context }) => {
+    test('collapsed — pill 이 실 페이지에서 접기/펼치기 된다', async ({ context }) => {
         const page = await context.newPage();
         await page.goto(MOCK_PROBLEM_URL);
 
         const widget = page.locator('#codit-root');
         await expect(widget.getByText(/^\d{2}:\d{2}$/)).toBeVisible();
         await widget.getByRole('button', { name: 'Codit 타이머 접기' }).click();
-
         await expect(widget.getByRole('button', { name: /펼치기/ })).toBeVisible();
+
+        test.skip(!SNAP, 'DS_SNAP=1 로 실행 (스냅샷은 머신 의존 · 미커밋)');
         await expect(widget).toHaveScreenshot('widget-collapsed.png', {
             mask: [widget.getByText(/^\d{2}:\d{2}$/)],
         });

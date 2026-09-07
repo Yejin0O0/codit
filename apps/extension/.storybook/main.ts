@@ -13,6 +13,9 @@ const config: StorybookConfig = {
         '../entrypoints/**/*.stories.@(ts|tsx)',
     ],
     addons: ['@storybook/addon-a11y'],
+    // 스토리가 `/brand/*`·`/icon/*` 절대경로로 참조하는 브랜드·아이콘 에셋 서빙.
+    // (Vite 빌더는 plain dev 서버와 달리 프로젝트 public/ 을 자동 서빙하지 않음)
+    staticDirs: ['../public'],
     framework: {
         name: '@storybook/react-vite',
         options: {},
