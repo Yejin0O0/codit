@@ -48,7 +48,8 @@ export function PanelShell({
     }
 
     return (
-        <Card className={cn('gap-0 overflow-hidden py-0', className)}>
+        // shadow-lg = primary 틴트 = 위젯 프레임을 SWEA 흰 페이지에서 분리 + "Codit 패널" 각인 (prd.md ADR-5)
+        <Card className={cn('gap-0 overflow-hidden py-0 shadow-lg', className)}>
             <div
                 className={cn(
                     'flex items-center justify-between border-b px-4 py-3',

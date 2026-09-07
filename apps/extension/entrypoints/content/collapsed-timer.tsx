@@ -46,7 +46,8 @@ export function CollapsedTimer({
             ref={ref}
             type="button"
             variant="outline"
-            className={cn('h-10 gap-2 px-3.5', dragHandlers && 'cursor-grab')}
+            // pill = 완전 원형 (prd.md ADR-4) · shadow-lg = SWEA 흰 페이지 위 분리 (ADR-5)
+            className={cn('h-10 gap-2 rounded-full px-3.5 shadow-lg', dragHandlers && 'cursor-grab')}
             onPointerDown={dragHandlers?.onPointerDown}
             onClick={handleClick}
         >
