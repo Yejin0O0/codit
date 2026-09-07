@@ -1,13 +1,20 @@
 # Design System
 
-> Codit Chrome Extension UI 설계 기준.
-> fe-ui-design 스킬이 Feature마다 업데이트한다.
-> tdd-green-frontend는 이 문서를 읽어 구현 시 참조한다.
-> 아키텍처 규칙은 [ui-architecture.md](./ui-architecture.md) 참조.
+> Codit Chrome Extension UI 설계 기준. 아키텍처 규칙은 [ui-architecture.md](./ui-architecture.md) 참조.
+>
+> **두 섹션의 소유가 다르다:**
+> - `## 기초` — `design-system` 스킬이 소유. 토큰 값·팔레트·스케일·테마 정책. `/design-system`으로만 변경.
+> - `## feature별 인벤토리` — `fe-ui-design` 스킬이 Feature마다 업데이트. 컴포넌트·EXTEND·CUSTOM 목록.
+>
+> `tdd-green-frontend`는 이 문서를 읽어 구현 시 참조한다.
 
 ---
 
-## UI Library
+## 기초
+
+> `/design-system` 스킬 소유. 아직 v1 리스킨 전 — 토큰 값은 shadcn `neutral` 기본값. 리스킨 시 이 섹션이 확정 팔레트·스케일로 채워진다.
+
+### UI Library
 
 - **shadcn/ui** (복사형 — 라이브러리 의존이 아니라 레포가 소스를 소유한다)
   - style: `new-york`
@@ -18,7 +25,7 @@
 
 ---
 
-## 테마 정책
+### 테마 정책
 
 | 항목 | 결정 |
 |------|------|
@@ -28,7 +35,7 @@
 
 ---
 
-## 디자인 토큰
+### 디자인 토큰
 
 | 토큰 | 값 | 용도 | 첫 사용 Feature |
 |------|-----|------|----------------|
@@ -45,10 +52,15 @@
 | 위젯 collapsed pill 크기 | 높이 ≈ 40px (`h-10`) — 읽고 누를 수 있는 크기, 초소형 금지 | `CollapsedTimer` — expanded 320px 프레임과 같은 top-right anchor 에서 축소 렌더 | timer-persistence |
 
 > 구체 색상값은 shadcn `neutral` 프리셋을 따르며, `--success`/`--warning`은 구현 시 라이트 팔레트에 맞춰 확정한다.
+> (v1 리스킨 시 `/design-system` Phase 2~3에서 전 토큰 값 확정 — 색·타이포·간격·radius·elevation·motion·z.)
 
 ---
 
-## 사용 중인 컴포넌트
+## feature별 인벤토리
+
+> `fe-ui-design` 스킬 소유. Feature마다 새 컴포넌트/EXTEND/CUSTOM 행을 추가한다. `## 기초`는 건드리지 않는다.
+
+### 사용 중인 컴포넌트
 
 | 컴포넌트 | 출처 | 분류 | 커스터마이징 | 첫 사용 Feature |
 |---------|------|------|------------|----------------|
@@ -67,7 +79,7 @@
 
 ---
 
-## EXTEND 패턴
+### EXTEND 패턴
 
 | 이름 | 기반 | 확장 내용 |
 |------|------|----------|
@@ -83,7 +95,7 @@
 
 ---
 
-## CUSTOM 컴포넌트
+### CUSTOM 컴포넌트
 
 | 이름 | 근거 |
 |------|------|
@@ -99,7 +111,7 @@
 
 ---
 
-## 컴포넌트 패턴
+### 컴포넌트 패턴
 
 - Floating Widget의 모든 화면은 `PanelShell`을 최상위 프레임으로 사용한다.
 - Extension Page의 모든 화면은 `ExtensionPageShell`을 최상위 프레임으로 사용한다.

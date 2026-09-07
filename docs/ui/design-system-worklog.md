@@ -3,8 +3,15 @@
 > **목적**: 이 문서 하나로 다른 PC에서 작업을 이어받는다.
 > 다음 세션 시작 시: "docs/ui/design-system-worklog.md 읽고 이어서 진행" 이라고 하면 된다.
 >
-> 상태: **기획/방향 탐색 단계.** 코드·토큰 변경 아직 없음. `develop` 기준 브랜치 `feat/디자인시스템-기획`.
+> 상태: **스킬 골격 작성 완료.** `.claude/skills/design-system/SKILL.md` 존재.
+> 이 문서(§2 SWEA / §3 로고 / §6 열린 결정)는 `/design-system` 실행 시 Phase 0~2 입력으로 쓴다.
+> Phase 5에서 durable 내용을 `design-system.md ## 기초`로 흡수한 뒤 **삭제 예정**.
+> `develop` 기준 브랜치 `feat/디자인시스템-기획`.
 > 최종 갱신: 2026-09-07
+>
+> **아래 §5·§7은 SKILL.md로 대체됨** — 최신 파이프라인·수정사항은 `SKILL.md`와
+> memory `design-system-skill-plan` 참조. 실행 순서: STEP 1(스킬 골격, 완료) →
+> STEP 2 PR-A(FE 구조 정규화) → STEP 3 하네스 → STEP 4 `/design-system`.
 
 ---
 
