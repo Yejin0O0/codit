@@ -19,8 +19,9 @@ export interface Attempt {
 }
 
 export interface Tag {
-  id: string;
+  id: number;
   name: string;
+  category: string;
 }
 
 export interface UserStats {
