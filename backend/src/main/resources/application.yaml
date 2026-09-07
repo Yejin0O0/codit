@@ -14,9 +14,14 @@ spring:
       ddl-auto: update
     open-in-view: false
     show-sql: true
+    # data.sql(태그 초기 시딩)이 Hibernate의 자동 스키마 생성 이후에 실행되도록 순서를 미룬다.
+    defer-datasource-initialization: true
     properties:
       hibernate:
         format_sql: true
+  sql:
+    init:
+      mode: always
 
 server:
   port: 8080
