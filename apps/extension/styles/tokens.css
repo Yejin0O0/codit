@@ -38,6 +38,18 @@
     --border: oklch(0.8747 0.0185 303.38); /* #D8D3E0 mauve-7 */
     --input: oklch(0.8106 0.0301 300.89); /* #C4BDD2 mauve-8 */
     --ring: oklch(0.7293 0.1182 281.44); /* #9B9EF0 iris-8 */
+
+    /* motion — Material 3 easing/duration. idle 위젯 무애니(behavioral). prd.md ADR-6 */
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --duration-slow: 300ms;
+
+    /* z-index — 위젯 mount 는 JS(mount.tsx)가 --z-widget 값과 동기화. prd.md ADR-7 */
+    --z-widget: 999999;
+    --z-overlay: 2147483000;
+    --z-toast: 2147483001;
 }
 
 .dark {
@@ -64,6 +76,27 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
+}
+
+@theme {
+    /*
+     * Codit elevation — Material 3 레벨. Tailwind 기본 shadow-* 를 대체한다.
+     * 위젯 프레임(shadow-lg)은 primary 틴트로 "Codit 패널" 각인 + SWEA 흰 배경 분리. prd.md ADR-5.
+     */
+    --shadow-2xs: 0 1px 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+    --shadow-xs: 0 1px 2px 0 color-mix(in oklab, var(--foreground) 6%, transparent);
+    --shadow-sm:
+        0 1px 2px 0 color-mix(in oklab, var(--foreground) 7%, transparent),
+        0 1px 3px 0 color-mix(in oklab, var(--foreground) 5%, transparent);
+    --shadow-md:
+        0 2px 8px -2px color-mix(in oklab, var(--foreground) 10%, transparent),
+        0 1px 3px -1px color-mix(in oklab, var(--foreground) 7%, transparent);
+    --shadow-lg:
+        0 16px 40px -12px color-mix(in oklab, var(--primary) 28%, transparent),
+        0 4px 12px -2px color-mix(in oklab, var(--foreground) 10%, transparent);
+    --shadow-xl:
+        0 24px 56px -16px color-mix(in oklab, var(--primary) 30%, transparent),
+        0 6px 18px -4px color-mix(in oklab, var(--foreground) 12%, transparent);
 }
 
 @theme inline {

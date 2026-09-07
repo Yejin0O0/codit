@@ -22,7 +22,7 @@
         'Noto Sans KR', 'Malgun Gothic', sans-serif;
     font-size: 14px;
     font-weight: 400;
-    line-height: 1.5;
+    line-height: 1.6; /* 한글 가독성 — prd.md ADR-2 */
     letter-spacing: normal;
     text-align: left;
     color: var(--foreground);
@@ -35,5 +35,16 @@
     * {
         border-color: var(--border);
         outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+}
+
+/* idle 위젯 저산만 — 사용자가 reduced-motion 을 원하면 모든 전환 제거. prd.md ADR-6 */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

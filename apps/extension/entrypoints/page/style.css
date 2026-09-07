@@ -27,7 +27,7 @@ body {
         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo',
         'Noto Sans KR', 'Malgun Gothic', sans-serif;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6; /* 한글 가독성 — prd.md ADR-2 */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -36,5 +36,15 @@ body {
     * {
         border-color: var(--border);
         outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
