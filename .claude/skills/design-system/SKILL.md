@@ -24,7 +24,7 @@ Codit 익스텐션 UI의 **기초 레이어**(디자인 토큰 값 + 컴포넌�
 
 | | `design-system` (이 스킬) | `fe-ui-design` |
 |---|---|---|
-| 담당 | 기초 레이어 — 토큰 값·스케일·컴포넌트 사용 규칙(variant→역할)·SWEA 공존 규칙 + 갤러리 + 시각 QA 하네스 | feature별 — 와이어프레임·화면 배치·컴포넌트 트리·UI State |
+| 담당 | 기초 레이어 — 토큰 값·스케일·컴포넌트 사용 규칙(variant→역할)·SWEA 공존 규칙 + Storybook 카탈로그 + e2e 위젯 스펙 | feature별 — 와이어프레임·화면 배치·컴포넌트 트리·UI State |
 | `docs/ui/design-system.md` | `## 기초` 섹션 (소유) | `## feature별 인벤토리` 섹션 (소유) |
 | 코드 작성 | O — 토큰·컴포넌트 스킨·로고 SVG | X — 설계 문서만 |
 | 실행 시점 | 리스킨/개편 시 | 새 feature TDD 사이클 진입 시 |
@@ -39,7 +39,7 @@ Codit 익스텐션 UI의 **기초 레이어**(디자인 토큰 값 + 컴포넌�
 |---|---|---|
 | `/design-system` | 토큰 세트 수립/개편 → Phase 0~5 파이프라인 | O (Phase 4) |
 | `/design-system audit` | drift 점검: `tokens.css` ↔ `design-system.md ## 기초` ↔ `components.json` ↔ grep 실사용 ↔ SWEA 재감사. 불일치 리포트 | X (승인 시 별도) |
-| `/design-system verify` | 시각 QA 하네스만 실행(build → screenshot → 대비 단언) → 리포트 | X |
+| `/design-system verify` | 시각 QA만 실행(Storybook a11y + 위젯 스크린샷 + typecheck/lint/test/build) → 리포트 | X |
 
 ---
 
@@ -50,7 +50,7 @@ Codit 익스텐션 UI의 **기초 레이어**(디자인 토큰 값 + 컴포넌�
 git status                          # 클린해야 함
 git branch --show-current           # feat/디자인시스템-기획 (develop tip 기준) 권장
 pnpm --filter @codit/extension build   # 빌드 가능 확인
-ls e2e/design-system.spec.ts apps/extension/entrypoints/gallery 2>/dev/null   # 하네스 존재 여부
+ls e2e/design-system.spec.ts apps/extension/.storybook 2>/dev/null   # 하네스 존재 여부
 ```
 
 하네스가 없으면 Phase 0에서 부트스트랩한다.
@@ -65,7 +65,7 @@ Phase 1  [BLOCKED · 1회]  방향 결정                 ── 개발자 대�
 Phase 2  토큰 세트 제안 ([확정]/[결정 포인트] + 미리보기)
 Phase 3  [GATE]  토큰 세트 승인                     ── 개발자 대기
 Phase 4  리스킨 리팩토링 (컴포넌트 단위 · 이 스킬이 직접 수행)
-Phase 5  갤러리 완성 + design-system.md 재구성
+Phase 5  Storybook 완성 + design-system.md 재구성
 Phase 6  [GATE]  back-half 위임 (@ac-verifier → /tdd-refactor → /security-review → /e2e-write → /create-pr)
 ```
 
@@ -87,11 +87,12 @@ Phase 6  [GATE]  back-half 위임 (@ac-verifier → /tdd-refactor → /security-
 
 **부트스트랩** (하네스 없을 때만):
 
-- `apps/extension/entrypoints/gallery/` — WXT page entrypoint. 현재 컴포넌트 그대로 나열(리스킨 전). dev 빌드에 `gallery.html`로 포함되며 manifest엔 링크 안 됨 (e2e가 빌드 산출물을 스크린샷하므로 빌드에 있어야 함)
-- `e2e/design-system.spec.ts` — 갤러리·위젯 스크린샷 + canvas sRGB화 대비 단언 + `DS_REVIEW=1` walkthrough
-- **before baseline**: `pnpm --filter @codit/extension build && pnpm test:e2e e2e/design-system.spec.ts` → 현재(shadcn neutral) 상태를 스냅샷으로 커밋
+- `apps/extension/.storybook/` — Storybook 10 (react-vite + addon-a11y). `main.ts` viteFinal에 `@tailwindcss/vite` + `@/` alias, `storybook.css`가 `tokens.css` 로드
+- 스토리: `Foundations/Playground`(실 컴포넌트 위 토큰 튜닝) + `Primitives/*` + `Codit/*` + `Widget/화면`
+- `e2e/design-system.spec.ts` — 실 Shadow DOM 위젯 스크린샷 + `DS_REVIEW=1` walkthrough
+- **before baseline**: `pnpm --filter @codit/extension build && pnpm test:e2e e2e/design-system.spec.ts` → 위젯 baseline 스냅샷 커밋
 
-> 하네스가 이미 있으면 이 단계 스킵. `/design-system verify`로 baseline만 재생성.
+> 하네스가 이미 있으면 이 단계 스킵. Storybook 스토리 추가/갱신만.
 
 ---
 
@@ -159,7 +160,7 @@ color   (primary / 뉴트럴 램프 / 의미색 success·warning·destructive / 
 **원칙**:
 
 1. **semantic 토큰 이름 유지** — `--success` `--warning` `--destructive` `--primary` 등은 이미 존재. **값만 변경**한다. 이름·구조를 바꾸면 컴포넌트 톤-클래스 단언 테스트가 연쇄로 깨진다.
-2. **미리보기 필수** — 각 후보값에 대해 `docs/ui/_worklog-assets/design-direction-draft.html`를 갱신하고, 갤러리에 후보 토큰을 적용한 스크린샷을 첨부한다. "이 값이면 이렇게 보임"을 눈으로 확인하게 한다.
+2. **미리보기 필수** — `Foundations/Playground` 스토리(실 컴포넌트 위 토큰 튜닝)로 개발자가 직접 조정·확정하게 한다. 필요 시 임시 `tokens.css` 적용 후 위젯 스크린샷 첨부.
 3. **OKLCH 최종값 확정 전 대비 검증** — `--primary`/`--primary-foreground` 등 fg/bg 쌍이 WCAG AA(본문 4.5:1, 큰 텍스트·UI 3:1)를 통과하는지 `getComputedStyle` 기반으로 확인.
 
 산출: `docs/features/design-system/prd.md` (사용자 스토리 = 리스킨 목표 / **ADR = 토큰 세트 결정들** / Out of Scope = 다크모드·레이아웃).
@@ -187,11 +188,11 @@ color   (primary / 뉴트럴 램프 / 의미색 success·warning·destructive / 
 
 ```
 ① 수정
-② pnpm --filter @codit/extension build
-③ pnpm test:e2e e2e/design-system.spec.ts        → 스크린샷 diff (로컬 자문) + 대비 단언 (CI 가드)
-④ pnpm -r typecheck && pnpm --filter @codit/extension lint && pnpm --filter @codit/extension test
+② pnpm -r typecheck && pnpm --filter @codit/extension lint && pnpm --filter @codit/extension test
      └ Vitest 클래스/톤 단언이 깨지면 = 컴포넌트 계약 변경 → STOP, 개발자에게 보고
-⑤ 개발자 눈 승인 (의도된 시각 변화 확인)
+③ pnpm --filter @codit/extension storybook  (또는 storybook:build + a11y)  → 컴포넌트 확인
+④ pnpm --filter @codit/extension build && pnpm test:e2e e2e/design-system.spec.ts  → 실 위젯 스크린샷 diff (로컬 자문)
+⑤ 개발자 눈 승인 (Storybook + 위젯 스크린샷)
 ⑥ 스크린샷이 의도대로면 --update-snapshots
 ⑦ 커밋 (한 단위 = 한 커밋, prefix: refactor(ds):)
 ```
@@ -203,9 +204,9 @@ color   (primary / 뉴트럴 램프 / 의미색 success·warning·destructive / 
 | 4a | `styles/tokens.css` 색 재작성 | prd.md ADR의 OKLCH 값을 `:root`(→`:host`) + Surface 오버라이드로 배치. diff 큼 — 전면 색 변화 |
 | 4b | `styles/tokens.css`에 스케일 추가 | 타이포·간격·radius·elevation·motion·z + `@theme` 매핑 + Surface `style.css` base |
 | 4c | `entrypoints/popup/*.css` 정리 | WXT scaffold hex 제거. 실제 Codit 화면 아님 |
-| 4d | shadcn 프리미티브 (`components/ui/*.tsx`) | 토큰값 넘어 형태 변경 결정한 경우만. 제자리 Edit |
-| 4e | EXTEND/CUSTOM 조합 | `PanelShell`·`ResultToggleGroup`·`CoditWidget`·`CollapsedTimer` 등. 제자리 Edit |
-| 4f | 로고 SVG 교체 | `brand-header.tsx`·`collapsed-timer.tsx` 인라인 `<path>` (마름모 placeholder → C 마크 트레이스). 워드마크 = 그라데이션 텍스트. + `page.html`/`gallery.html` 파비콘. 확장 아이콘(`public/icon/`)은 이미 교체됨. 규격: `docs/ui/brand/README.md` |
+| 4d | shadcn 프리미티브 (`components/ui/*.tsx`) + 각 `*.stories.tsx` | 토큰값 넘어 형태 변경 결정한 경우만. 제자리 Edit. 스토리 없으면 이 단위에서 추가 |
+| 4e | EXTEND/CUSTOM 조합 + 스토리 | `PanelShell`·`ResultToggleGroup`·`CoditWidget`·`CollapsedTimer` 등. 제자리 Edit |
+| 4f | 로고 SVG 교체 | `brand-header.tsx`·`collapsed-timer.tsx` 인라인 `<path>` (마름모 placeholder → C 마크 트레이스). 워드마크 = 그라데이션 텍스트. + `page.html` 파비콘. 확장 아이콘(`public/icon/`)은 이미 교체됨. 규격: `docs/ui/brand/README.md` |
 
 **코드 변경 방식**: 기존 파일 **제자리 `Edit`**. 삭제+재생성 아님. rename은 `git mv`. 죽은 코드는 그 커밋 안에서 즉시 제거.
 
@@ -213,9 +214,9 @@ color   (primary / 뉴트럴 램프 / 의미색 success·warning·destructive / 
 
 ---
 
-### Phase 5 — 갤러리 완성 + 문서 재구성
+### Phase 5 — Storybook 완성 + 문서 재구성
 
-- `entrypoints/gallery/`를 리스킨된 전 컴포넌트 + 토큰 스와치로 완성
+- Storybook 스토리를 리스킨된 전 컴포넌트로 채운다 (`Primitives/*`, `Codit/*`, `Widget/화면`, `Foundations/Colors`·`Type`). Playground 스토리의 시드값을 확정 토큰으로 갱신
 - `docs/ui/design-system.md`를 2섹션으로 재구성:
   - `## 기초` — 토큰 값·스케일·원칙·SWEA 공존 규칙 (이 스킬 소유). Phase 2~3 결정 반영
   - `## feature별 인벤토리` — 기존 컴포넌트 표 (fe-ui-design 소유). **기존 내용 100% 보존**, 헤더만 삽입. 스왑한 컴포넌트가 있으면 그 행만 사실 정정
@@ -254,38 +255,36 @@ color   (primary / 뉴트럴 램프 / 의미색 success·warning·destructive / 
 ## `verify` 모드
 
 ```
+pnpm --filter @codit/extension storybook:build   # 컴포넌트 빌드 + a11y 규칙 컴파일
 pnpm --filter @codit/extension build
 pnpm test:e2e e2e/design-system.spec.ts
+pnpm -r typecheck && pnpm --filter @codit/extension lint && pnpm --filter @codit/extension test
 ```
 
-- 스크린샷 diff (before/after 나란히) — **로컬 자문용**. headful Chrome이라 머신 의존 → CI 회귀 가드로 신뢰하지 않음. 초 단위로 바뀌는 타이머 숫자는 mask 처리됨
-- canvas sRGB화 → WCAG 대비 단언 — **CI 가드**. 계산된 색상값은 결정적
+- **Storybook a11y** — 컴포넌트별 axe 대비/이름 점검. `@storybook/addon-a11y`의 test 모드 or 스토리 순회
+- **위젯 스크린샷 diff** — 실 Shadow DOM. **로컬 자문용**, headful 머신 의존 → CI 가드 아님. 타이머 mask
 - typecheck·lint·test·build 결과
 
-**수동 검토가 필요할 때** (자동 스크린샷이 너무 빨라 페이지 전환을 못 볼 때):
+**수동 검토** (자동 스크린샷이 너무 빨라 못 볼 때):
 
-```
-DS_REVIEW=1 pnpm test:e2e e2e/design-system.spec.ts -g "수동 검토" --headed
-```
-
-갤러리 → 위젯 각 화면(타이머/결과선택/메모/태그/collapsed)에서 Playwright Inspector가
-멈춘다. 눈으로 확인한 뒤 Resume. 갤러리는 정적 페이지라 `pnpm dev:ext` 후
-`chrome-extension://{id}/gallery.html`을 직접 열어 스크롤하며 봐도 된다.
+- **컴포넌트**: `pnpm --filter @codit/extension storybook` → `localhost:6006` 에서 스토리 훑기
+- **실 위젯 흐름**: `DS_REVIEW=1 pnpm test:e2e e2e/design-system.spec.ts -g "수동 검토" --headed` — 각 화면에서 Playwright Inspector 멈춤, 눈으로 확인 후 Resume
 
 Phase 6의 `@ac-verifier` 입력, 또는 독립 실행.
 
 ---
 
-## 하네스 (영구 산출물, 2파일)
+## 하네스 (영구 산출물)
 
-| 파일 | 역할 |
-|---|---|
-| `apps/extension/entrypoints/gallery/` | 부품 카탈로그 — 토큰 스와치 + 대비 쌍 + radius + 프리미티브 + Codit 조합을 한 스크롤에. WXT page entrypoint(`:root` 스코프, Extension Page 계열). manifest 어디에도 링크 안 됨. dev 빌드에 `gallery.html`로 포함(~41KB) — 스토어 배포 시 제외 검토 |
-| `e2e/design-system.spec.ts` (+ `-snapshots/`) | 갤러리 풀페이지 + 위젯 expanded(타이머)/collapsed(pill) 스크린샷(타이머 숫자 mask) + canvas 대비 단언 + `DS_REVIEW=1` 수동 walkthrough. `e2e/fixtures/extension.ts` 재사용 |
+| 축 | 무엇 | 역할 |
+|---|---|---|
+| **Storybook** (`apps/extension/.storybook/`) | 컴포넌트 카탈로그. `pnpm --filter @codit/extension storybook` → `localhost:6006`. `@storybook/addon-a11y`(axe)가 컴포넌트 대비 검사. `Foundations/Playground` 스토리 = 실제 화면 컴포넌트 위에서 토큰 실시간 튜닝 (Phase 2 결정 도구) | 부품 catalog + a11y/대비 + 토큰 미리보기 |
+| **`e2e/design-system.spec.ts`** (+ `-snapshots/`) | 빌드된 확장 로드 → 실 Chrome + Shadow DOM + `:root→:host` + 실 SWEA 페이지 조건의 위젯 expanded/collapsed 스크린샷(타이머 mask) + `DS_REVIEW=1` walkthrough. `e2e/fixtures/extension.ts` 재사용 | **Storybook이 못 하는 것만** — 실 Shadow DOM 위젯 회귀 (로컬 자문) |
 
-> `scripts/check-contrast.mjs` 같은 자작 OKLCH→sRGB 변환은 만들지 않는다 — 부정확 위험. 대비는 브라우저 canvas(`ctx.fillStyle`)로 임의 CSS 색을 sRGB 바이트화해 spec 안에서 계산한다.
-
-> Extension Page auth/history는 현재 mock(`App.tsx` placeholder) → v1 검증은 **위젯 + 갤러리**만 의미 있음. 실화면 구현 시 자동으로 리스킨된 토큰 적용.
+> Storybook은 `:root` 렌더(Extension Page Surface 계열) — 실제 위젯 Shadow DOM(`:root→:host` 치환)은 e2e 스펙만 검증한다.
+> `scripts/check-contrast.mjs` 같은 자작 변환은 안 만듦 — 대비는 Storybook a11y(axe)가 담당.
+> Extension Page auth/history는 현재 mock → v1 검증은 **위젯(e2e) + 컴포넌트(Storybook)**. 실화면 구현 시 자동 적용.
+> Storybook은 devDependency만 — 익스텐션 번들 미포함. Chromatic(시각 회귀 SaaS) 도입은 별도 결정.
 
 ---
 
@@ -347,7 +346,7 @@ design-system {mode} 완료
 산출물
   docs/features/design-system/{생성된 문서 목록}
   apps/extension/styles/tokens.css ({N}개 토큰)
-  apps/extension/entrypoints/gallery/ ({N}개 컴포넌트)
+  apps/extension/.storybook/ ({N}개 스토리)
   e2e/design-system.spec.ts
   docs/ui/design-system.md (## 기초 재구성)
 
