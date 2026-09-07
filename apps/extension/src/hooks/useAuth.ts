@@ -8,6 +8,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 export function useAuth(): {
     authState: AuthState;
     loginWithGoogle: () => Promise<void>;
+    logout: () => Promise<void>;
 } {
     const [authState, setAuthState] = useState<AuthState>({
         user: null,
@@ -15,6 +16,7 @@ export function useAuth(): {
         expiresAt: null,
         status: 'idle',
         error: null,
+        sessionExpiredMessage: null,
     });
 
     useEffect(() => {
@@ -96,6 +98,7 @@ export function useAuth(): {
                 expiresAt: data.expiresAt,
                 status: 'authenticated',
                 error: null,
+                sessionExpiredMessage: null,
             });
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
@@ -112,5 +115,50 @@ export function useAuth(): {
         }
     };
 
-    return { authState, loginWithGoogle };
+    useEffect(() => {
+        const listener = (
+            changes: Record<string, chrome.storage.StorageChange>,
+            area: string,
+        ) => {
+            if (area !== 'local') return;
+            if (changes.sessionExpiredMessage?.newValue) {
+                setAuthState({
+                    user: null,
+                    accessToken: null,
+                    expiresAt: null,
+                    status: 'idle',
+                    error: null,
+                    sessionExpiredMessage: changes.sessionExpiredMessage.newValue as string,
+                });
+            }
+        };
+        chrome.storage.onChanged.addListener(listener);
+        return () => {
+            chrome.storage.onChanged.removeListener(listener);
+        };
+    }, []);
+
+    const logout = async (): Promise<void> => {
+        if (authState.accessToken) {
+            try {
+                await fetch(`${API_BASE_URL}/api/auth/logout`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${authState.accessToken}` },
+                });
+            } catch {
+                // best-effort
+            }
+        }
+        await chrome.storage.local.remove(['accessToken', 'expiresAt', 'sessionExpiredMessage']);
+        setAuthState({
+            user: null,
+            accessToken: null,
+            expiresAt: null,
+            status: 'idle',
+            error: null,
+            sessionExpiredMessage: null,
+        });
+    };
+
+    return { authState, loginWithGoogle, logout };
 }

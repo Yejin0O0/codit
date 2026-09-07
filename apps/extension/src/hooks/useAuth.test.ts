@@ -114,4 +114,60 @@ describe('useAuth', () => {
         await act(async () => {});
         expect(result.current.authState.status).toBe('idle');
     });
+
+    it('logout 호출 시 chrome.storage.local을 초기화하고 authState를 리셋한다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'test-token',
+            expiresAt: Date.now() + 1000 * 60 * 60,
+        });
+        const { result } = renderHook(() => useAuth());
+        await act(async () => {});
+        expect(result.current.authState.status).toBe('authenticated');
+
+        await act(async () => {
+            await result.current.logout();
+        });
+
+        expect(result.current.authState.status).toBe('idle');
+        const stored = await fakeBrowser.storage.local.get(['accessToken', 'expiresAt']);
+        expect(stored.accessToken).toBeUndefined();
+    });
+
+    it('logout 호출 시 백엔드 /api/auth/logout을 Authorization 헤더와 함께 호출한다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'test-token',
+            expiresAt: Date.now() + 1000 * 60 * 60,
+        });
+        const mockFetch = vi.spyOn(global, 'fetch').mockResolvedValue(
+            new Response(null, { status: 200 }),
+        );
+        const { result } = renderHook(() => useAuth());
+        await act(async () => {});
+
+        await act(async () => {
+            await result.current.logout();
+        });
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining('/api/auth/logout'),
+            expect.objectContaining({
+                method: 'POST',
+                headers: expect.objectContaining({
+                    Authorization: 'Bearer test-token',
+                }),
+            }),
+        );
+    });
+
+    it('storage에 sessionExpiredMessage가 생기면 authState를 초기화하고 sessionExpiredMessage를 세팅한다', async () => {
+        const { result } = renderHook(() => useAuth());
+        await act(async () => {});
+
+        await act(async () => {
+            await fakeBrowser.storage.local.set({ sessionExpiredMessage: '세션이 만료되었습니다' });
+        });
+
+        expect(result.current.authState.sessionExpiredMessage).toBe('세션이 만료되었습니다');
+        expect(result.current.authState.status).toBe('idle');
+    });
 });
