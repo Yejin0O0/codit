@@ -1,0 +1,8 @@
+{
+  "java.configuration.updateBuildConfiguration": "interactive",
+
+  "// tailwind v4": "@theme / @utility / @custom-variant / @apply 를 VS Code 내장 CSS 검사기가 모름 → 가짜 'Unknown at rule' 경고. 빌드·lint 는 정상. (Tailwind CSS IntelliSense 확장 설치 시 자동 인식)",
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore"
+}

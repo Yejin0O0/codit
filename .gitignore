@@ -29,7 +29,9 @@ backend/out/
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 *.iml
 
 # OS
