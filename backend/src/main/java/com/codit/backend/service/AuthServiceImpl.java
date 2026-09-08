@@ -51,7 +51,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseGet(() -> findOrCreateUser(provider, profile));
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
-        long expiresAt = System.currentTimeMillis() + jwtTokenProvider.getAccessTokenExpirySeconds() * 1000;
+        long expiresAt = computeAccessTokenExpiresAt();
 
         UserProfile userProfile = UserProfile.builder()
                 .id(user.getId())
@@ -60,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
                 .role(user.getRole() != null ? user.getRole().name() : Role.USER.name())
                 .build();
 
-        refreshTokenRepository.save(buildRefreshToken(user));
+        rotateRefreshToken(user);
 
         return AuthTokenResponse.builder()
                 .accessToken(accessToken)
@@ -111,12 +111,24 @@ public class AuthServiceImpl implements AuthService {
             throw new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
         String newAccessToken = jwtTokenProvider.generateAccessToken(user.getId());
-        long expiresAt = System.currentTimeMillis() + jwtTokenProvider.getAccessTokenExpirySeconds() * 1000;
-        refreshTokenRepository.save(buildRefreshToken(user));
+        long expiresAt = computeAccessTokenExpiresAt();
+        rotateRefreshToken(user);
         return TokenRefreshResponse.builder()
                 .accessToken(newAccessToken)
                 .expiresAt(expiresAt)
                 .build();
+    }
+
+    private long computeAccessTokenExpiresAt() {
+        return System.currentTimeMillis() + jwtTokenProvider.getAccessTokenExpirySeconds() * 1000;
+    }
+
+    private void rotateRefreshToken(User user) {
+        // findByUser는 단일 결과를 기대하는 Optional 반환 메서드이므로,
+        // 기존 row를 지우지 않고 매번 새로 저장하면 두 번째 rotation부터
+        // 2건 이상 매칭되어 IncorrectResultSizeDataAccessException이 발생한다.
+        refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepository.save(buildRefreshToken(user));
     }
 
     private RefreshToken buildRefreshToken(User user) {

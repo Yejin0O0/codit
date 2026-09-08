@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -261,6 +263,7 @@ class AuthServiceTest {
 
         authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect");
 
+        verify(refreshTokenRepository).deleteByUser(savedUser);
         verify(refreshTokenRepository).save(any(RefreshToken.class));
     }
 
@@ -281,6 +284,25 @@ class AuthServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getAccessToken()).isEqualTo("new-access-token");
         verify(refreshTokenRepository).save(any(RefreshToken.class));
+    }
+
+    @Test
+    @DisplayName("refresh는 기존 Refresh Token을 삭제한 뒤에 새 Refresh Token을 저장해야 한다 (중복 INSERT로 인한 findByUser 500 방지)")
+    void refreshShouldDeleteExistingRefreshTokenBeforeSavingNewOne() {
+        User user = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        RefreshToken storedRefreshToken = RefreshToken.builder()
+                .user(user).token("old-refresh-token").expiresAt(LocalDateTime.now().plusDays(7)).build();
+        when(jwtTokenProvider.getUserIdIgnoreExpiry("expired-access-token")).thenReturn(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(refreshTokenRepository.findByUser(user)).thenReturn(Optional.of(storedRefreshToken));
+        when(jwtTokenProvider.generateAccessToken(1L)).thenReturn("new-access-token");
+        when(jwtTokenProvider.getAccessTokenExpirySeconds()).thenReturn(3600L);
+
+        authService.refresh("expired-access-token");
+
+        InOrder order = inOrder(refreshTokenRepository);
+        order.verify(refreshTokenRepository).deleteByUser(user);
+        order.verify(refreshTokenRepository).save(any(RefreshToken.class));
     }
 
     @Test
