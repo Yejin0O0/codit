@@ -4,15 +4,18 @@
 > Layer 2 R0 · 에픽 #51 · 이슈 #52. `PanelShell`·`CoditWidget` **레이아웃만** 재설계 —
 > props 시그니처·동작 로직 불변.
 
-## 재설계 결정 (Product Decision)
+## 재설계 결정 (Product Decision — 스파이크 스토리에서 개발자 확정)
 
 | # | 항목 | 결정 |
 |---|------|------|
-| 1 | 섹션 구분 | **inset hairline** — 헤더/푸터 divider를 전폭 `border-b`/`border-t`에서, 좌우 여백이 있는(inset) 얇고 옅은 선(`border-border/60`)으로. 320px 좁은 폭에서 답답함 완화, 완전 무경계는 SWEA 흰 페이지 위에서 헤더가 떠 보여 배제 |
+| 1 | 섹션 구분 | **전폭 divider 유지** — 헤더 `border-b` / 푸터 `border-t` 그대로. (스파이크에서 A 선택 — 320px 흰 배경 위에서 명확한 구조가 낫다고 판단) |
 | 2 | 진행 단계 | **도트** — `2 / 4` 텍스트 → `● ● ○ ○` (완료+현재 채움 / 남음 빈). 헤더 우측, 접기 버튼 왼쪽. `step` 미주입 시 미렌더 |
-| 3 | 제목 시맨틱 | `<h2>` heading (기존 `<span>`) — a11y. 시각 스타일(`text-sm font-semibold`)은 유지 |
-| 4 | 아이콘 | 전부 인라인 `<svg>` (`panel-shell.tsx` 내부). 라이브러리 미도입 원칙 |
-| 5 | 간격 리듬 | 헤더/푸터 `py` 통일, 본문 `py` 한 단계 크게. `px-4` 공통 유지 |
+| 3 | 밀도 | **roomy** — 헤더/푸터 `py-3.5`, 본문 `py-5` (현재 py-3 / py-4 → 한 단계씩 크게). `px-4` 공통 유지 |
+| 4 | 제목 시맨틱 | `<h2>` heading (기존 `<span>`) — a11y. 시각 스타일(`text-sm font-semibold`)은 유지 |
+| 5 | 아이콘 | 전부 인라인 `<svg>` (`panel-shell.tsx` 내부). 라이브러리 미도입 원칙 |
+
+> **현재 대비 실제 변경**: ① step 텍스트 → 도트  ② 밀도 roomy  ③ 제목 h2.
+> divider·footer 버튼 배치·shadow·drag·collapse 동작은 **전부 유지**.
 
 ---
 
@@ -24,13 +27,13 @@
 
 ```
 ┌───────────────────────────────┐  ← Card, shadow-lg(primary 틴트), rounded-xl
-│  풀이 타이머            [ ⌄ ]  │  h2            ghost icon btn
-│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │  inset hairline
+│  풀이 타이머            [ ⌄ ]  │  h2            ghost icon btn   (py-3.5)
+├───────────────────────────────┤  border-b (전폭)
 │                               │
-│        { 화면 본문 }          │  px-4, py 한 단계 크게
+│        { 화면 본문 }          │  px-4 py-5 (roomy)
 │                               │
-│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │  inset hairline
-│  ┌─────────────────────────┐  │
+├───────────────────────────────┤  border-t (전폭)
+│  ┌─────────────────────────┐  │  (py-3.5)
 │  │          완료           │  │  Button default, w-full
 │  └─────────────────────────┘  │
 └───────────────────────────────┘
@@ -41,11 +44,11 @@
 ```
 ┌───────────────────────────────┐
 │  메모        ● ● ○ ○   [ ⌄ ]  │  h2   step dots   ghost icon
-│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │
+├───────────────────────────────┤  border-b
 │                               │
-│        { 화면 본문 }          │
+│        { 화면 본문 }          │  py-5
 │                               │
-│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │
+├───────────────────────────────┤  border-t
 │  ┌─────────┐   ┌───────────┐  │
 │  │  뒤로   │   │   다음    │  │  outline(왼쪽) + default, 각 flex-1
 │  └─────────┘   └───────────┘  │
@@ -57,9 +60,9 @@
 ```
 ┌───────────────────────────────┐
 │  저장 완료             [ ⌄ ]  │
-│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │
+├───────────────────────────────┤  border-b
 │                               │
-│        { 화면 본문 }          │  footer 없음 → 본문이 하단 패딩까지
+│        { 화면 본문 }          │  py-5, footer 없음 → 본문이 하단까지
 │                               │
 └───────────────────────────────┘
 ```
@@ -84,14 +87,14 @@
 ```
 CoditWidget                         → 표현 전용 래퍼 (변경 없음: w-full, text-foreground)
 └── PanelShell                      → EXTEND ← shadcn Card
-    ├── <header>                    → hairline(inset, bottom) · 선택적 드래그 핸들
+    ├── <header>                    → border-b, px-4 py-3.5 · 선택적 드래그 핸들
     │   ├── <h2>{title}</h2>        → text-sm font-semibold, flex-1
     │   ├── StepDots (조건부)       → step="n / N" 파싱 → 원 N개 (n개 채움)
-    │   │                             인라인 <svg><circle> 또는 <span> 원
+    │   │                             <span> size-1.5 rounded-full (채움 bg-primary / 빈 border-input)
     │   └── Button (조건부)         → shadcn Button variant=ghost size=icon
     │       └── <svg> chevron-down  → aria-hidden, size-4
-    ├── <div>{children}</div>       → 본문 슬롯, px-4 + py(본문)
-    └── <footer>{footer}</footer>   → 조건부. hairline(inset, top). 화면이 Button 주입
+    ├── <div>{children}</div>       → 본문 슬롯, px-4 py-5
+    └── <footer>{footer}</footer>   → 조건부. border-t, px-4 py-3.5. 화면이 Button 주입
 ```
 
 새로 만드는 하위 컴포넌트: **`StepDots`** (PanelShell 내부 로컬 — 별도 파일/export 불필요).
