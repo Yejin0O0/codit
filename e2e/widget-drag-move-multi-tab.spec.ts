@@ -12,7 +12,7 @@ test.describe('widget-drag-move — 다중 탭 storage 동기화 (e2e-infra #28)
         await pageA.goto(MOCK_PROBLEM_URL);
         await pageB.goto(MOCK_PROBLEM_URL);
 
-        const headerA = pageA.getByText('풀이 타이머').locator('..');
+        const headerA = pageA.locator('[data-slot="panel-shell-header"]');
         await dragBy(headerA, -250, 200);
         const afterDragOnA = await getWidgetPosition(pageA);
 
@@ -31,7 +31,7 @@ test.describe('widget-drag-move — 다중 탭 storage 동기화 (e2e-infra #28)
         await pageA.goto(MOCK_PROBLEM_URL);
         await pageB.goto(MOCK_PROBLEM_URL);
 
-        const headerA = pageA.getByText('풀이 타이머').locator('..');
+        const headerA = pageA.locator('[data-slot="panel-shell-header"]');
         await dragBy(headerA, -250, 200);
         const afterDragOnA = await getWidgetPosition(pageA);
 
