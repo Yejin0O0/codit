@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,7 +27,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -263,7 +261,6 @@ class AuthServiceTest {
 
         authService.loginWithOAuth("GOOGLE", "auth-code", "http://redirect");
 
-        verify(refreshTokenRepository).deleteByUser(savedUser);
         verify(refreshTokenRepository).save(any(RefreshToken.class));
     }
 
@@ -278,31 +275,37 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByUser(user)).thenReturn(Optional.of(storedRefreshToken));
         when(jwtTokenProvider.generateAccessToken(1L)).thenReturn("new-access-token");
         when(jwtTokenProvider.getAccessTokenExpirySeconds()).thenReturn(3600L);
+        when(jwtTokenProvider.getRefreshTokenExpirySeconds()).thenReturn(604800L);
 
         TokenRefreshResponse result = authService.refresh("expired-access-token");
 
         assertThat(result).isNotNull();
         assertThat(result.getAccessToken()).isEqualTo("new-access-token");
-        verify(refreshTokenRepository).save(any(RefreshToken.class));
+        assertThat(storedRefreshToken.getToken()).isNotEqualTo("old-refresh-token");
     }
 
     @Test
-    @DisplayName("refresh는 기존 Refresh Token을 삭제한 뒤에 새 Refresh Token을 저장해야 한다 (중복 INSERT로 인한 findByUser 500 방지)")
-    void refreshShouldDeleteExistingRefreshTokenBeforeSavingNewOne() {
+    @DisplayName("refresh는 기존 Refresh Token row를 delete+insert 하지 않고 제자리에서 갱신해야 한다 (중복 INSERT로 인한 findByUser 500 방지)")
+    void refreshShouldRotateExistingRefreshTokenInPlaceWithoutDeleteOrReinsert() {
         User user = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        LocalDateTime originalExpiresAt = LocalDateTime.now().plusDays(7);
         RefreshToken storedRefreshToken = RefreshToken.builder()
-                .user(user).token("old-refresh-token").expiresAt(LocalDateTime.now().plusDays(7)).build();
+                .user(user).token("old-refresh-token").expiresAt(originalExpiresAt).build();
         when(jwtTokenProvider.getUserIdIgnoreExpiry("expired-access-token")).thenReturn(1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(refreshTokenRepository.findByUser(user)).thenReturn(Optional.of(storedRefreshToken));
         when(jwtTokenProvider.generateAccessToken(1L)).thenReturn("new-access-token");
         when(jwtTokenProvider.getAccessTokenExpirySeconds()).thenReturn(3600L);
+        when(jwtTokenProvider.getRefreshTokenExpirySeconds()).thenReturn(604800L);
 
         authService.refresh("expired-access-token");
 
-        InOrder order = inOrder(refreshTokenRepository);
-        order.verify(refreshTokenRepository).deleteByUser(user);
-        order.verify(refreshTokenRepository).save(any(RefreshToken.class));
+        // delete+insert 방식은 두 번째 rotation부터 findByUser가 2건을 매칭해 500을 유발했다.
+        // 같은 row를 제자리에서 갱신하면 그 창(window)이 아예 없다.
+        verify(refreshTokenRepository, never()).deleteByUser(any(User.class));
+        verify(refreshTokenRepository, never()).save(any(RefreshToken.class));
+        assertThat(storedRefreshToken.getToken()).isNotEqualTo("old-refresh-token");
+        assertThat(storedRefreshToken.getExpiresAt()).isAfter(originalExpiresAt.minusSeconds(1));
     }
 
     @Test

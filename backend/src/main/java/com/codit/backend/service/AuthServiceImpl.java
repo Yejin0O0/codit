@@ -124,19 +124,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void rotateRefreshToken(User user) {
-        // findByUser는 단일 결과를 기대하는 Optional 반환 메서드이므로,
-        // 기존 row를 지우지 않고 매번 새로 저장하면 두 번째 rotation부터
-        // 2건 이상 매칭되어 IncorrectResultSizeDataAccessException이 발생한다.
-        refreshTokenRepository.deleteByUser(user);
-        refreshTokenRepository.save(buildRefreshToken(user));
-    }
+        // delete+insert 대신 기존 row를 제자리에서 갱신한다 — 동시에 여러 refresh 요청이
+        // (다른 탭/기기 등에서) 들어와도 row가 지워졌다 다시 생기는 창이 없어, 두 요청이
+        // findByUser에서 서로 다른 row를 보는 일이 없다(RefreshToken#rotate 참고).
+        String newToken = UUID.randomUUID().toString();
+        LocalDateTime newExpiresAt = LocalDateTime.now().plusSeconds(jwtTokenProvider.getRefreshTokenExpirySeconds());
 
-    private RefreshToken buildRefreshToken(User user) {
-        return RefreshToken.builder()
-                .user(user)
-                .token(UUID.randomUUID().toString())
-                .expiresAt(LocalDateTime.now().plusDays(7))
-                .build();
+        refreshTokenRepository.findByUser(user)
+                .ifPresentOrElse(
+                        existing -> existing.rotate(newToken, newExpiresAt),
+                        () -> refreshTokenRepository.save(RefreshToken.builder()
+                                .user(user)
+                                .token(newToken)
+                                .expiresAt(newExpiresAt)
+                                .build()));
     }
 
     private User findUserByToken(String token) {
