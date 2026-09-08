@@ -71,6 +71,30 @@ describe('useAuth', () => {
         expect(stored.sessionExpiredMessage).toBeUndefined();
     });
 
+    it('로그인 성공 시 storage 쓰기를 한 번의 set 호출로 묶어 원자적으로 처리한다', async () => {
+        await fakeBrowser.storage.local.set({ sessionExpiredMessage: '세션이 만료되었습니다' });
+        vi.spyOn(chrome.identity, 'getRedirectURL').mockReturnValue('https://abc.chromiumapp.org/');
+        vi.spyOn(chrome.identity, 'launchWebAuthFlow').mockImplementation(async ({ url }) => {
+            const state = new URL(url as string).searchParams.get('state') ?? '';
+            return `https://abc.chromiumapp.org/?code=test-code&state=${state}`;
+        });
+        const mockUser = { id: 1, email: 'test@gmail.com', nickname: 'Test User', role: 'USER' };
+        vi.spyOn(global, 'fetch').mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({ accessToken: 'test-token', expiresAt: 9999999, user: mockUser }),
+        } as unknown as Response);
+        const removeSpy = vi.spyOn(chrome.storage.local, 'remove');
+
+        const { result } = renderHook(() => useAuth());
+        await act(async () => {
+            await result.current.loginWithGoogle();
+        });
+
+        // set 하나로 묶지 않고 set(accessToken/expiresAt) + remove(sessionExpiredMessage)로
+        // 나누면 그 사이 다른 컨텍스트가 "인증됨 + 세션만료" 모순 상태를 읽을 수 있다.
+        expect(removeSpy).not.toHaveBeenCalled();
+    });
+
     it('마운트 시 chrome.storage.local에 토큰이 있으면 authenticated 상태로 복원되어야 한다', async () => {
         await fakeBrowser.storage.local.set({
             accessToken: 'stored-token',

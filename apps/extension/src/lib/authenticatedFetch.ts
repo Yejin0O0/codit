@@ -23,12 +23,22 @@ async function doRefresh(currentToken: string): Promise<RefreshResult> {
     if (!response.ok) {
         return { ok: false, reason: response.status === 401 ? 'expired' : 'network' };
     }
-    const data = (await response.json()) as TokenRefreshResponse;
+    let data: TokenRefreshResponse;
+    try {
+        data = (await response.json()) as TokenRefreshResponse;
+    } catch {
+        // 백엔드가 200을 반환했지만 body가 정상 JSON이 아닌 경우(프록시 에러 페이지 등)도
+        // refresh 토큰 자체는 알 수 없는 상태이므로 'network'로 취급해 세션을 유지한다.
+        return { ok: false, reason: 'network' };
+    }
+    // sessionExpiredMessage 제거를 accessToken/expiresAt 저장과 한 번의 set 호출로 묶어
+    // 원자적으로 처리한다 — 별도 호출로 나누면 그 사이에 다른 컨텍스트(팝업/서비스워커)가
+    // mount해 "유효한 accessToken" + "지워지기 전 sessionExpiredMessage"를 동시에 읽을 수 있다.
     await chrome.storage.local.set({
         accessToken: data.accessToken,
         expiresAt: data.expiresAt,
+        sessionExpiredMessage: null,
     });
-    await chrome.storage.local.remove('sessionExpiredMessage');
     return { ok: true, accessToken: data.accessToken };
 }
 
@@ -46,8 +56,13 @@ function toHeaderRecord(headers?: HeadersInit): Record<string, string> {
 }
 
 async function clearSessionAndNotify(): Promise<void> {
-    await chrome.storage.local.set({ sessionExpiredMessage: '세션이 만료되었습니다' });
-    await chrome.storage.local.remove(['accessToken', 'expiresAt']);
+    // sessionExpiredMessage 세팅과 accessToken/expiresAt 제거를 한 번의 set 호출로 묶어
+    // 원자적으로 처리한다(반대 방향은 doRefresh 성공 경로 참고).
+    await chrome.storage.local.set({
+        sessionExpiredMessage: '세션이 만료되었습니다',
+        accessToken: null,
+        expiresAt: null,
+    });
 }
 
 export async function authenticatedFetch(url: string, init?: RequestInit): Promise<Response> {

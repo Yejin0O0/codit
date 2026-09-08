@@ -100,12 +100,15 @@ export function useAuth(): {
             }
 
             const data = await response.json();
+            // accessToken/expiresAt 저장과 sessionExpiredMessage 제거(이전 세션이 만료돼
+            // 남아있던 안내가 재로그인 후에도 되살아나지 않도록)를 한 번의 set 호출로 묶어
+            // 원자적으로 처리한다 — 별도 호출로 나누면 그 사이에 다른 컨텍스트가 mount해
+            // "유효한 accessToken" + "지워지기 전 sessionExpiredMessage"를 동시에 읽을 수 있다.
             await chrome.storage.local.set({
                 accessToken: data.accessToken,
                 expiresAt: data.expiresAt,
+                sessionExpiredMessage: null,
             });
-            // 이전 세션이 만료돼 남아있던 안내가 재로그인 후에도 되살아나지 않도록 지운다.
-            await chrome.storage.local.remove('sessionExpiredMessage');
 
             setAuthState({
                 ...RESET_AUTH_STATE,
