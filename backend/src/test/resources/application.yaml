@@ -21,3 +21,4 @@ spring:
 jwt:
   secret: test-only-secret-key-for-context-loads-min-32-bytes
   access-token-expiry-seconds: 3600
+  refresh-token-expiry-seconds: 604800

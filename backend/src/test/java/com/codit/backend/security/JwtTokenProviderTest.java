@@ -10,7 +10,7 @@ class JwtTokenProviderTest {
 
     private static final String SECRET = "test-secret-key-for-jwt-token-provider-min-32-bytes";
 
-    private final JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(new JwtProperties(SECRET, 3600));
+    private final JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(new JwtProperties(SECRET, 3600, 604800));
 
     @Test
     @DisplayName("발급한 토큰에서 동일한 userId를 꺼낼 수 있어야 한다")
@@ -25,7 +25,7 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("만료된 토큰이면 예외를 던져야 한다")
     void shouldThrowWhenTokenIsExpired() {
-        JwtTokenProvider expiredProvider = new JwtTokenProvider(new JwtProperties(SECRET, -10));
+        JwtTokenProvider expiredProvider = new JwtTokenProvider(new JwtProperties(SECRET, -10, 604800));
         String expiredToken = expiredProvider.generateAccessToken(42L);
 
         assertThatThrownBy(() -> jwtTokenProvider.getUserId(expiredToken))
@@ -46,7 +46,7 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("만료됐지만 서명이 유효한 토큰이면 getUserIdIgnoreExpiry가 userId를 반환한다")
     void getUserIdIgnoreExpiryShouldReturnUserIdWhenTokenExpiredButSignatureValid() {
-        JwtTokenProvider expiredProvider = new JwtTokenProvider(new JwtProperties(SECRET, -10));
+        JwtTokenProvider expiredProvider = new JwtTokenProvider(new JwtProperties(SECRET, -10, 604800));
         String expiredToken = expiredProvider.generateAccessToken(99L);
 
         long userId = jwtTokenProvider.getUserIdIgnoreExpiry(expiredToken);
@@ -58,7 +58,7 @@ class JwtTokenProviderTest {
     @DisplayName("서명이 유효하지 않으면 getUserIdIgnoreExpiry가 예외를 던진다")
     void getUserIdIgnoreExpiryShouldThrowWhenTokenSignatureIsInvalid() {
         JwtTokenProvider otherProvider = new JwtTokenProvider(
-                new JwtProperties("different-secret-key-for-testing-min-32-bytes", 3600));
+                new JwtProperties("different-secret-key-for-testing-min-32-bytes", 3600, 604800));
         String tokenWithWrongSignature = otherProvider.generateAccessToken(42L);
 
         assertThatThrownBy(() -> jwtTokenProvider.getUserIdIgnoreExpiry(tokenWithWrongSignature))
