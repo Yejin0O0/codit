@@ -8,45 +8,103 @@
  */
 
 :root {
+    /*
+     * Codit v1 팔레트 — Radix Colors 기반 (iris 브랜드 + mauve 뉴트럴 + green/amber/red 의미).
+     * hex 원본·근거·트레이드오프: docs/features/design-system/prd.md ADR-1.
+     * 통일 라이트. Surface 오버라이드(위젯 :host / 페이지 :root)는 각 style.css.
+     */
     --radius: 0.625rem;
 
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.985 0 0);
-    --success: oklch(0.596 0.145 163.225);
-    --success-foreground: oklch(0.985 0 0);
-    --warning: oklch(0.828 0.189 84.429);
-    --warning-foreground: oklch(0.145 0 0);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
+    --background: oklch(0.9837 0.0041 301.43); /* #FAF9FC */
+    --foreground: oklch(0.2087 0.0281 300.38); /* #1A1523 */
+    --card: oklch(0.9537 0.0021 17.2); /* #F1EFEF — SWEA 흰 페이지 위 회색 패널 분리 */
+    --card-foreground: oklch(0.2087 0.0281 300.38);
+    /* popover 표면은 card 와 동일 계열로 묶어둔다 — 리브랜딩 시 함께 이동 */
+    --popover: var(--card);
+    --popover-foreground: var(--card-foreground);
+    --primary: oklch(0.5403 0.1841 278.28); /* #5B5BD6 iris-9 */
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.9554 0.0082 301.35); /* #F1EFF5 mauve-3 */
+    --secondary-foreground: oklch(0.2428 0.0193 298.69); /* #211E28 */
+    /* muted 표면은 secondary 와 동일 — 함께 이동 */
+    --muted: var(--secondary);
+    --muted-foreground: oklch(0.5053 0.0174 294.11); /* #65636E */
+    --accent: oklch(0.9561 0.0215 294.59); /* #F1EEFE */
+    --accent-foreground: oklch(0.5111 0.1739 279.84); /* #5753C6 iris-11 */
+    --destructive: oklch(0.6256 0.1933 23.03); /* #E5484D red-9 */
+    --destructive-foreground: oklch(1 0 0);
+    --success: oklch(0.6406 0.1329 157.68); /* #30A46C green-9 */
+    --success-foreground: oklch(1 0 0);
+    --warning: oklch(0.8537 0.1572 84.13); /* #FFC53D amber-9 */
+    --warning-foreground: oklch(0.3522 0.0486 54.17); /* #4F3422 amber-12 */
+    --border: oklch(0.8747 0.0185 303.38); /* #D8D3E0 mauve-7 */
+    --input: oklch(0.8106 0.0301 300.89); /* #C4BDD2 mauve-8 */
+    --ring: oklch(0.7293 0.1182 281.44); /* #9B9EF0 iris-8 */
+
+    /* motion — Material 3 easing/duration. idle 위젯 무애니(behavioral). prd.md ADR-6 */
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --duration-slow: 300ms;
+
+    /* z-index — 위젯 mount 는 JS(mount.tsx)가 --z-widget 값과 동기화. prd.md ADR-7 */
+    --z-widget: 999999;
+    --z-overlay: 2147483000;
+    --z-toast: 2147483001;
+
+    /* 브랜드 워드마크 그라데이션 — 로고 락업(#8FB5FB → #A193FA). docs/ui/brand/README.md */
+    --brand-wordmark-from: oklch(0.7725 0.1091 262.19);
+    --brand-wordmark-to: oklch(0.7182 0.1472 288.35);
 }
 
+/* "Codit" 워드마크 — 그라데이션 텍스트. BrandHeader 전용. */
+@utility brand-wordmark {
+    background-image: linear-gradient(
+        90deg,
+        var(--brand-wordmark-from),
+        var(--brand-wordmark-to)
+    );
+    /* WebKit 은 최신 버전도 -webkit- 접두사를 요구할 수 있다. browserslist 미설정이라 수동 fallback. */
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+/*
+ * prefers-reduced-motion 존중 — 사용자가 모션 최소화를 원하면 모든 애니메이션·전환을 제거하고
+ * idle 위젯도 정적으로 유지한다. prd.md ADR-6.
+ * 세 Surface(content/page/popup)가 이 파일을 import 하므로 여기 한 곳에 둔다.
+ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/*
+ * .dark — v2 다크 모드 placeholder (휴면). v1 은 통일 라이트라 이 블록은 활성 경로가 아니다.
+ * 값은 shadcn 기본 무채색 그대로이며 v1 iris/mauve 팔레트로 튜닝되지 않았다 (issues.md).
+ * 특히 --primary 가 무채색이라 다크에서는 shadow-lg 의 primary 틴트도 회색이 된다.
+ * v2 에서 위젯 Surface 오버라이드로 교체 예정 — 그때 라이트 값 미러링 or 실제 다크 팔레트 튜닝.
+ */
 .dark {
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
+    --popover: var(--card);
+    --popover-foreground: var(--card-foreground);
     --primary: oklch(0.922 0 0);
     --primary-foreground: oklch(0.205 0 0);
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
+    --muted: var(--secondary);
     --muted-foreground: oklch(0.708 0 0);
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
@@ -59,6 +117,27 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
+}
+
+@theme {
+    /*
+     * Codit elevation — Material 3 레벨. Tailwind 기본 shadow-* 를 대체한다.
+     * 위젯 프레임(shadow-lg)은 primary 틴트로 "Codit 패널" 각인 + SWEA 흰 배경 분리. prd.md ADR-5.
+     */
+    --shadow-2xs: 0 1px 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+    --shadow-xs: 0 1px 2px 0 color-mix(in oklab, var(--foreground) 6%, transparent);
+    --shadow-sm:
+        0 1px 2px 0 color-mix(in oklab, var(--foreground) 7%, transparent),
+        0 1px 3px 0 color-mix(in oklab, var(--foreground) 5%, transparent);
+    --shadow-md:
+        0 2px 8px -2px color-mix(in oklab, var(--foreground) 10%, transparent),
+        0 1px 3px -1px color-mix(in oklab, var(--foreground) 7%, transparent);
+    --shadow-lg:
+        0 16px 40px -12px color-mix(in oklab, var(--primary) 28%, transparent),
+        0 4px 12px -2px color-mix(in oklab, var(--foreground) 10%, transparent);
+    --shadow-xl:
+        0 24px 56px -16px color-mix(in oklab, var(--primary) 30%, transparent),
+        0 6px 18px -4px color-mix(in oklab, var(--foreground) 12%, transparent);
 }
 
 @theme inline {

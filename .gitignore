@@ -29,7 +29,9 @@ backend/out/
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 *.iml
 
 # OS
@@ -47,3 +49,6 @@ Thumbs.db
 .project
 .classpath
 .settings/
+
+# Playwright 시각 스냅샷 — headful Chrome 이라 머신 의존. 로컬에서만 생성/비교 (DS_SNAP=1).
+e2e/*-snapshots/

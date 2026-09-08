@@ -1,5 +1,7 @@
 import { cn } from '@/lib/utils';
 
+import { CoditMark } from './codit-mark';
+
 interface BrandHeaderProps {
     /** full: 로고 + 워드마크 + 설명 문구 / compact: 로고 + 워드마크 (설명 문구만 생략) */
     variant?: 'full' | 'compact';
@@ -17,15 +19,8 @@ export function BrandHeader({ variant = 'full', className }: BrandHeaderProps) {
             className={cn('flex items-center gap-2', isFull && 'flex-col', className)}
         >
             <span className="flex items-center gap-1.5">
-                <svg
-                    viewBox="0 0 16 16"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    className="text-primary size-5"
-                >
-                    <path d="M8 0 16 8 8 16 0 8Z" />
-                </svg>
-                <span className="text-base font-semibold">Codit</span>
+                <CoditMark withCheck className="text-primary" />
+                <span className="brand-wordmark text-base font-bold tracking-tight">Codit</span>
             </span>
             {isFull ? (
                 <span className="text-muted-foreground text-sm">{DESCRIPTION}</span>

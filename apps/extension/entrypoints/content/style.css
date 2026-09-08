@@ -22,7 +22,7 @@
         'Noto Sans KR', 'Malgun Gothic', sans-serif;
     font-size: 14px;
     font-weight: 400;
-    line-height: 1.5;
+    line-height: 1.6; /* 한글 가독성 — prd.md ADR-2 */
     letter-spacing: normal;
     text-align: left;
     color: var(--foreground);

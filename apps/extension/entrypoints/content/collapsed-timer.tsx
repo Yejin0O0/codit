@@ -1,5 +1,6 @@
 import type { Ref } from 'react';
 
+import { CoditMark } from '@/components/codit/codit-mark';
 import { Button } from '@/components/ui/button';
 import { formatDuration } from '@/lib/format-duration';
 import { cn } from '@/lib/utils';
@@ -46,18 +47,13 @@ export function CollapsedTimer({
             ref={ref}
             type="button"
             variant="outline"
-            className={cn('h-10 gap-2 px-3.5', dragHandlers && 'cursor-grab')}
+            // pill = 완전 원형 (prd.md ADR-4) · shadow-lg = SWEA 흰 페이지 위 분리 (ADR-5)
+            className={cn('h-10 gap-2 rounded-full px-3.5 shadow-lg', dragHandlers && 'cursor-grab')}
             onPointerDown={dragHandlers?.onPointerDown}
             onClick={handleClick}
         >
-            <svg
-                viewBox="0 0 16 16"
-                aria-hidden="true"
-                fill="currentColor"
-                className="text-primary size-5"
-            >
-                <path d="M8 0 16 8 8 16 0 8Z" />
-            </svg>
+            {/* C 마크 — pill 은 단색(체크 생략). docs/ui/brand/README.md */}
+            <CoditMark className="text-primary" />
             <span className="sr-only">{srLabel}</span>
             <span className="text-base font-medium tabular-nums">{formatDuration(seconds)}</span>
             {status === 'stopped' ? (

@@ -1,0 +1,21 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* 토큰 SoT — Storybook 은 자체 document 라 :root 로 적용 (Extension Page Surface 계열). */
+@import '../styles/tokens.css';
+
+@custom-variant dark (&:is(.dark *));
+
+body {
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo',
+        'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    color: var(--foreground);
+}
+
+@layer base {
+    * {
+        border-color: var(--border);
+        outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+}

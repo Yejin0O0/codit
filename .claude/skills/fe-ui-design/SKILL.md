@@ -24,7 +24,7 @@ prd.md (사용자 스토리 + AC)
     ↓ 개발자 응답 후 확정
     ↓ 산출물 저장
 docs/features/{feature}/ui-design.md
-docs/ui/design-system.md (최초 실행 시 생성 / 이후 업데이트)
+docs/ui/design-system.md → ## feature별 인벤토리 만 업데이트 (## 기초 는 /design-system 소관)
 ```
 
 ---
@@ -59,19 +59,27 @@ docs/ui/design-system.md (최초 실행 시 생성 / 이후 업데이트)
 ls docs/ui/design-system.md 2>/dev/null
 ```
 
-**파일이 없는 경우 (최초 실행)**
+`docs/ui/design-system.md`는 두 섹션으로 나뉜다:
 
-shadcn/ui 기본값을 기준으로 설계를 진행한다. 설계 완료 후 5단계에서 파일을 새로 생성한다.
+| 섹션 | 소유 | fe-ui-design 권한 |
+|------|------|------------------|
+| `## 기초` | `design-system` 스킬 | **읽기 전용 입력** — 토큰 값·팔레트·스케일·SWEA 공존 규칙 |
+| `## feature별 인벤토리` | fe-ui-design | 읽기 + 이 feature 항목 추가 (5-2단계) |
+
+**파일이 없는 경우**
+
+기초 레이어가 아직 없다는 뜻이다. shadcn/ui 기본값을 기준으로 설계를 진행하되,
+새 토큰 값을 지어내지 않는다. 설계 완료 후 개발자에게 `/design-system` 실행을 권한다.
+5단계에서 `## feature별 인벤토리`만 생성한다 (`## 기초`는 생성하지 않는다).
 
 **파일이 있는 경우**
 
-`docs/ui/design-system.md`를 읽어 다음을 파악한다:
+- `## 기초` — 확정된 토큰(색·간격·폰트·radius 등)과 SWEA 공존 규칙을 읽어 **일관된 설계의 전제로 삼는다.** 값을 바꾸거나 새 값을 제안하지 않는다.
+- `## feature별 인벤토리` — 이미 사용 중인 컴포넌트·EXTEND 패턴·프로젝트 컴포넌트 패턴을 읽는다.
 
-- 이미 사용 중인 shadcn/ui 컴포넌트와 커스터마이징 내용
-- 확정된 디자인 토큰 (색상, 간격, 폰트)
-- 프로젝트 컴포넌트 패턴
-
-기존 결정과 일관된 설계를 한다. 이미 확정된 토큰·컴포넌트 선택을 뒤집지 않는다.
+이미 확정된 토큰·컴포넌트 선택을 뒤집지 않는다. 이 feature가 `## 기초`에 없는
+새 토큰(색·간격·radius 등)을 필요로 하면, **값을 정하지 말고** "이 토큰이 필요함"만
+Product Decision(2단계) 또는 결과 보고에 flag하고 `/design-system` 소관으로 넘긴다.
 
 ### 1-3. 기존 컴포넌트 패턴 파악
 
@@ -228,40 +236,37 @@ FeaturePage
 {prd.md Out of Scope에서 UI 관련 항목}
 ```
 
-### 5-2. design-system.md 업데이트
+### 5-2. design-system.md `## feature별 인벤토리` 업데이트
 
-이 Feature에서 새로 사용하거나 커스터마이징한 shadcn/ui 컴포넌트와 디자인 토큰을 `docs/ui/design-system.md`에 반영한다.
+이 Feature에서 새로 사용하거나 커스터마이징한 컴포넌트를 `docs/ui/design-system.md`의
+`## feature별 인벤토리` 섹션에만 반영한다.
 
-**최초 실행 (파일 없음):** 파일을 새로 생성한다.
+- **`## 기초` 섹션은 절대 건드리지 않는다** — 토큰 값·팔레트·스케일은 `/design-system` 소관.
+- **디자인 토큰 행을 추가하지 않는다.** 이 feature가 새 토큰을 필요로 했다면 6단계 결과 보고에 flag만 한다.
+
+**`## feature별 인벤토리`가 없는 경우:** 섹션을 새로 만든다 (파일 전체를 생성하지 않는다 — `## 기초`는 `/design-system`이 만든다).
 
 ```markdown
-# Design System
+## feature별 인벤토리
 
-> Codit Chrome Extension UI 설계 기준.
-> fe-ui-design 스킬이 Feature마다 업데이트한다.
-> tdd-green-frontend는 이 문서를 읽어 구현 시 참조한다.
+### 사용 중인 컴포넌트
 
-## UI Library
+| 컴포넌트 | 출처 | 분류 | 커스터마이징 | 첫 사용 Feature |
+|---------|------|------|------------|----------------|
+| Badge   | shadcn/ui | USE | 없음 | {feature명} |
 
-shadcn/ui
+### EXTEND 패턴
 
-## 사용 중인 컴포넌트
+| 이름 | 기반 | 확장 내용 |
+|------|------|----------|
 
-| 컴포넌트 | 커스터마이징 | 첫 사용 Feature |
-|---------|------------|----------------|
-| Badge   | 없음        | {feature명}     |
+### CUSTOM 컴포넌트
 
-## 디자인 토큰
-
-| 토큰 | 값 | 용도 | 첫 사용 Feature |
-|------|-----|------|----------------|
-
-## 컴포넌트 패턴
-
-{프로젝트 공통 패턴이 생기면 여기에 추가}
+| 이름 | 근거 |
+|------|------|
 ```
 
-**기존 파일 있음:** 이 Feature에서 새로 추가된 컴포넌트·토큰만 추가한다. 기존 내용은 수정하지 않는다.
+**섹션이 이미 있는 경우:** 이 Feature에서 새로 추가된 컴포넌트/EXTEND/CUSTOM 행만 추가한다. 기존 행은 수정하지 않는다.
 
 ---
 
@@ -272,7 +277,7 @@ fe-ui-design 완료 — {feature명} (이슈 #{N})
 
 산출물
   docs/features/{feature}/ui-design.md
-  docs/ui/design-system.md ({신규 생성 / N개 항목 추가})
+  docs/ui/design-system.md ## feature별 인벤토리 ({N}개 항목 추가)
 
 와이어프레임: {화면 수}개 화면
 컴포넌트: {컴포넌트 수}개 ({shadcn 컴포넌트 수}개 shadcn/ui)
@@ -280,6 +285,9 @@ UI State: {상태 수}개 상태 정의
 
 이번 Feature에서 추가된 shadcn/ui 컴포넌트
   {컴포넌트명} — {용도}
+
+필요한 새 토큰 (있으면 — /design-system 소관)
+  {토큰명} — {용도}. 값 미정
 
 다음 단계: /test-scenarios {N}
 ```
@@ -293,4 +301,7 @@ UI State: {상태 수}개 상태 정의
 - **production 소스 읽기 금지** — `apps/extension/entrypoints/`의 구현 코드는 패턴 파악용으로만 참조한다. 의존하지 않는다.
 - **Product Decision은 한 번만 보고** — 여러 결정 포인트가 있어도 모아서 한 번에 BLOCKED 처리한다.
 - **기존 design-system.md 결정 뒤집기 금지** — 이미 확정된 컴포넌트 선택과 토큰은 바꾸지 않는다.
-- **design-system.md 기존 내용 수정 금지** — 새 항목 추가만 허용. 기존 행은 건드리지 않는다.
+- **design-system.md 기존 내용 수정 금지** — `## feature별 인벤토리`에 새 항목 추가만 허용. 기존 행은 건드리지 않는다.
+- **토큰 값 정의·변경 금지** — 색·간격·radius·타이포·elevation·motion 값은 `/design-system` 소관. `## 기초` 섹션은 읽기 전용. 새 토큰이 필요하면 값을 정하지 말고 flag만 한다.
+
+관련 스킬: `design-system` (토큰 기초 레이어 — `## 기초` 섹션 소유)

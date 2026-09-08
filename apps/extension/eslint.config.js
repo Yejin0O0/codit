@@ -10,7 +10,14 @@ import prettierConfig from 'eslint-config-prettier';
 
 export default tseslint.config(
     {
-        ignores: ['.wxt/**', 'node_modules/**', '.output/**', 'dist/**', 'coverage/**'],
+        ignores: [
+            '.wxt/**',
+            'node_modules/**',
+            '.output/**',
+            'dist/**',
+            'coverage/**',
+            'storybook-static/**',
+        ],
     },
 
     js.configs.recommended,
