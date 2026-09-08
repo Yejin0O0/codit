@@ -15,9 +15,11 @@ const mockAuthState = (status: AuthStatus, extra: object = {}) =>
             expiresAt: null,
             error: null,
             status,
+            sessionExpiredMessage: null,
             ...extra,
         },
         loginWithGoogle: vi.fn(),
+        logout: vi.fn(),
     });
 
 describe('PopupApp', () => {

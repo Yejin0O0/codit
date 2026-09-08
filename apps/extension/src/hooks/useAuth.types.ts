@@ -6,4 +6,5 @@ export interface AuthState {
     expiresAt: number | null;
     status: AuthStatus;
     error: string | null;
+    sessionExpiredMessage: string | null;
 }

@@ -1,6 +1,8 @@
 package com.codit.backend.controller;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -8,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.codit.backend.dto.AuthTokenResponse;
 import com.codit.backend.dto.LoginRequest;
+import com.codit.backend.dto.TokenRefreshResponse;
 import com.codit.backend.dto.UserProfile;
 import com.codit.backend.exception.AuthErrorCode;
 import com.codit.backend.exception.AuthException;
@@ -95,6 +98,53 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login/GOOGLE")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new LoginRequest("bad-code", "http://redirect"))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("refresh 성공 시 200과 새 accessToken을 반환해야 한다")
+    void refreshShouldReturn200WithNewAccessTokenOnSuccess() throws Exception {
+        TokenRefreshResponse response = TokenRefreshResponse.builder()
+                .accessToken("new-access-token")
+                .expiresAt(System.currentTimeMillis() + 3600000L)
+                .build();
+        when(authService.refresh(anyString())).thenReturn(response);
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .header("Authorization", "Bearer expired-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("new-access-token"));
+    }
+
+    @Test
+    @DisplayName("refresh 시 서명이 유효하지 않으면 401을 반환해야 한다")
+    void refreshShouldReturn401WhenTokenSignatureIsInvalid() throws Exception {
+        when(authService.refresh(anyString()))
+                .thenThrow(new AuthException(AuthErrorCode.UNAUTHENTICATED));
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .header("Authorization", "Bearer invalid-token"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("logout 성공 시 200을 반환해야 한다")
+    void logoutShouldReturn200OnSuccess() throws Exception {
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isOk());
+
+        verify(authService).logout("valid-token");
+    }
+
+    @Test
+    @DisplayName("logout 시 서명이 유효하지 않으면 401을 반환해야 한다")
+    void logoutShouldReturn401WhenTokenSignatureIsInvalid() throws Exception {
+        doThrow(new AuthException(AuthErrorCode.UNAUTHENTICATED))
+                .when(authService).logout(anyString());
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized());
     }
 }

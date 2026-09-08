@@ -13,6 +13,11 @@ export interface AuthTokenResponse {
   user: UserProfile;
 }
 
+export interface TokenRefreshResponse {
+  accessToken: string;
+  expiresAt: number;
+}
+
 export interface UserProfile {
   id: number;
   email: string;

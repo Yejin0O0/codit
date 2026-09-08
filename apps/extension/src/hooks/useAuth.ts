@@ -5,34 +5,49 @@ import type { AuthState } from './useAuth.types';
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8080';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
+const RESET_AUTH_STATE: AuthState = {
+    user: null,
+    accessToken: null,
+    expiresAt: null,
+    status: 'idle',
+    error: null,
+    sessionExpiredMessage: null,
+};
+
 export function useAuth(): {
     authState: AuthState;
     loginWithGoogle: () => Promise<void>;
+    logout: () => Promise<void>;
 } {
-    const [authState, setAuthState] = useState<AuthState>({
-        user: null,
-        accessToken: null,
-        expiresAt: null,
-        status: 'idle',
-        error: null,
-    });
+    const [authState, setAuthState] = useState<AuthState>(RESET_AUTH_STATE);
 
     useEffect(() => {
-        chrome.storage.local.get(['accessToken', 'expiresAt']).then((stored: Record<string, unknown>) => {
-            const expiresAt = stored.expiresAt as number | undefined;
-            const isExpired = typeof expiresAt === 'number' && expiresAt <= Date.now();
+        chrome.storage.local
+            .get(['accessToken', 'expiresAt', 'sessionExpiredMessage'])
+            .then((stored: Record<string, unknown>) => {
+                const expiresAt = stored.expiresAt as number | undefined;
+                const isExpired = typeof expiresAt === 'number' && expiresAt <= Date.now();
+                const sessionExpiredMessage = (stored.sessionExpiredMessage as string | undefined) ?? null;
 
-            if (stored.accessToken && !isExpired) {
-                setAuthState((prev) => ({
-                    ...prev,
-                    status: 'authenticated',
-                    accessToken: stored.accessToken as string,
-                    expiresAt: expiresAt ?? null,
-                }));
-            } else if (isExpired) {
-                chrome.storage.local.remove(['accessToken', 'expiresAt']);
-            }
-        });
+                if (stored.accessToken && !isExpired) {
+                    setAuthState((prev) => ({
+                        ...prev,
+                        status: 'authenticated',
+                        accessToken: stored.accessToken as string,
+                        expiresAt: expiresAt ?? null,
+                        sessionExpiredMessage,
+                    }));
+                    return;
+                }
+
+                if (isExpired) {
+                    chrome.storage.local.remove(['accessToken', 'expiresAt']);
+                }
+
+                if (sessionExpiredMessage) {
+                    setAuthState((prev) => ({ ...prev, sessionExpiredMessage }));
+                }
+            });
     }, []);
 
     const loginWithGoogle = async (): Promise<void> => {
@@ -85,17 +100,22 @@ export function useAuth(): {
             }
 
             const data = await response.json();
+            // accessToken/expiresAt 저장과 sessionExpiredMessage 제거(이전 세션이 만료돼
+            // 남아있던 안내가 재로그인 후에도 되살아나지 않도록)를 한 번의 set 호출로 묶어
+            // 원자적으로 처리한다 — 별도 호출로 나누면 그 사이에 다른 컨텍스트가 mount해
+            // "유효한 accessToken" + "지워지기 전 sessionExpiredMessage"를 동시에 읽을 수 있다.
             await chrome.storage.local.set({
                 accessToken: data.accessToken,
                 expiresAt: data.expiresAt,
+                sessionExpiredMessage: null,
             });
 
             setAuthState({
+                ...RESET_AUTH_STATE,
                 user: data.user,
                 accessToken: data.accessToken,
                 expiresAt: data.expiresAt,
                 status: 'authenticated',
-                error: null,
             });
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
@@ -112,5 +132,52 @@ export function useAuth(): {
         }
     };
 
-    return { authState, loginWithGoogle };
+    useEffect(() => {
+        const listener = (
+            changes: Record<string, chrome.storage.StorageChange>,
+            area: string,
+        ) => {
+            if (area !== 'local') return;
+
+            if (changes.sessionExpiredMessage?.newValue) {
+                setAuthState({
+                    ...RESET_AUTH_STATE,
+                    sessionExpiredMessage: changes.sessionExpiredMessage.newValue as string,
+                });
+                return;
+            }
+
+            if (changes.accessToken || changes.expiresAt) {
+                setAuthState((prev) => {
+                    if (prev.status !== 'authenticated') return prev;
+                    return {
+                        ...prev,
+                        accessToken: (changes.accessToken?.newValue as string | undefined) ?? prev.accessToken,
+                        expiresAt: (changes.expiresAt?.newValue as number | undefined) ?? prev.expiresAt,
+                    };
+                });
+            }
+        };
+        chrome.storage.onChanged.addListener(listener);
+        return () => {
+            chrome.storage.onChanged.removeListener(listener);
+        };
+    }, []);
+
+    const logout = async (): Promise<void> => {
+        if (authState.accessToken) {
+            try {
+                await fetch(`${API_BASE_URL}/api/auth/logout`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${authState.accessToken}` },
+                });
+            } catch {
+                // best-effort
+            }
+        }
+        await chrome.storage.local.remove(['accessToken', 'expiresAt', 'sessionExpiredMessage']);
+        setAuthState(RESET_AUTH_STATE);
+    };
+
+    return { authState, loginWithGoogle, logout };
 }
