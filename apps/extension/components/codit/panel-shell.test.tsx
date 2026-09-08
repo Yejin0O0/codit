@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createRef } from 'react';
 
 import { PanelShell } from './panel-shell';
 
@@ -73,6 +74,17 @@ describe('PanelShell — 회귀 가드 (동작 불변)', () => {
         );
 
         expect(headerOf('메모').querySelector('button')).toBeNull();
+    });
+
+    it('collapseControlRef 로 접기 버튼 요소에 접근할 수 있다', () => {
+        const ref = createRef<HTMLButtonElement>();
+        render(
+            <PanelShell title="풀이 타이머" onCollapse={vi.fn()} collapseControlRef={ref}>
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(ref.current).toBe(screen.getByRole('button', { name: 'Codit 타이머 접기' }));
     });
 });
 
@@ -176,6 +188,17 @@ describe('PanelShell — step 도트 (신규)', () => {
 
         expect(screen.getByText('5 / 3')).toBeInTheDocument();
         expect(screen.queryByLabelText('5 / 3 단계')).toBeNull();
+    });
+
+    it('step="0 / 3" (n = 0) → 파싱 실패로 원문 텍스트를 렌더한다', () => {
+        render(
+            <PanelShell title="메모" step="0 / 3">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.getByText('0 / 3')).toBeInTheDocument();
+        expect(screen.queryByLabelText(/단계$/)).toBeNull();
     });
 });
 
