@@ -4,20 +4,23 @@ import { getWidgetPosition } from './fixtures/widget';
 
 const MOCK_PROBLEM_URL =
     'https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=E2E-TEST-001';
+/** R1 재설계: 위젯 헤더 제목 = "문제 #{id}" (제목 없을 때). 드래그 핸들 = PanelShell 헤더. */
+const widgetHeader = (page: import('@playwright/test').Page) =>
+    page.locator('[data-slot="panel-shell-header"]');
 
 test.describe('widget-drag-move — 헤더 드래그 위치 영속 (e2e-infra #26)', () => {
     test('[정상] mock 문제 페이지에 접속하면 Codit 위젯이 뜬다', async ({ context }) => {
         const page = await context.newPage();
         await page.goto(MOCK_PROBLEM_URL);
 
-        await expect(page.getByText('풀이 타이머')).toBeVisible();
+        await expect(widgetHeader(page)).toBeVisible();
     });
 
     test('[정상] 헤더를 드래그하면 위젯이 이동한 만큼 위치가 갱신된다', async ({ context }) => {
         const page = await context.newPage();
         await page.goto(MOCK_PROBLEM_URL);
 
-        const header = page.getByText('풀이 타이머').locator('..');
+        const header = widgetHeader(page);
         const before = await getWidgetPosition(page);
 
         const dx = -250;
@@ -33,7 +36,7 @@ test.describe('widget-drag-move — 헤더 드래그 위치 영속 (e2e-infra #2
         const page = await context.newPage();
         await page.goto(MOCK_PROBLEM_URL);
 
-        const header = page.getByText('풀이 타이머').locator('..');
+        const header = widgetHeader(page);
         await dragBy(header, -250, 200);
         const afterDrag = await getWidgetPosition(page);
 

@@ -19,7 +19,7 @@ test.describe('widget-drag-move — 접힌 pill 드래그·클릭 구분 (e2e-in
 
         await dragBy(pill, 3, 0);
 
-        await expect(page.getByText('풀이 타이머')).toBeVisible();
+        await expect(page.locator('[data-slot="panel-shell-header"]')).toBeVisible();
     });
 
     test('[정상] pill을 20px 드래그하면 위젯이 이동하고 펼쳐지지 않는다', async ({ context }) => {
@@ -33,7 +33,7 @@ test.describe('widget-drag-move — 접힌 pill 드래그·클릭 구분 (e2e-in
 
         await dragBy(pill, -20, 0);
 
-        await expect(page.getByText('풀이 타이머')).not.toBeVisible();
+        await expect(page.locator('[data-slot="panel-shell-header"]')).not.toBeVisible();
         const after = await pill.boundingBox();
         expect(after?.x).toBeCloseTo(before.x - 20, 0);
     });
@@ -46,6 +46,6 @@ test.describe('widget-drag-move — 접힌 pill 드래그·클릭 구분 (e2e-in
 
         await dragBy(pill, 4, 0);
 
-        await expect(page.getByText('풀이 타이머')).toBeVisible();
+        await expect(page.locator('[data-slot="panel-shell-header"]')).toBeVisible();
     });
 });
