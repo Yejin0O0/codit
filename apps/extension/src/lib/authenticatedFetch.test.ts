@@ -208,6 +208,77 @@ describe('authenticatedFetch', () => {
         );
     });
 
+    it('refresh 호출 자체가 네트워크 예외를 던지면 세션 만료로 처리하고 크래시하지 않는다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'token',
+            expiresAt: Date.now() + 3 * 60 * 1000,
+        });
+
+        vi.spyOn(global, 'fetch').mockRejectedValueOnce(new TypeError('network error'));
+
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/test`);
+
+        expect(response.status).toBe(401);
+        const stored = await fakeBrowser.storage.local.get(['accessToken', 'sessionExpiredMessage']);
+        expect(stored.sessionExpiredMessage).toBe('세션이 만료되었습니다');
+        expect(stored.accessToken).toBeUndefined();
+    });
+
+    it('동시에 여러 요청이 만료 임박 토큰으로 호출되면 refresh는 한 번만 나간다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'near-expiry-token',
+            expiresAt: Date.now() + 3 * 60 * 1000,
+        });
+
+        const mockFetch = vi.spyOn(global, 'fetch').mockImplementation((input) => {
+            const url = typeof input === 'string' ? input : input.toString();
+            if (url.includes('/api/auth/refresh')) {
+                return Promise.resolve(
+                    new Response(
+                        JSON.stringify({ accessToken: 'new-token', expiresAt: Date.now() + 60 * 60 * 1000 }),
+                        { status: 200 },
+                    ),
+                );
+            }
+            return Promise.resolve(new Response('ok', { status: 200 }));
+        });
+
+        await Promise.all([
+            authenticatedFetch(`${API_BASE_URL}/api/test-a`),
+            authenticatedFetch(`${API_BASE_URL}/api/test-b`),
+        ]);
+
+        const refreshCalls = mockFetch.mock.calls.filter(
+            (call) => typeof call[0] === 'string' && call[0].includes('/api/auth/refresh'),
+        );
+        expect(refreshCalls.length).toBe(1);
+    });
+
+    it('init.headers로 Headers 인스턴스를 넘겨도 값이 유실되지 않는다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'token',
+            expiresAt: Date.now() + 30 * 60 * 1000,
+        });
+
+        const mockFetch = vi.spyOn(global, 'fetch').mockResolvedValue(
+            new Response('ok', { status: 200 }),
+        );
+
+        await authenticatedFetch(`${API_BASE_URL}/api/test`, {
+            headers: new Headers({ 'X-Custom': 'custom-value' }),
+        });
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            `${API_BASE_URL}/api/test`,
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    'x-custom': 'custom-value',
+                    Authorization: 'Bearer token',
+                }),
+            }),
+        );
+    });
+
     it('재시도 요청이 401이면 sessionExpiredMessage를 세팅하지 않고 401을 반환한다', async () => {
         await fakeBrowser.storage.local.set({
             accessToken: 'token',

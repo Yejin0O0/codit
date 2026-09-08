@@ -1,18 +1,39 @@
+import type { TokenRefreshResponse } from '@codit/shared-types';
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8080';
 const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
 
+let inFlightRefresh: Promise<string | null> | null = null;
+
 async function doRefresh(currentToken: string): Promise<string | null> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${currentToken}` },
-    });
-    if (!response.ok) return null;
-    const data = (await response.json()) as { accessToken: string; expiresAt: number };
-    await chrome.storage.local.set({
-        accessToken: data.accessToken,
-        expiresAt: data.expiresAt,
-    });
-    return data.accessToken;
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${currentToken}` },
+        });
+        if (!response.ok) return null;
+        const data = (await response.json()) as TokenRefreshResponse;
+        await chrome.storage.local.set({
+            accessToken: data.accessToken,
+            expiresAt: data.expiresAt,
+        });
+        return data.accessToken;
+    } catch {
+        return null;
+    }
+}
+
+function refreshOnce(currentToken: string): Promise<string | null> {
+    if (!inFlightRefresh) {
+        inFlightRefresh = doRefresh(currentToken).finally(() => {
+            inFlightRefresh = null;
+        });
+    }
+    return inFlightRefresh;
+}
+
+function toHeaderRecord(headers?: HeadersInit): Record<string, string> {
+    return Object.fromEntries(new Headers(headers).entries());
 }
 
 async function clearSessionAndNotify(): Promise<void> {
@@ -26,7 +47,7 @@ export async function authenticatedFetch(url: string, init?: RequestInit): Promi
     const expiresAt = stored.expiresAt as number | undefined;
 
     if (token && typeof expiresAt === 'number' && expiresAt - Date.now() <= REFRESH_THRESHOLD_MS) {
-        const newToken = await doRefresh(token);
+        const newToken = await refreshOnce(token);
         if (newToken) {
             token = newToken;
         } else {
@@ -35,12 +56,12 @@ export async function authenticatedFetch(url: string, init?: RequestInit): Promi
         }
     }
 
-    const baseHeaders = (init?.headers ?? {}) as Record<string, string>;
+    const baseHeaders = toHeaderRecord(init?.headers);
     const headers = { ...baseHeaders, ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     const response = await fetch(url, { ...init, headers });
 
     if (response.status === 401 && token) {
-        const newToken = await doRefresh(token);
+        const newToken = await refreshOnce(token);
         if (newToken) {
             const retryHeaders = { ...baseHeaders, Authorization: `Bearer ${newToken}` };
             return fetch(url, { ...init, headers: retryHeaders });
