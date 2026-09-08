@@ -309,6 +309,31 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("row가 없는 유저에게 동시 refresh 요청 2개가 들어와도 두 번째는 예외 없이 기존 row를 회전시킨다 (findByUser 500 재발 방지)")
+    void refreshShouldRotateWinnerRowWhenConcurrentInsertViolatesUserUniqueness() {
+        User user = User.builder().id(1L).email("test@gmail.com").nickname("Test User").build();
+        RefreshToken winnerRow = RefreshToken.builder()
+                .user(user).token("winner-token").expiresAt(LocalDateTime.now().plusDays(7)).build();
+        when(jwtTokenProvider.getUserIdIgnoreExpiry("access-token")).thenReturn(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        // 최초 조회 시점엔 row가 없다가(로그인 직후 등), save가 unique 제약(user_id)에 걸리고
+        // 재조회하면 동시 요청이 먼저 만든 row(winnerRow)가 보이는 시나리오.
+        when(refreshTokenRepository.findByUser(user))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(winnerRow));
+        when(refreshTokenRepository.save(any(RefreshToken.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate user_id"));
+        when(jwtTokenProvider.generateAccessToken(1L)).thenReturn("new-access-token");
+        when(jwtTokenProvider.getAccessTokenExpirySeconds()).thenReturn(3600L);
+        when(jwtTokenProvider.getRefreshTokenExpirySeconds()).thenReturn(604800L);
+
+        TokenRefreshResponse result = authService.refresh("access-token");
+
+        assertThat(result.getAccessToken()).isEqualTo("new-access-token");
+        assertThat(winnerRow.getToken()).isNotEqualTo("winner-token");
+    }
+
+    @Test
     @DisplayName("Bearer 토큰 서명이 유효하지 않으면 refresh가 UNAUTHENTICATED를 던진다")
     void refreshShouldThrowUnauthenticatedWhenTokenSignatureIsInvalid() {
         when(jwtTokenProvider.getUserIdIgnoreExpiry("invalid-token"))

@@ -133,11 +133,25 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.findByUser(user)
                 .ifPresentOrElse(
                         existing -> existing.rotate(newToken, newExpiresAt),
-                        () -> refreshTokenRepository.save(RefreshToken.builder()
-                                .user(user)
-                                .token(newToken)
-                                .expiresAt(newExpiresAt)
-                                .build()));
+                        () -> insertRefreshToken(user, newToken, newExpiresAt));
+    }
+
+    private void insertRefreshToken(User user, String newToken, LocalDateTime newExpiresAt) {
+        // "row 없음" 분기는 findByUser -> save 사이에 락이 없는 check-then-act라, 같은 유저의
+        // row가 아직 없는 상태(최초 로그인 직후 등)에 동시 refresh 요청 2개가 들어오면 둘 다
+        // insert를 시도할 수 있다. RefreshToken.user에 걸어둔 unique 제약(user_id)이 뒤늦게
+        // 도착한 쪽을 DataIntegrityViolationException으로 떨어뜨리므로, 그 경우 먼저 insert된
+        // row를 찾아 제자리에서 회전시킨다.
+        try {
+            refreshTokenRepository.save(RefreshToken.builder()
+                    .user(user)
+                    .token(newToken)
+                    .expiresAt(newExpiresAt)
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            RefreshToken winner = refreshTokenRepository.findByUser(user).orElseThrow(() -> e);
+            winner.rotate(newToken, newExpiresAt);
+        }
     }
 
     private User findUserByToken(String token) {
