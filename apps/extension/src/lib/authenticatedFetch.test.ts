@@ -208,20 +208,94 @@ describe('authenticatedFetch', () => {
         );
     });
 
-    it('refresh 호출 자체가 네트워크 예외를 던지면 세션 만료로 처리하고 크래시하지 않는다', async () => {
+    it('선제 refresh가 네트워크 예외로 실패하면 세션을 유지한 채 기존 토큰으로 원래 요청을 시도한다', async () => {
         await fakeBrowser.storage.local.set({
-            accessToken: 'token',
+            accessToken: 'still-valid-token',
             expiresAt: Date.now() + 3 * 60 * 1000,
         });
 
-        vi.spyOn(global, 'fetch').mockRejectedValueOnce(new TypeError('network error'));
+        const mockFetch = vi.spyOn(global, 'fetch').mockImplementation((input) => {
+            const url = typeof input === 'string' ? input : input.toString();
+            if (url.includes('/api/auth/refresh')) {
+                return Promise.reject(new TypeError('network error'));
+            }
+            return Promise.resolve(new Response('ok', { status: 200 }));
+        });
+
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/test`);
+
+        expect(response.status).toBe(200);
+        expect(mockFetch).toHaveBeenCalledWith(
+            `${API_BASE_URL}/api/test`,
+            expect.objectContaining({
+                headers: expect.objectContaining({ Authorization: 'Bearer still-valid-token' }),
+            }),
+        );
+        const stored = await fakeBrowser.storage.local.get(['accessToken', 'sessionExpiredMessage']);
+        expect(stored.sessionExpiredMessage).toBeUndefined();
+        expect(stored.accessToken).toBe('still-valid-token');
+    });
+
+    it('refresh가 5xx(백엔드 일시 장애)로 실패해도 세션을 유지한 채 기존 토큰으로 원래 요청을 시도한다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'still-valid-token',
+            expiresAt: Date.now() + 3 * 60 * 1000,
+        });
+
+        vi.spyOn(global, 'fetch').mockImplementation((input) => {
+            const url = typeof input === 'string' ? input : input.toString();
+            if (url.includes('/api/auth/refresh')) {
+                return Promise.resolve(new Response('Internal Server Error', { status: 500 }));
+            }
+            return Promise.resolve(new Response('ok', { status: 200 }));
+        });
+
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/test`);
+
+        expect(response.status).toBe(200);
+        const stored = await fakeBrowser.storage.local.get(['accessToken', 'sessionExpiredMessage']);
+        expect(stored.sessionExpiredMessage).toBeUndefined();
+        expect(stored.accessToken).toBe('still-valid-token');
+    });
+
+    it('401 fallback refresh가 네트워크 예외로 실패하면 세션을 유지한 채 원래 401 응답을 반환한다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'token',
+            expiresAt: Date.now() + 30 * 60 * 1000,
+        });
+
+        vi.spyOn(global, 'fetch')
+            .mockResolvedValueOnce(new Response('Unauthorized', { status: 401 }))
+            .mockRejectedValueOnce(new TypeError('network error'));
 
         const response = await authenticatedFetch(`${API_BASE_URL}/api/test`);
 
         expect(response.status).toBe(401);
         const stored = await fakeBrowser.storage.local.get(['accessToken', 'sessionExpiredMessage']);
-        expect(stored.sessionExpiredMessage).toBe('세션이 만료되었습니다');
-        expect(stored.accessToken).toBeUndefined();
+        expect(stored.sessionExpiredMessage).toBeUndefined();
+        expect(stored.accessToken).toBe('token');
+    });
+
+    it('refresh 성공 시 storage에 남아있던 sessionExpiredMessage를 지운다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'near-expiry-token',
+            expiresAt: Date.now() + 3 * 60 * 1000,
+            sessionExpiredMessage: '세션이 만료되었습니다',
+        });
+
+        vi.spyOn(global, 'fetch')
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({ accessToken: 'new-token', expiresAt: Date.now() + 60 * 60 * 1000 }),
+                    { status: 200 },
+                ),
+            )
+            .mockResolvedValueOnce(new Response('ok', { status: 200 }));
+
+        await authenticatedFetch(`${API_BASE_URL}/api/test`);
+
+        const stored = await fakeBrowser.storage.local.get('sessionExpiredMessage');
+        expect(stored.sessionExpiredMessage).toBeUndefined();
     });
 
     it('동시에 여러 요청이 만료 임박 토큰으로 호출되면 refresh는 한 번만 나간다', async () => {
