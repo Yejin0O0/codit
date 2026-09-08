@@ -159,6 +159,35 @@ describe('useAuth', () => {
         );
     });
 
+    it('마운트 시 storage에 이미 sessionExpiredMessage가 있으면 authState에 반영한다 (팝업 재오픈 시나리오)', async () => {
+        await fakeBrowser.storage.local.set({ sessionExpiredMessage: '세션이 만료되었습니다' });
+
+        const { result } = renderHook(() => useAuth());
+        await act(async () => {});
+
+        expect(result.current.authState.sessionExpiredMessage).toBe('세션이 만료되었습니다');
+        expect(result.current.authState.status).toBe('idle');
+    });
+
+    it('silent refresh로 storage의 accessToken이 갱신되면 authState.accessToken도 갱신된다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'old-token',
+            expiresAt: Date.now() + 1000 * 60 * 60,
+        });
+        const { result } = renderHook(() => useAuth());
+        await act(async () => {});
+        expect(result.current.authState.status).toBe('authenticated');
+
+        await act(async () => {
+            await fakeBrowser.storage.local.set({
+                accessToken: 'refreshed-token',
+                expiresAt: Date.now() + 1000 * 60 * 120,
+            });
+        });
+
+        expect(result.current.authState.accessToken).toBe('refreshed-token');
+    });
+
     it('storage에 sessionExpiredMessage가 생기면 authState를 초기화하고 sessionExpiredMessage를 세팅한다', async () => {
         const { result } = renderHook(() => useAuth());
         await act(async () => {});
