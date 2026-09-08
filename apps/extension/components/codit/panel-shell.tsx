@@ -21,33 +21,49 @@ interface PanelShellProps {
     className?: string;
 }
 
+/** `"n / N"` → `{ n, total }`. 형식 불일치 또는 `n` 이 `[1, N]` 밖이면 null. */
+function parseStep(step: string): { n: number; total: number } | null {
+    const match = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(step);
+    if (!match) {
+        return null;
+    }
+    const n = Number(match[1]);
+    const total = Number(match[2]);
+    if (n < 1 || n > total) {
+        return null;
+    }
+    return { n, total };
+}
+
 /**
  * step 진행 인디케이터. `"n / N"` 을 파싱해 도트 N개를 렌더하고 앞 n개를 채운다.
- * 파싱 실패(형식 불일치 / n > N) 시 원문 문자열을 텍스트로 렌더한다.
+ * 파싱 실패 시 원문 문자열을 텍스트로 렌더한다.
  */
 function StepDots({ step }: { step: string }) {
-    const match = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(step);
-    const n = match ? Number(match[1]) : 0;
-    const total = match ? Number(match[2]) : 0;
+    const parsed = parseStep(step);
 
-    if (!match || n < 1 || n > total) {
+    if (parsed === null) {
         return (
             <span className="text-muted-foreground text-xs font-medium tabular-nums">{step}</span>
         );
     }
 
+    const { n, total } = parsed;
     return (
         <span className="flex items-center gap-1" aria-label={`${n} / ${total} 단계`}>
-            {Array.from({ length: total }, (_, i) => (
-                <span
-                    key={i}
-                    data-filled={i < n ? 'true' : 'false'}
-                    className={cn(
-                        'size-1.5 rounded-full',
-                        i < n ? 'bg-primary' : 'border-input border',
-                    )}
-                />
-            ))}
+            {Array.from({ length: total }, (_, i) => {
+                const filled = i < n;
+                return (
+                    <span
+                        key={i}
+                        data-filled={filled ? 'true' : 'false'}
+                        className={cn(
+                            'size-1.5 rounded-full',
+                            filled ? 'bg-primary' : 'border-input border',
+                        )}
+                    />
+                );
+            })}
         </span>
     );
 }
