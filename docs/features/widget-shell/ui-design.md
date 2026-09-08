@@ -14,7 +14,8 @@
 | 4 | 제목 시맨틱 | `<h2>` heading (기존 `<span>`) — a11y. 시각 스타일(`text-sm font-semibold`)은 유지 |
 | 5 | 아이콘 | 전부 인라인 `<svg>` (`panel-shell.tsx` 내부). 라이브러리 미도입 원칙 |
 
-> **현재 대비 실제 변경**: ① step 텍스트 → 도트  ② 밀도 roomy  ③ 제목 h2.
+> **현재 대비 실제 변경**: ① step 텍스트 → 도트  ② 밀도 roomy  ③ 제목 h2
+> ④ 헤더 좌측에 `CoditMark`(단색 C) — 접힌 pill 과 브랜드 일관성 (#55 로 마크 자체는 별도 개선).
 > divider·footer 버튼 배치·shadow·drag·collapse 동작은 **전부 유지**.
 
 ---

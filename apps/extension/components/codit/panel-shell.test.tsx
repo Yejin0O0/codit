@@ -100,6 +100,22 @@ describe('PanelShell — 제목 시맨틱 (신규)', () => {
             screen.queryByRole('heading', { level: 2, name: '풀이 타이머' }),
         ).toBeInTheDocument();
     });
+
+    it('헤더 좌측에 브랜드 마크(aria-hidden svg)를 제목 앞에 렌더한다', () => {
+        render(
+            <PanelShell title="풀이 타이머">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        const header = headerOf('풀이 타이머');
+        const markSvg = header.querySelector('svg[aria-hidden="true"]');
+        expect(markSvg).not.toBeNull();
+
+        // 마크가 제목보다 DOM 순서상 앞
+        const heading = screen.getByRole('heading', { name: '풀이 타이머' });
+        expect(markSvg!.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
 });
 
 describe('PanelShell — step 도트 (신규)', () => {

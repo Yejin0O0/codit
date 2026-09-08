@@ -1,5 +1,6 @@
 import type { PointerEvent as ReactPointerEvent, ReactNode, Ref } from 'react';
 
+import { CoditMark } from '@/components/codit/codit-mark';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -104,7 +105,11 @@ export function PanelShell({
                 )}
                 onPointerDown={handleHeaderPointerDown}
             >
-                <h2 className="text-sm font-semibold">{title}</h2>
+                <span className="flex items-center gap-1.5">
+                    {/* 브랜드 마크 — 접힌 pill 과 일관 (단색 C). docs/ui/brand/README.md */}
+                    <CoditMark className="text-primary size-4 shrink-0" />
+                    <h2 className="text-sm font-semibold">{title}</h2>
+                </span>
                 <span className="flex items-center gap-2">
                     {step ? <StepDots step={step} /> : null}
                     {onCollapse ? (
