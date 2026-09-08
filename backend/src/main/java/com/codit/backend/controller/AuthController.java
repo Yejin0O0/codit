@@ -5,6 +5,7 @@ import com.codit.backend.dto.LoginRequest;
 import com.codit.backend.dto.TokenRefreshResponse;
 import com.codit.backend.exception.AuthErrorCode;
 import com.codit.backend.exception.AuthException;
+import com.codit.backend.security.BearerTokenExtractor;
 import com.codit.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,9 +48,10 @@ public class AuthController {
     }
 
     private String extractToken(String bearerToken) {
-        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+        String token = BearerTokenExtractor.extract(bearerToken);
+        if (token == null) {
             throw new AuthException(AuthErrorCode.UNAUTHENTICATED);
         }
-        return bearerToken.substring(7);
+        return token;
     }
 }
