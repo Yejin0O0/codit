@@ -90,7 +90,7 @@ CoditWidget                         → 표현 전용 래퍼 (변경 없음: w-f
     ├── <header>                    → border-b, px-4 py-3.5 · 선택적 드래그 핸들
     │   ├── <h2>{title}</h2>        → text-sm font-semibold, flex-1
     │   ├── StepDots (조건부)       → step="n / N" 파싱 → 원 N개 (n개 채움)
-    │   │                             <span> size-1.5 rounded-full (채움 bg-primary / 빈 border-input)
+    │   │                             <span> size-1.5 rounded-full (채움 bg-primary / 빈 bg-input)
     │   └── Button (조건부)         → shadcn Button variant=ghost size=icon
     │       └── <svg> chevron-down  → aria-hidden, size-4
     ├── <div>{children}</div>       → 본문 슬롯, px-4 py-5

@@ -59,7 +59,7 @@ function StepDots({ step }: { step: string }) {
                         data-filled={filled ? 'true' : 'false'}
                         className={cn(
                             'size-1.5 rounded-full',
-                            filled ? 'bg-primary' : 'border-input border',
+                            filled ? 'bg-primary' : 'bg-input',
                         )}
                     />
                 );
