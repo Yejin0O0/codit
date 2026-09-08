@@ -60,7 +60,7 @@ describe('App timer flow', () => {
 
         await pickResultAndNext(user, '오답');
         // 메모 화면 (step 2 / 3), 아직 태그 화면 아님
-        expect(screen.getByText('2 / 3')).toBeInTheDocument();
+        expect(screen.getByLabelText('2 / 3 단계')).toBeInTheDocument();
         expect(screen.queryByText('태그 선택')).not.toBeInTheDocument();
 
         await user.click(screen.getByRole('button', { name: '다음' }));
@@ -75,8 +75,8 @@ describe('App timer flow', () => {
 
         // 메모 화면(step 2 / 3)을 건너뛰고 바로 태그 화면(step 2 / 2)
         expect(screen.getByText('태그 선택')).toBeInTheDocument();
-        expect(screen.getByText('2 / 2')).toBeInTheDocument();
-        expect(screen.queryByText('2 / 3')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('2 / 2 단계')).toBeInTheDocument();
+        expect(screen.queryByLabelText('2 / 3 단계')).not.toBeInTheDocument();
     });
 
     it('태그를 하나 이상 선택하기 전에는 "저장" 버튼을 비활성화한다', async () => {
@@ -243,7 +243,7 @@ describe('App collapse', () => {
         await user.click(collapseBtn()!);
         await user.click(expandBtn()!);
 
-        expect(screen.getByText('2 / 3')).toBeInTheDocument();
+        expect(screen.getByLabelText('2 / 3 단계')).toBeInTheDocument();
     });
 
     it('접기 → 펼치기가 타이머를 초기화하지 않는다', async () => {
@@ -366,7 +366,7 @@ describe('App collapse', () => {
         await user.click(collapseBtn()!);
         await user.click(expandBtn()!);
 
-        expect(screen.getByText('2 / 3')).toBeInTheDocument(); // memo 화면 복귀 확인
+        expect(screen.getByLabelText('2 / 3 단계')).toBeInTheDocument(); // memo 화면 복귀 확인
         expect(collapseBtn()).toHaveFocus();
     });
 

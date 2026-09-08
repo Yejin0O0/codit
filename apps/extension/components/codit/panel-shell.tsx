@@ -22,8 +22,39 @@ interface PanelShellProps {
 }
 
 /**
+ * step 진행 인디케이터. `"n / N"` 을 파싱해 도트 N개를 렌더하고 앞 n개를 채운다.
+ * 파싱 실패(형식 불일치 / n > N) 시 원문 문자열을 텍스트로 렌더한다.
+ */
+function StepDots({ step }: { step: string }) {
+    const match = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(step);
+    const n = match ? Number(match[1]) : 0;
+    const total = match ? Number(match[2]) : 0;
+
+    if (!match || n < 1 || n > total) {
+        return (
+            <span className="text-muted-foreground text-xs font-medium tabular-nums">{step}</span>
+        );
+    }
+
+    return (
+        <span className="flex items-center gap-1" aria-label={`${n} / ${total} 단계`}>
+            {Array.from({ length: total }, (_, i) => (
+                <span
+                    key={i}
+                    data-filled={i < n ? 'true' : 'false'}
+                    className={cn(
+                        'size-1.5 rounded-full',
+                        i < n ? 'bg-primary' : 'border-input border',
+                    )}
+                />
+            ))}
+        </span>
+    );
+}
+
+/**
  * 모든 화면의 공통 프레임 (EXTEND ← Card).
- * 헤더(제목 + 스텝 인디케이터 + 선택적 접기 컨트롤) / 본문 / 선택적 푸터 슬롯을
+ * 헤더(제목 + 스텝 도트 + 선택적 접기 컨트롤) / 본문 / 선택적 푸터 슬롯을
  * 고정 레이아웃으로 제공한다.
  */
 export function PanelShell({
@@ -52,18 +83,14 @@ export function PanelShell({
         <Card className={cn('gap-0 overflow-hidden py-0 shadow-lg', className)}>
             <div
                 className={cn(
-                    'flex items-center justify-between border-b px-4 py-3',
+                    'flex items-center justify-between border-b px-4 py-3.5',
                     dragHandlers && 'cursor-grab',
                 )}
                 onPointerDown={handleHeaderPointerDown}
             >
-                <span className="text-sm font-semibold">{title}</span>
+                <h2 className="text-sm font-semibold">{title}</h2>
                 <span className="flex items-center gap-2">
-                    {step ? (
-                        <span className="text-muted-foreground text-xs font-medium tabular-nums">
-                            {step}
-                        </span>
-                    ) : null}
+                    {step ? <StepDots step={step} /> : null}
                     {onCollapse ? (
                         <Button
                             ref={collapseControlRef}
@@ -94,9 +121,9 @@ export function PanelShell({
                 </span>
             </div>
 
-            <div className="px-4 py-4">{children}</div>
+            <div className="px-4 py-5">{children}</div>
 
-            {footer ? <div className="flex gap-2 border-t px-4 py-3">{footer}</div> : null}
+            {footer ? <div className="flex gap-2 border-t px-4 py-3.5">{footer}</div> : null}
         </Card>
     );
 }
