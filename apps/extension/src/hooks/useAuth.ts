@@ -104,6 +104,8 @@ export function useAuth(): {
                 accessToken: data.accessToken,
                 expiresAt: data.expiresAt,
             });
+            // 이전 세션이 만료돼 남아있던 안내가 재로그인 후에도 되살아나지 않도록 지운다.
+            await chrome.storage.local.remove('sessionExpiredMessage');
 
             setAuthState({
                 ...RESET_AUTH_STATE,
