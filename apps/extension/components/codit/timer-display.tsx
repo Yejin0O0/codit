@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 interface TimerDisplayProps {
     seconds: number;
     caption?: string;
+    /** true + caption → 캡션 앞에 펄스 도트 (측정 중 표시). */
+    running?: boolean;
     className?: string;
 }
 
