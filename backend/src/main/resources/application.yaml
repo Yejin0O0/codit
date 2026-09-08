@@ -22,6 +22,9 @@ spring:
   sql:
     init:
       mode: always
+      # data.sql 이 UTF-8 이므로 플랫폼 기본 charset(Windows 한글 = MS949)에
+      # 좌우되지 않도록 명시한다. 미지정 시 Java 17 + Windows 에서 태그 이름이 깨진다.
+      encoding: UTF-8
 
 server:
   port: 8080
