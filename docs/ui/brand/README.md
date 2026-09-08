@@ -24,15 +24,17 @@
 |------|------|------|------|------|
 | 확장 아이콘 (`manifest.icons`, 툴바, 확장 관리, 스토어) | 마크만 | PNG 16/32/48/96/128 → `apps/extension/public/icon/` | `codit-logo-icon.png` 리사이즈 | ✅ 생성됨 (`pnpm dlx sharp-cli … resize`) |
 | Extension Page 파비콘 (`popup/index.html`, `page/index.html`) | 마크만 | PNG | `public/icon/32.png` · `16.png` (확장 아이콘 재사용) | ✅ 연결됨 (전용 파비콘 파생본은 불필요 — 아이콘 세트로 충분) |
-| `BrandHeader` (Extension Page 상단 — auth / history) | 마크 + "Codit" | **인라인 SVG** (`CoditMark withCheck`) + 그라데이션 텍스트 (워드마크) | 로고 트레이스 | ✅ 원호형 stroke C + 민트 체크 |
-| `CollapsedTimer` pill (Shadow DOM, ~16px) | 마크만, 단색 | **인라인 SVG** (`CoditMark`), `currentColor` / `text-primary` | 로고 트레이스, 16px 판독되게 단순화 (그림자·베벨 제거) | ✅ 단색 C |
+| `BrandHeader` (Extension Page 상단 — auth / history) | 마크 + "Codit" | **인라인 SVG** (`CoditMark withCheck`) + 그라데이션 텍스트 (워드마크) | 로고 트레이스 | ✅ 굵은 C 획 + 민트 체크 |
+| `CollapsedTimer` pill (Shadow DOM, ~18px) | 마크 (C + 체크) | **인라인 SVG** (`CoditMark withCheck`), `currentColor` / `text-primary` | 로고 트레이스, 그림자·베벨·배경 제거 | ✅ 굵은 C + 민트 체크 |
+| 펼친 위젯 헤더 (`PanelShell`) | 마크 (C 단색) | **인라인 SVG** (`CoditMark`), `text-primary` | 위와 동일 | ⬜ UI-L2 R0 (#52) 에서 추가 |
 | 갤러리 | — | — | — | 삭제됨 (Storybook `Foundations/브랜드` 가 대체) |
 | README / 기획 문서 | 락업 | PNG | `codit-logo-lockup.png` | — |
 | 로딩·빈 화면 일러스트 | 마크 or 락업 | PNG / SVG | — | 범위 밖 (후속) |
 
 ### 원칙
 
-- **제품 UI 안(BrandHeader·pill·갤러리)은 래스터 PNG를 쓰지 않는다.** Shadow DOM 격리 + "인라인 SVG only" 아키텍처 규칙([`../ui-architecture.md`](../ui-architecture.md)). 렌더된 로고의 3D 베벨·그림자·그라데이션은 16px에서 뭉개진다 → 평면 인라인 SVG로 트레이스한다.
+- **제품 UI 안(BrandHeader·pill·위젯 헤더)은 래스터 PNG를 쓰지 않는다.** Shadow DOM 격리 + "인라인 SVG only" 아키텍처 규칙([`../ui-architecture.md`](../ui-architecture.md)). 렌더된 로고의 3D 베벨·그림자·그라데이션은 16px에서 뭉개진다 → 평면 인라인 SVG로 트레이스한다.
+- **`CoditMark` SVG 는 로고의 굵은 C + 민트 체크를 평면으로 재현한다** (팔각 디테일·배경 배지 생략 — pill/헤더 크기에서 안 읽힘). path 좌표 SoT = `components/codit/codit-mark.tsx`.
 - **확장 아이콘·파비콘·문서 이미지는 PNG.** 여기서는 렌더된 그라데이션 버전을 그대로 쓴다.
 - 16px 툴바 아이콘은 소프트 그림자 때문에 프레임을 꽉 못 채운다 — 필요 시 16px 전용 평면 변형을 별도로 만든다(후속).
 - 스토어 프로모 아트(512px+)가 필요하면 `codit-logo-icon.png`(344px)로는 부족 → 원본 제작자에게 고해상도 요청.
