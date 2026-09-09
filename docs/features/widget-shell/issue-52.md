@@ -46,7 +46,7 @@ function StepDots({ step }: { step: string }): JSX.Element;
 
 ### 회귀 가드 (기존 동작 유지 — 전부 통과해야 함)
 
-- **[회귀] onCollapse 주입 시 `aria-label="Codit 타이머 접기"` 버튼을 렌더한다**
+- **[회귀] onCollapse 주입 시 접기 아이콘 버튼을 렌더한다** (`aria-label` 은 재리뷰로 `"Codit 위젯 접기"` 로 중립화 — 타이머 아닌 화면에서도 노출되므로)
 - **[회귀] 접기 버튼 클릭 시 onCollapse 를 한 번 호출한다**
 - **[회귀] 접기 버튼 내부 SVG 는 `aria-hidden="true"` 다**
 - **[회귀] onCollapse 미주입 시 접기 버튼을 렌더하지 않는다**

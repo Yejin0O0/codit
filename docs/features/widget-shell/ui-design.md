@@ -114,7 +114,7 @@ CoditWidget                         → 표현 전용 래퍼 (변경 없음: w-f
 | StepDots | n / N | `step="n / N"` | 원 N개, 앞 n개 채움(`bg-primary`)·나머지 빈(`border-input`) |
 | StepDots | fallback | `step` 파싱 불가 | 문자열 그대로 렌더 (기존 동작 보존) |
 | Collapse 버튼 | hidden | `onCollapse` 미주입 | 미렌더 |
-| Collapse 버튼 | idle | `onCollapse` 주입 | ghost 아이콘 버튼, `aria-label="Codit 타이머 접기"` |
+| Collapse 버튼 | idle | `onCollapse` 주입 | ghost 아이콘 버튼, `aria-label="Codit 위젯 접기"` (화면-중립) |
 | Collapse 버튼 | hover | 포인터 | `bg-accent` |
 | Collapse 버튼 | focus | 키보드 | focus ring(`ring-ring`) |
 | Collapse 버튼 | 포커스 복귀 | collapsed→expanded 전환 | `collapseControlRef`로 포커스 이동 (기존 동작) |
