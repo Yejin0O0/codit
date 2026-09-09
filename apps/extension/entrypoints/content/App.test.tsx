@@ -67,16 +67,50 @@ describe('App timer flow', () => {
         expect(screen.getByText('태그 선택')).toBeInTheDocument();
     });
 
-    it('보류를 선택하면 메모 화면을 건너뛰고 태그 화면으로 이동한다', async () => {
+    it('보류를 선택해도 메모 화면을 거친다 (#69)', async () => {
         const user = userEvent.setup();
         renderApp();
 
         await pickResultAndNext(user, '보류');
 
-        // 메모 화면(step 2 / 3)을 건너뛰고 바로 태그 화면(step 2 / 2)
+        // 메모 화면(step 2 / 3), 아직 태그 화면 아님 — 정답/오답과 동일한 흐름
+        expect(screen.getByLabelText('2 / 3 단계')).toBeInTheDocument();
+        expect(screen.queryByText('태그 선택')).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: '다음' }));
         expect(screen.getByText('태그 선택')).toBeInTheDocument();
-        expect(screen.getByLabelText('2 / 2 단계')).toBeInTheDocument();
-        expect(screen.queryByLabelText('2 / 3 단계')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('3 / 3 단계')).toBeInTheDocument();
+    });
+
+    it('보류의 메모 화면은 Textarea가 기본 노출되고 placeholder가 "보류한 이유를 적어두세요."이다 (#69)', async () => {
+        const user = userEvent.setup();
+        renderApp();
+
+        await pickResultAndNext(user, '보류');
+
+        expect(screen.getByPlaceholderText('보류한 이유를 적어두세요.')).toBeInTheDocument();
+    });
+
+    it('보류의 메모 화면에서 "뒤로" 클릭 시 결과 선택 화면으로 이동한다 (#69)', async () => {
+        const user = userEvent.setup();
+        renderApp();
+
+        await pickResultAndNext(user, '보류');
+        await user.click(screen.getByRole('button', { name: '뒤로' }));
+
+        expect(screen.getByText('결과 선택')).toBeInTheDocument();
+    });
+
+    it('보류 경로에서 태그 화면 "뒤로" 클릭 시 메모 화면으로 돌아간다 (#69)', async () => {
+        const user = userEvent.setup();
+        renderApp();
+
+        await pickResultAndNext(user, '보류');
+        await user.click(screen.getByRole('button', { name: '다음' })); // → 태그 화면
+
+        await user.click(screen.getByRole('button', { name: '뒤로' }));
+        expect(screen.getByLabelText('2 / 3 단계')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('보류한 이유를 적어두세요.')).toBeInTheDocument();
     });
 
     it('태그를 하나 이상 선택하기 전에는 "저장" 버튼을 비활성화한다', async () => {
@@ -84,6 +118,7 @@ describe('App timer flow', () => {
         renderApp();
 
         await pickResultAndNext(user, '보류');
+        await user.click(screen.getByRole('button', { name: '다음' })); // 메모 → 태그
 
         const saveButton = screen.getByRole('button', { name: '저장' });
         expect(saveButton).toBeDisabled();
@@ -99,6 +134,7 @@ describe('App custom tag input', () => {
         renderApp();
 
         await pickResultAndNext(user, '보류');
+        await user.click(screen.getByRole('button', { name: '다음' })); // 메모 → 태그
 
         await user.type(screen.getByPlaceholderText('태그 직접 입력'), 'DFS');
         await user.click(screen.getByRole('button', { name: '추가' }));
@@ -314,7 +350,8 @@ describe('App collapse', () => {
         const user = userEvent.setup();
         renderApp();
 
-        await pickResultAndNext(user, '보류'); // → 태그 화면
+        await pickResultAndNext(user, '보류');
+        await user.click(screen.getByRole('button', { name: '다음' })); // 메모 → 태그 화면
         await user.click(screen.getByRole('button', { name: 'DFS' }));
         expect(screen.getByText('1개 선택됨')).toBeInTheDocument();
 
@@ -376,9 +413,10 @@ describe('App collapse', () => {
         expect(collapseBtn()).not.toHaveFocus();
     });
 
-    /** 보류 결과로 태그 화면까지 간 뒤 태그 하나 골라 저장해 success 화면으로 진입한다. */
+    /** 보류 결과로 메모→태그 화면까지 간 뒤 태그 하나 골라 저장해 success 화면으로 진입한다. */
     async function goToSuccess(user: ReturnType<typeof userEvent.setup>) {
-        await pickResultAndNext(user, '보류'); // → 태그 화면
+        await pickResultAndNext(user, '보류');
+        await user.click(screen.getByRole('button', { name: '다음' })); // 메모 → 태그 화면
         await user.click(screen.getByRole('button', { name: 'DFS' }));
         await user.click(screen.getByRole('button', { name: '저장' })); // → success 화면
     }
@@ -790,7 +828,8 @@ describe('App timer-session', () => {
 
         await user.click(screen.getByRole('button', { name: '완료' }));
         await user.click(screen.getByText('보류'));
-        await user.click(screen.getByRole('button', { name: '다음' }));
+        await user.click(screen.getByRole('button', { name: '다음' })); // 결과 → 메모
+        await user.click(screen.getByRole('button', { name: '다음' })); // 메모 → 태그
         await user.click(screen.getByRole('button', { name: 'DFS' }));
         await user.click(screen.getByRole('button', { name: '저장' }));
 
@@ -824,7 +863,8 @@ describe('App timer-session', () => {
 
         await user.click(screen.getByRole('button', { name: '완료' }));
         await user.click(screen.getByText('보류'));
-        await user.click(screen.getByRole('button', { name: '다음' }));
+        await user.click(screen.getByRole('button', { name: '다음' })); // 결과 → 메모
+        await user.click(screen.getByRole('button', { name: '다음' })); // 메모 → 태그
         await user.click(screen.getByRole('button', { name: 'DFS' }));
         await user.click(screen.getByRole('button', { name: '저장' }));
 
