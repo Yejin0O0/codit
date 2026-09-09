@@ -1,11 +1,11 @@
 import type { Ref } from 'react';
 
 import { PanelShell } from '@/components/codit/panel-shell';
-import { Badge } from '@/components/ui/badge';
+import { ResultBadge } from '@/components/codit/result-badge';
 import { Button } from '@/components/ui/button';
 
 import { MemoField } from '../components/MemoField';
-import { RESULT_LABELS, type ResultType } from '../screens';
+import type { ResultType } from '../screens';
 import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface MemoScreenProps {
@@ -54,9 +54,7 @@ export function MemoScreen({
             }
         >
             <div className="flex flex-col gap-4">
-                <Badge variant="secondary" className="w-fit">
-                    {RESULT_LABELS[result]}
-                </Badge>
+                <ResultBadge result={result} className="w-fit" />
 
                 <MemoField
                     result={result}

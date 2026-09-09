@@ -45,7 +45,7 @@
 | `--secondary-foreground` | `#211E28` | mauve-12 | |
 | `--border` | `#D8D3E0` | mauve-7 | 카드·구분선·미선택 토글 |
 | `--input` | `#C4BDD2` | mauve-8 | 입력창 테두리 (누를 수 있게 진하게) |
-| `--success` / `-foreground` | `#30A46C` / `#FFF` | green-9 | 정답 — 토글·배지·완료 체크 |
+| `--success` / `-foreground` | `#00824C` / `#FFF` | green-9 근사(L↓) | 정답 — 토글·배지·완료 체크. green-9(`#30A46C`)는 흰 텍스트와 3.15:1로 WCAG AA 미달(#71, `--destructive` #66과 같은 패턴) — L만 낮춰 4.90:1 확보 |
 | `--warning` / `-foreground` | `#FFC53D` / `#4F3422` | amber-9 / -12 | 보류 |
 | `--destructive` / `-foreground` | `#D1343D` / `#FFF` | red-9 근사(L↓) | 오답·삭제. red-9(`#E5484D`)는 흰 텍스트와 3.91:1로 WCAG AA 미달(#66) — 같은 hue·chroma에서 L만 낮춰 4.93:1 확보 |
 | `--brand-wordmark-from/to` | `#8FB5FB` / `#A193FA` | — | "Codit" 워드마크 그라데이션 (`@utility brand-wordmark`) |
