@@ -1,17 +1,22 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createRef } from 'react';
 
 import { PanelShell } from './panel-shell';
 
-describe('PanelShell', () => {
-    it('onCollapse 가 주어지면 aria-label="Codit 타이머 접기" 버튼을 렌더한다', () => {
+/** 헤더 요소 — data-slot 앵커 (제목 마크업 구조와 무관). */
+const headerOf = () =>
+    document.querySelector('[data-slot="panel-shell-header"]') as HTMLElement;
+
+describe('PanelShell — 회귀 가드 (동작 불변)', () => {
+    it('onCollapse 가 주어지면 aria-label="Codit 위젯 접기" 버튼을 렌더한다', () => {
         render(
             <PanelShell title="풀이 타이머" onCollapse={vi.fn()}>
                 <div>body</div>
             </PanelShell>,
         );
 
-        expect(screen.getByRole('button', { name: 'Codit 타이머 접기' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Codit 위젯 접기' })).toBeInTheDocument();
     });
 
     it('접기 버튼 클릭 시 onCollapse 를 한 번 호출한다', async () => {
@@ -23,20 +28,9 @@ describe('PanelShell', () => {
             </PanelShell>,
         );
 
-        await user.click(screen.getByRole('button', { name: 'Codit 타이머 접기' }));
+        await user.click(screen.getByRole('button', { name: 'Codit 위젯 접기' }));
 
         expect(onCollapse).toHaveBeenCalledTimes(1);
-    });
-
-    it('step 과 접기 버튼이 함께 주어지면 둘 다 렌더한다', () => {
-        render(
-            <PanelShell title="메모" step="2 / 3" onCollapse={vi.fn()}>
-                <div>body</div>
-            </PanelShell>,
-        );
-
-        expect(screen.getByText('2 / 3')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Codit 타이머 접기' })).toBeInTheDocument();
     });
 
     it('접기 버튼 내부 SVG 는 aria-hidden 이다', () => {
@@ -46,7 +40,7 @@ describe('PanelShell', () => {
             </PanelShell>,
         );
 
-        const svg = screen.getByRole('button', { name: 'Codit 타이머 접기' }).querySelector('svg');
+        const svg = screen.getByRole('button', { name: 'Codit 위젯 접기' }).querySelector('svg');
         expect(svg).not.toBeNull();
         expect(svg).toHaveAttribute('aria-hidden', 'true');
     });
@@ -70,25 +64,214 @@ describe('PanelShell', () => {
             </PanelShell>,
         );
 
-        expect(screen.queryByRole('button', { name: 'Codit 타이머 접기' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Codit 위젯 접기' })).toBeNull();
     });
 
-    it('onCollapse 미주입 시 헤더는 title(+step)만 담고 기존 레이아웃을 유지한다', () => {
-        const { container } = render(
+    it('onCollapse 미주입 시 헤더에 버튼이 없다', () => {
+        render(
             <PanelShell title="메모" step="2 / 3">
                 <div>body</div>
             </PanelShell>,
         );
 
-        expect(screen.getByText('메모')).toBeInTheDocument();
-        expect(screen.getByText('2 / 3')).toBeInTheDocument();
-        const header = container.querySelector('.border-b');
-        expect(header?.querySelector('button')).toBeNull();
+        expect(headerOf().querySelector('button')).toBeNull();
+    });
+
+    it('collapseControlRef 로 접기 버튼 요소에 접근할 수 있다', () => {
+        const ref = createRef<HTMLButtonElement>();
+        render(
+            <PanelShell title="풀이 타이머" onCollapse={vi.fn()} collapseControlRef={ref}>
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(ref.current).toBe(screen.getByRole('button', { name: 'Codit 위젯 접기' }));
+    });
+});
+
+describe('PanelShell — 제목 시맨틱 (신규)', () => {
+    it('title 을 heading(level 2)으로 렌더한다', () => {
+        render(
+            <PanelShell title="풀이 타이머">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(
+            screen.queryByRole('heading', { level: 2, name: '풀이 타이머' }),
+        ).toBeInTheDocument();
+    });
+
+    it('헤더 좌측에 브랜드 마크(aria-hidden svg)를 제목 앞에 렌더한다', () => {
+        render(
+            <PanelShell title="풀이 타이머">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        const header = headerOf();
+        const markSvg = header.querySelector('svg[aria-hidden="true"]');
+        expect(markSvg).not.toBeNull();
+
+        // 마크가 제목보다 DOM 순서상 앞
+        const heading = screen.getByRole('heading', { name: '풀이 타이머' });
+        expect(markSvg!.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('긴 title 이 우측 그룹을 밀지 않도록 h2 는 truncate, 좌측 그룹은 min-w-0', () => {
+        render(
+            <PanelShell title={'아주 긴 제목 '.repeat(20)} onCollapse={vi.fn()} step="2 / 3">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        const heading = screen.getByRole('heading', { level: 2 });
+        expect(heading.className).toMatch(/truncate/);
+        expect(heading.parentElement!.className).toMatch(/min-w-0/);
+        // 긴 제목이어도 도트 그룹과 접기 버튼은 그대로 렌더된다
+        expect(screen.getByRole('img', { name: '2 / 3 단계' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Codit 위젯 접기' })).toBeInTheDocument();
+    });
+});
+
+describe('PanelShell — step 도트 (신규)', () => {
+    it('step="2 / 4" → 도트 4개, 앞 2개 data-filled="true" / 뒤 2개 "false"', () => {
+        render(
+            <PanelShell title="메모" step="2 / 4">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        const group = screen.queryByLabelText('2 / 4 단계');
+        expect(group).toBeInTheDocument();
+        const dots = group!.querySelectorAll('[data-filled]');
+        expect(dots).toHaveLength(4);
+        expect(group!.querySelectorAll('[data-filled="true"]')).toHaveLength(2);
+        expect(group!.querySelectorAll('[data-filled="false"]')).toHaveLength(2);
+        expect(dots[0]).toHaveAttribute('data-filled', 'true');
+        expect(dots[3]).toHaveAttribute('data-filled', 'false');
+    });
+
+    it('step="3 / 3" → 도트 3개 전부 data-filled="true"', () => {
+        render(
+            <PanelShell title="태그 선택" step="3 / 3">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        const group = screen.queryByLabelText('3 / 3 단계');
+        expect(group).toBeInTheDocument();
+        expect(group!.querySelectorAll('[data-filled]')).toHaveLength(3);
+        expect(group!.querySelectorAll('[data-filled="true"]')).toHaveLength(3);
+    });
+
+    it('step="1 / 1" → 도트 1개, data-filled="true"', () => {
+        render(
+            <PanelShell title="메모" step="1 / 1">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        const group = screen.queryByLabelText('1 / 1 단계');
+        expect(group).toBeInTheDocument();
+        const dots = group!.querySelectorAll('[data-filled]');
+        expect(dots).toHaveLength(1);
+        expect(dots[0]).toHaveAttribute('data-filled', 'true');
+    });
+
+    it('step + onCollapse 동시 주입 → 도트 그룹과 접기 버튼을 둘 다 렌더한다', () => {
+        render(
+            <PanelShell title="메모" step="2 / 3" onCollapse={vi.fn()}>
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.queryByLabelText('2 / 3 단계')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Codit 위젯 접기' })).toBeInTheDocument();
+    });
+
+    it('step 미주입 시 도트 그룹을 렌더하지 않는다', () => {
+        render(
+            <PanelShell title="풀이 타이머">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.queryByLabelText(/단계$/)).toBeNull();
+    });
+
+    it('step="곧 완료" (형식 불일치) → 원문 텍스트를 렌더하고 도트는 없다', () => {
+        render(
+            <PanelShell title="메모" step="곧 완료">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.getByText('곧 완료')).toBeInTheDocument();
+        expect(screen.queryByLabelText(/단계$/)).toBeNull();
+    });
+
+    it('step="5 / 3" (n > N) → 파싱 실패로 원문 텍스트를 렌더한다', () => {
+        render(
+            <PanelShell title="메모" step="5 / 3">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.getByText('5 / 3')).toBeInTheDocument();
+        expect(screen.queryByLabelText('5 / 3 단계')).toBeNull();
+    });
+
+    it('step="0 / 3" (n = 0) → 파싱 실패로 원문 텍스트를 렌더한다', () => {
+        render(
+            <PanelShell title="메모" step="0 / 3">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.getByText('0 / 3')).toBeInTheDocument();
+        expect(screen.queryByLabelText(/단계$/)).toBeNull();
+    });
+
+    it('step="1 / 20" (N > 상한) → 파싱 실패로 원문 텍스트를 렌더하고 도트 폭발을 막는다', () => {
+        render(
+            <PanelShell title="메모" step="1 / 20">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.getByText('1 / 20')).toBeInTheDocument();
+        expect(screen.queryByLabelText(/단계$/)).toBeNull();
+        expect(document.querySelectorAll('[data-filled]')).toHaveLength(0);
+    });
+
+    it('도트 그룹은 role="img" 로 스크린리더에 단일 이미지(진행 단계)로 노출된다', () => {
+        render(
+            <PanelShell title="메모" step="2 / 3">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.getByRole('img', { name: '2 / 3 단계' })).toBeInTheDocument();
+    });
+});
+
+describe('PanelShell — 레이아웃 (구분 A: divider 유지)', () => {
+    it('헤더에 border-b, footer 컨테이너에 border-t 가 있다', () => {
+        render(
+            <PanelShell title="풀이 타이머" footer={<span>footer-x</span>}>
+                <div>body-x</div>
+            </PanelShell>,
+        );
+
+        expect(headerOf().className).toMatch(/border-b/);
+        const footer = screen.getByText('footer-x').parentElement as HTMLElement;
+        expect(footer.className).toMatch(/border-t/);
     });
 });
 
 describe('PanelShell drag handle (#19)', () => {
-    const header = () => screen.getByText('풀이 타이머').closest('div') as HTMLElement;
+    const header = () => headerOf();
 
     it('dragHandlers 가 주어지면 헤더 pointerdown 시 onPointerDown 을 호출한다', () => {
         const onPointerDown = vi.fn();
@@ -121,7 +304,7 @@ describe('PanelShell drag handle (#19)', () => {
             </PanelShell>,
         );
 
-        fireEvent.pointerDown(screen.getByRole('button', { name: 'Codit 타이머 접기' }), {
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Codit 위젯 접기' }), {
             clientX: 10,
             clientY: 10,
         });

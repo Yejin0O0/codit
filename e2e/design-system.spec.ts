@@ -38,7 +38,7 @@ test.describe('design-system — 위젯 실조건 (실 Shadow DOM)', () => {
 
         const widget = page.locator('#codit-root');
         await expect(widget.getByText(/^\d{2}:\d{2}$/)).toBeVisible();
-        await widget.getByRole('button', { name: 'Codit 타이머 접기' }).click();
+        await widget.getByRole('button', { name: 'Codit 위젯 접기' }).click();
         await expect(widget.getByRole('button', { name: /펼치기/ })).toBeVisible();
 
         test.skip(!SNAP, 'DS_SNAP=1 로 실행 (스냅샷은 머신 의존 · 미커밋)');
@@ -73,7 +73,7 @@ test.describe('design-system — 수동 검토 (walkthrough)', () => {
         await widget.getByRole('button', { name: '다음' }).click();
         await page.pause(); // ④ 태그 선택 화면 → Resume
 
-        await widget.getByRole('button', { name: 'Codit 타이머 접기' }).first().click();
+        await widget.getByRole('button', { name: 'Codit 위젯 접기' }).first().click();
         await page.pause(); // ⑤ collapsed pill → Resume
     });
 });
