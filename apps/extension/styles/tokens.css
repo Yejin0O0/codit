@@ -35,7 +35,9 @@
        L 만 낮춰 4.93:1 확보 (Radix red-11 근사, 채움+흰 텍스트 조합 전용) */
     --destructive: oklch(0.57 0.1933 23.03); /* #D1343D */
     --destructive-foreground: oklch(1 0 0);
-    --success: oklch(0.6406 0.1329 157.68); /* #30A46C green-9 */
+    /* green-9(#30A46C)는 흰 텍스트와 3.15:1 — WCAG AA(4.5:1) 미달(#71, --destructive와 같은 패턴 #66).
+       같은 hue·chroma에서 L 만 낮춰 4.90:1 확보 (채움+흰 텍스트 조합 전용) */
+    --success: oklch(0.53 0.1329 157.68); /* #00824C */
     --success-foreground: oklch(1 0 0);
     --warning: oklch(0.8537 0.1572 84.13); /* #FFC53D amber-9 */
     --warning-foreground: oklch(0.3522 0.0486 54.17); /* #4F3422 amber-12 */
