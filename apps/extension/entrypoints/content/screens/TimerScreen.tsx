@@ -35,7 +35,7 @@ export function TimerScreen({
 }: TimerScreenProps) {
     return (
         <PanelShell
-            title="풀이 타이머"
+            title={problemLabel(problemId, problemTitle)}
             onCollapse={onCollapse}
             collapseControlRef={collapseControlRef}
             dragHandlers={dragHandlers}
@@ -45,11 +45,8 @@ export function TimerScreen({
                 </Button>
             }
         >
-            <div className="flex flex-col items-center gap-4">
-                <span className="text-muted-foreground text-xs font-medium">
-                    {problemLabel(problemId, problemTitle)}
-                </span>
-                <TimerDisplay seconds={elapsedSeconds} caption="측정 중" />
+            <div className="flex flex-col items-center gap-3">
+                <TimerDisplay seconds={elapsedSeconds} caption="측정 중" running />
             </div>
         </PanelShell>
     );

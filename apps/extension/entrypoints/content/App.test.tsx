@@ -438,7 +438,7 @@ function mountAppWithContainer(size?: { width?: number; height?: number }) {
     return { containerEl, ...view };
 }
 
-/** expanded 타이머 화면의 PanelShell 헤더 div. */
+/** expanded 타이머 화면의 PanelShell 헤더 div (data-slot 앵커 — 제목 마크업과 무관). */
 const timerHeader = () =>
     document.querySelector('[data-slot="panel-shell-header"]') as HTMLElement;
 

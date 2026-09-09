@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures/extension';
 import { dragBy } from './fixtures/drag';
-import { getWidgetPosition } from './fixtures/widget';
+import { getWidgetPosition, widgetHeader } from './fixtures/widget';
 
 const MOCK_PROBLEM_URL =
     'https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=E2E-TEST-001';
@@ -12,7 +12,7 @@ test.describe('widget-drag-move — 다중 탭 storage 동기화 (e2e-infra #28)
         await pageA.goto(MOCK_PROBLEM_URL);
         await pageB.goto(MOCK_PROBLEM_URL);
 
-        const headerA = pageA.getByText('풀이 타이머').locator('..');
+        const headerA = widgetHeader(pageA);
         await dragBy(headerA, -250, 200);
         const afterDragOnA = await getWidgetPosition(pageA);
 
@@ -31,7 +31,7 @@ test.describe('widget-drag-move — 다중 탭 storage 동기화 (e2e-infra #28)
         await pageA.goto(MOCK_PROBLEM_URL);
         await pageB.goto(MOCK_PROBLEM_URL);
 
-        const headerA = pageA.getByText('풀이 타이머').locator('..');
+        const headerA = widgetHeader(pageA);
         await dragBy(headerA, -250, 200);
         const afterDragOnA = await getWidgetPosition(pageA);
 
