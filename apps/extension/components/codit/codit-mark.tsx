@@ -2,8 +2,8 @@ import { cn } from '@/lib/utils';
 
 interface CoditMarkProps {
     /**
-     * true: 두꺼운 C + 민트 체크 (풀 로고 — BrandHeader).
-     * false: 두꺼운 C 단색만 (pill — CollapsedTimer, ~16px 판독 우선).
+     * true: 두꺼운 C + 민트 체크 (풀 락업 — BrandHeader).
+     * false: 두꺼운 C 단색만 (인-프로덕트 마크 — CollapsedTimer pill, ~16px 판독 우선).
      */
     withCheck?: boolean;
     className?: string;
