@@ -9,14 +9,14 @@ const headerOf = () =>
     document.querySelector('[data-slot="panel-shell-header"]') as HTMLElement;
 
 describe('PanelShell — 회귀 가드 (동작 불변)', () => {
-    it('onCollapse 가 주어지면 aria-label="Codit 타이머 접기" 버튼을 렌더한다', () => {
+    it('onCollapse 가 주어지면 aria-label="Codit 위젯 접기" 버튼을 렌더한다', () => {
         render(
             <PanelShell title="풀이 타이머" onCollapse={vi.fn()}>
                 <div>body</div>
             </PanelShell>,
         );
 
-        expect(screen.getByRole('button', { name: 'Codit 타이머 접기' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Codit 위젯 접기' })).toBeInTheDocument();
     });
 
     it('접기 버튼 클릭 시 onCollapse 를 한 번 호출한다', async () => {
@@ -28,7 +28,7 @@ describe('PanelShell — 회귀 가드 (동작 불변)', () => {
             </PanelShell>,
         );
 
-        await user.click(screen.getByRole('button', { name: 'Codit 타이머 접기' }));
+        await user.click(screen.getByRole('button', { name: 'Codit 위젯 접기' }));
 
         expect(onCollapse).toHaveBeenCalledTimes(1);
     });
@@ -40,7 +40,7 @@ describe('PanelShell — 회귀 가드 (동작 불변)', () => {
             </PanelShell>,
         );
 
-        const svg = screen.getByRole('button', { name: 'Codit 타이머 접기' }).querySelector('svg');
+        const svg = screen.getByRole('button', { name: 'Codit 위젯 접기' }).querySelector('svg');
         expect(svg).not.toBeNull();
         expect(svg).toHaveAttribute('aria-hidden', 'true');
     });
@@ -64,7 +64,7 @@ describe('PanelShell — 회귀 가드 (동작 불변)', () => {
             </PanelShell>,
         );
 
-        expect(screen.queryByRole('button', { name: 'Codit 타이머 접기' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Codit 위젯 접기' })).toBeNull();
     });
 
     it('onCollapse 미주입 시 헤더에 버튼이 없다', () => {
@@ -85,7 +85,7 @@ describe('PanelShell — 회귀 가드 (동작 불변)', () => {
             </PanelShell>,
         );
 
-        expect(ref.current).toBe(screen.getByRole('button', { name: 'Codit 타이머 접기' }));
+        expect(ref.current).toBe(screen.getByRole('button', { name: 'Codit 위젯 접기' }));
     });
 });
 
@@ -116,6 +116,21 @@ describe('PanelShell — 제목 시맨틱 (신규)', () => {
         // 마크가 제목보다 DOM 순서상 앞
         const heading = screen.getByRole('heading', { name: '풀이 타이머' });
         expect(markSvg!.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('긴 title 이 우측 그룹을 밀지 않도록 h2 는 truncate, 좌측 그룹은 min-w-0', () => {
+        render(
+            <PanelShell title={'아주 긴 제목 '.repeat(20)} onCollapse={vi.fn()} step="2 / 3">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        const heading = screen.getByRole('heading', { level: 2 });
+        expect(heading.className).toMatch(/truncate/);
+        expect(heading.parentElement!.className).toMatch(/min-w-0/);
+        // 긴 제목이어도 도트 그룹과 접기 버튼은 그대로 렌더된다
+        expect(screen.getByRole('img', { name: '2 / 3 단계' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Codit 위젯 접기' })).toBeInTheDocument();
     });
 });
 
@@ -172,7 +187,7 @@ describe('PanelShell — step 도트 (신규)', () => {
         );
 
         expect(screen.queryByLabelText('2 / 3 단계')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Codit 타이머 접기' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Codit 위젯 접기' })).toBeInTheDocument();
     });
 
     it('step 미주입 시 도트 그룹을 렌더하지 않는다', () => {
@@ -289,7 +304,7 @@ describe('PanelShell drag handle (#19)', () => {
             </PanelShell>,
         );
 
-        fireEvent.pointerDown(screen.getByRole('button', { name: 'Codit 타이머 접기' }), {
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Codit 위젯 접기' }), {
             clientX: 10,
             clientY: 10,
         });

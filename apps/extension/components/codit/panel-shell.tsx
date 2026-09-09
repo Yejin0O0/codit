@@ -113,11 +113,11 @@ export function PanelShell({
                 )}
                 onPointerDown={handleHeaderPointerDown}
             >
-                {/* 좌우 그룹 모두 div — h2 가 phrasing content 가 아니라 span 에 못 담는다 */}
-                <div className="flex items-center gap-1.5">
+                {/* 좌우 그룹 모두 div — h2 가 phrasing content 가 아니라 span 에 못 담는다. min-w-0 = 긴 title 이 우측 그룹을 밀지 않도록 */}
+                <div className="flex min-w-0 items-center gap-1.5">
                     {/* 브랜드 마크 — 접힌 pill 과 일관 (단색 C). docs/ui/brand/README.md */}
                     <CoditMark className="text-primary size-4 shrink-0" />
-                    <h2 className="text-sm font-semibold">{title}</h2>
+                    <h2 className="truncate text-sm font-semibold">{title}</h2>
                 </div>
                 <div className="flex items-center gap-2">
                     {step ? <StepDots step={step} /> : null}
@@ -128,7 +128,7 @@ export function PanelShell({
                             variant="ghost"
                             size="icon"
                             className="-mr-1 size-6"
-                            aria-label="Codit 타이머 접기"
+                            aria-label="Codit 위젯 접기"
                             onClick={onCollapse}
                             data-codit-no-drag
                         >

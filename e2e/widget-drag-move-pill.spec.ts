@@ -9,7 +9,7 @@ const MOCK_PROBLEM_URL =
 test.describe('widget-drag-move — 접힌 pill 드래그·클릭 구분 (e2e-infra #27)', () => {
     async function collapseWidget(page: Page) {
         await page.goto(MOCK_PROBLEM_URL);
-        await page.getByRole('button', { name: 'Codit 타이머 접기' }).click();
+        await page.getByRole('button', { name: 'Codit 위젯 접기' }).click();
         return page.getByRole('button', { name: /Codit 타이머 펼치기/ });
     }
 

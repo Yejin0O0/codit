@@ -5,7 +5,7 @@ import App from './App';
 import * as sessionStore from './timer-session/store';
 import { TIMER_SESSION_VERSION, type TimerSession } from './timer-session/types';
 
-const COLLAPSE = 'Codit 타이머 접기';
+const COLLAPSE = 'Codit 위젯 접기';
 const collapseBtn = () => screen.queryByRole('button', { name: COLLAPSE });
 const expandBtn = () => screen.queryByRole('button', { name: /펼치기/ });
 
