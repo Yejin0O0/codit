@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useArgs } from 'storybook/preview-api';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import { CORE_TAGS, TAG_CATEGORIES } from '@/lib/tag-catalog';
 
@@ -66,6 +67,19 @@ export const 결과_선택: ResultStory = {
             <ResultSelectScreen {...args} onChange={(value) => updateArgs({ value })} onNext={() => {}} />
         );
     },
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement);
+        await expect(canvas.getByText('정답')).toHaveAttribute('data-state', 'on');
+
+        await userEvent.click(canvas.getByText('오답'));
+
+        // useArgs() 업데이트는 Storybook args 채널을 왕복하므로 클릭 직후 동기적으로
+        // 반영되지 않는다 — waitFor 로 리렌더를 기다린다.
+        await waitFor(() => {
+            expect(canvas.getByText('오답')).toHaveAttribute('data-state', 'on');
+            expect(canvas.getByText('정답')).toHaveAttribute('data-state', 'off');
+        });
+    },
 };
 
 export const 메모: MemoStory = {
@@ -122,6 +136,16 @@ export const 태그_선택: TagStory = {
                 onSave={() => {}}
             />
         );
+    },
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement);
+        await expect(canvas.getByText('2개 선택됨')).toBeInTheDocument();
+
+        await userEvent.click(canvas.getByText('구현'));
+
+        await waitFor(() => {
+            expect(canvas.getByText('3개 선택됨')).toBeInTheDocument();
+        });
     },
 };
 
