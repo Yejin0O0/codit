@@ -86,6 +86,10 @@ UI 컴포넌트를 구현할 때는 시각적 스펙을 먼저 파악한다.
 
 디자인 문서가 없으면 이 단계를 건너뛰고 기존 컴포넌트 패턴만 따른다.
 
+대상 컴포넌트에 이미 `*.stories.tsx`가 있으면, 구현하는 prop/상태 변경을 그 스토리에도 반영한다 —
+`docs/ui/design-system.md` 및 `.claude/skills/design-system/SKILL.md`의 "Storybook 작성 컨벤션"
+(스칼라 prop은 `args`/`argTypes`, 컨트롤드 prop은 `useArgs()` 양방향 바인딩)을 따른다.
+
 ---
 
 ## 4단계: 첫 번째 실패 테스트 구현

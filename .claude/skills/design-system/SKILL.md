@@ -285,6 +285,31 @@ Phase 6의 `@ac-verifier` 입력, 또는 독립 실행.
 > Extension Page auth/history는 현재 mock → v1 검증은 **위젯(e2e) + 컴포넌트(Storybook)**. 실화면 구현 시 자동 적용.
 > Storybook은 devDependency만 — 익스텐션 번들 미포함. Chromatic(시각 회귀 SaaS) 도입은 별도 결정.
 
+### Storybook 작성 컨벤션 (모든 라운드 공통, 2026-09-09 확정)
+
+Storybook의 가치는 "코드 수정 없이 상태를 바꿔가며 보는 것"(Controls)이다. 스토리를 새로 쓰거나
+기존 화면을 리스킨/재설계할 때(에픽 #51 R2~ 포함) 그 스토리도 아래 패턴을 따른다 — 매 라운드
+반복 가능한 고정 컨벤션이다:
+
+1. **스칼라 prop(문자열/숫자/불리언/enum)은 `args`+`argTypes`로 노출한다.** 하드코딩(`elapsedSeconds={754}`)
+   대신 `args: { elapsedSeconds: 754 }` + `argTypes: { elapsedSeconds: { control: 'number' } }` —
+   긴 제목·큰 경과시간 같은 경계 케이스를 코드 안 고치고 Controls 패널에서 즉시 테스트하기 위함.
+2. **컨트롤드 prop(`value`+`onChange` 등 상위가 상태를 들고 있는 prop)은 `storybook/preview-api`의
+   `useArgs()`로 양방향 바인딩한다.** 캔버스 클릭(`updateArgs({ value })`)과 Controls 패널 수정이
+   서로 반영돼야 한다. 로컬 `useState`로 흉내만 내면(Controls 변경이 반영 안 됨) 안 된다.
+   예시: `apps/extension/entrypoints/content/screens/screens.stories.tsx`
+3. **여러 variant를 나란히 비교하는 게 목적인 스토리**(`AllVariants`, `Both`, 로고 Before/After 등)는
+   예외 — 고정 `render`로 유지한다. Controls는 "한 상태를 깊이 파는" 용도, 비교 갤러리는 다른 목적.
+4. **배열/객체 prop(태그 목록 등)처럼 Controls로 편집이 부적절하면 `control: false`로 명시**하고
+   캔버스 인터랙션으로만 검증한다 — Controls 패널을 비워두지 말고 "이건 컨트롤 대상이 아님"을 밝힌다.
+5. 화면(screen) 단위 스토리는 `meta.component`를 공유하지 않는 파일이 많다(`screens.stories.tsx`처럼
+   한 파일에 여러 화면) — 이 경우 `StoryObj<typeof ComponentName>`으로 스토리별 타입을 잡아 `args` 타입
+   안전성을 유지한다.
+
+이미 이 컨벤션대로인 것: `components/ui/button.stories.tsx`(Primitives), `entrypoints/content/collapsed-timer.stories.tsx`.
+`tdd-green-frontend` 3단계(디자인 컨텍스트 로드)에서 대상 컴포넌트에 기존 스토리가 있으면 새 prop/상태를
+이 컨벤션에 맞춰 함께 갱신한다.
+
 ---
 
 ## 방향 A/B/C 참고 (Phase 1 결정용)
