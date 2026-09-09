@@ -1,8 +1,8 @@
 import type { Ref } from 'react';
 
 import { PanelShell } from '@/components/codit/panel-shell';
+import { TimerDisplay } from '@/components/codit/timer-display';
 import { Button } from '@/components/ui/button';
-import { formatDuration } from '@/lib/format-duration';
 
 import { ResultToggleGroup } from '../components/ResultToggleGroup';
 import type { ResultType } from '../screens';
@@ -39,13 +39,8 @@ export function ResultSelectScreen({
                 </Button>
             }
         >
-            <div className="flex flex-col gap-4">
-                <p className="text-muted-foreground text-sm">
-                    <span className="text-foreground font-semibold tabular-nums">
-                        {formatDuration(elapsedSeconds)}
-                    </span>{' '}
-                    만에 풀이했어요.
-                </p>
+            <div className="flex flex-col items-center gap-4">
+                <TimerDisplay seconds={elapsedSeconds} caption="풀이 시간" />
                 <ResultToggleGroup value={value} onChange={onChange} />
             </div>
         </PanelShell>
