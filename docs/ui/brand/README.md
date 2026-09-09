@@ -39,6 +39,18 @@
 - 16px 툴바 아이콘은 소프트 그림자 때문에 프레임을 꽉 못 채운다 — 필요 시 16px 전용 평면 변형을 별도로 만든다(후속).
 - 스토어 프로모 아트(512px+)가 필요하면 `codit-logo-icon.png`(344px)로는 부족 → 원본 제작자에게 고해상도 요청.
 
+## `CoditMark` 인라인 SVG — 획 굵기 이력
+
+PR #46 최초 버전은 가는 아크(`strokeWidth` 3.2)라 pill(~18px)에서 "대충 그린 C"로 읽혔다.
+PR #55에서 굵은 C(`strokeWidth` 4.6)로 조정 — pill 판독성 우선. path 좌표 SoT 는
+`apps/extension/components/codit/codit-mark.tsx`.
+
+| Before (3.2) | After (4.6) |
+|:---:|:---:|
+| ![strokeWidth 3.2 CoditMark 를 담은 접힌 타이머 pill](./mark-before.png) | ![strokeWidth 4.6 CoditMark 를 담은 접힌 타이머 pill](./mark-after.png) |
+
+_(Storybook `Widget/CollapsedTimer` 스토리 캡처. running pill, `12:34`.)_
+
 ## 파생 명령 (참고)
 
 ```bash
