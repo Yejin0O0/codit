@@ -1,11 +1,12 @@
 import { render, screen } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 
 import { CORE_TAGS } from '../mockData';
 import type { ResultType } from '../screens';
 
 import { SaveSuccessScreen } from './SaveSuccessScreen';
 
-type Overrides = Partial<Parameters<typeof SaveSuccessScreen>[0]>;
+type Overrides = Partial<ComponentProps<typeof SaveSuccessScreen>>;
 
 function renderSuccess(overrides: Overrides = {}) {
     return render(
