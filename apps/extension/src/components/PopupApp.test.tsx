@@ -1,5 +1,6 @@
 import type { AuthStatus } from '@codit/shared-types';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import * as useAuthModule from '../hooks/useAuth';
 
@@ -45,5 +46,33 @@ describe('PopupApp', () => {
         mockAuthState('error', { error: '로그인 실패' });
         render(<PopupApp />);
         expect(screen.getByRole('alert')).toHaveTextContent('로그인 실패');
+    });
+
+    it('MainPage의 로그아웃 버튼 클릭 시 useAuth().logout이 호출되어야 한다', async () => {
+        const logout = vi.fn().mockResolvedValue(undefined);
+        vi.mocked(useAuthModule.useAuth).mockReturnValue({
+            authState: {
+                user: null,
+                accessToken: 'token',
+                expiresAt: null,
+                error: null,
+                status: 'authenticated',
+                sessionExpiredMessage: null,
+            },
+            loginWithGoogle: vi.fn(),
+            logout,
+        });
+        const user = userEvent.setup();
+        render(<PopupApp />);
+
+        await user.click(screen.getByRole('button', { name: '로그아웃' }));
+
+        expect(logout).toHaveBeenCalledTimes(1);
+    });
+
+    it('sessionExpiredMessage가 있으면 LoginPage에 안내 문구가 표시되어야 한다', () => {
+        mockAuthState('idle', { sessionExpiredMessage: '세션이 만료되었습니다' });
+        render(<PopupApp />);
+        expect(screen.getByRole('status')).toHaveTextContent('세션이 만료되었습니다');
     });
 });
