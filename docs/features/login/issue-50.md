@@ -71,4 +71,4 @@ export default function PopupApp(): JSX.Element
 | ~~AC1: authenticatedFetch 배선~~ | 보류 — 범위 제외 (2026-09-09 이슈 본문 수정, 바꿀 대상인 실제 API 호출 코드가 코드베이스에 없음) |
 | AC2: 로그아웃 버튼이 useAuth().logout()을 호출하도록 배선 | [정상] MainPage — 버튼 클릭 시 onLogout 호출 / [정상] PopupApp — logout을 onLogout으로 전달 |
 | AC3: sessionExpiredMessage가 있을 때 로그인 화면에 안내 문구 렌더링 | [정상] LoginPage 렌더링 / [경계] null일 때 미렌더링 / [경계] error와 동시 표시 / [정상] PopupApp — 값 전달 |
-| AC4: 위 배선 상태에서 #4 AC 중 남은 두 항목을 E2E로 검증 | tdd-loop 6.5단계(e2e-write)에서 별도 처리 |
+| AC4: 위 배선 상태에서 #4 AC 중 남은 두 항목을 E2E로 검증 | `e2e/login.spec.ts` — 로그아웃 클릭 시 storage 초기화+로그인 화면 전환 / storage의 sessionExpiredMessage 세팅 시 로그인 화면 전환+안내 표시 (이 PR에서 커버 완료) |

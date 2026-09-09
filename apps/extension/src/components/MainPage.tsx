@@ -11,7 +11,11 @@ export default function MainPage({ onLogout }: MainPageProps) {
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
-        await onLogout();
+        try {
+            await onLogout();
+        } finally {
+            setIsLoggingOut(false);
+        }
     };
 
     return (
