@@ -57,7 +57,7 @@
 | 종류 | 값 | 근거 |
 |------|-----|------|
 | radius | `--radius: 0.625rem`(10) + sm6/md8/lg10/xl14 · pill `rounded-full` | shadcn new-york |
-| 간격 | Tailwind 4px 베이스. `gap` 우선. 위젯 프레임 안쪽 `px-4 py-4`(16) | Tailwind |
+| 간격 | Tailwind 스페이싱 스케일 (4px 베이스 + `1.5`/`2.5`/`3.5` 하프스텝). `gap` 우선. **위젯 프레임**(`PanelShell`): 헤더·푸터 `px-4 py-3.5`(16/14) · 본문 `px-4 py-5`(16/20) — roomy 밀도 (R0 스파이크 결정) | Tailwind |
 | 타이포 | 시스템 스택(웹폰트 X) · 본문 14px · **한글 line-height 1.6** · size xs12/sm13/base14/lg16/xl20/2xl24/4xl36(타이머) · weight 400/500/600/700 | Tailwind + Apple HIG |
 | elevation | `@theme` `--shadow-2xs~xl`. **위젯 프레임 = `shadow-lg`** (primary 틴트 — "Codit 패널" 각인, SWEA 분리) | Material 3 |
 | motion | `--ease-out`/`--ease-in-out`, `--duration-fast120/base200/slow300`. **idle 위젯 무애니.** `prefers-reduced-motion` 전역 0 | Material 3 |

@@ -439,7 +439,8 @@ function mountAppWithContainer(size?: { width?: number; height?: number }) {
 }
 
 /** expanded 타이머 화면의 PanelShell 헤더 div. */
-const timerHeader = () => screen.getByText('풀이 타이머').closest('div') as HTMLElement;
+const timerHeader = () =>
+    document.querySelector('[data-slot="panel-shell-header"]') as HTMLElement;
 
 describe('App widget drag (#19)', () => {
     afterEach(() => {

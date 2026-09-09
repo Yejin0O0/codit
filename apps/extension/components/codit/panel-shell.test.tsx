@@ -4,8 +4,9 @@ import { createRef } from 'react';
 
 import { PanelShell } from './panel-shell';
 
-/** 헤더 요소 — 제목 텍스트의 가장 가까운 div. h2/span 어느 쪽이어도 동작. */
-const headerOf = (title: string) => screen.getByText(title).closest('div') as HTMLElement;
+/** 헤더 요소 — data-slot 앵커 (제목 마크업 구조와 무관). */
+const headerOf = () =>
+    document.querySelector('[data-slot="panel-shell-header"]') as HTMLElement;
 
 describe('PanelShell — 회귀 가드 (동작 불변)', () => {
     it('onCollapse 가 주어지면 aria-label="Codit 타이머 접기" 버튼을 렌더한다', () => {
@@ -73,7 +74,7 @@ describe('PanelShell — 회귀 가드 (동작 불변)', () => {
             </PanelShell>,
         );
 
-        expect(headerOf('메모').querySelector('button')).toBeNull();
+        expect(headerOf().querySelector('button')).toBeNull();
     });
 
     it('collapseControlRef 로 접기 버튼 요소에 접근할 수 있다', () => {
@@ -108,7 +109,7 @@ describe('PanelShell — 제목 시맨틱 (신규)', () => {
             </PanelShell>,
         );
 
-        const header = headerOf('풀이 타이머');
+        const header = headerOf();
         const markSvg = header.querySelector('svg[aria-hidden="true"]');
         expect(markSvg).not.toBeNull();
 
@@ -216,6 +217,28 @@ describe('PanelShell — step 도트 (신규)', () => {
         expect(screen.getByText('0 / 3')).toBeInTheDocument();
         expect(screen.queryByLabelText(/단계$/)).toBeNull();
     });
+
+    it('step="1 / 20" (N > 상한) → 파싱 실패로 원문 텍스트를 렌더하고 도트 폭발을 막는다', () => {
+        render(
+            <PanelShell title="메모" step="1 / 20">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.getByText('1 / 20')).toBeInTheDocument();
+        expect(screen.queryByLabelText(/단계$/)).toBeNull();
+        expect(document.querySelectorAll('[data-filled]')).toHaveLength(0);
+    });
+
+    it('도트 그룹은 role="img" 로 스크린리더에 단일 이미지(진행 단계)로 노출된다', () => {
+        render(
+            <PanelShell title="메모" step="2 / 3">
+                <div>body</div>
+            </PanelShell>,
+        );
+
+        expect(screen.getByRole('img', { name: '2 / 3 단계' })).toBeInTheDocument();
+    });
 });
 
 describe('PanelShell — 레이아웃 (구분 A: divider 유지)', () => {
@@ -226,14 +249,14 @@ describe('PanelShell — 레이아웃 (구분 A: divider 유지)', () => {
             </PanelShell>,
         );
 
-        expect(headerOf('풀이 타이머').className).toMatch(/border-b/);
+        expect(headerOf().className).toMatch(/border-b/);
         const footer = screen.getByText('footer-x').parentElement as HTMLElement;
         expect(footer.className).toMatch(/border-t/);
     });
 });
 
 describe('PanelShell drag handle (#19)', () => {
-    const header = () => headerOf('풀이 타이머');
+    const header = () => headerOf();
 
     it('dragHandlers 가 주어지면 헤더 pointerdown 시 onPointerDown 을 호출한다', () => {
         const onPointerDown = vi.fn();

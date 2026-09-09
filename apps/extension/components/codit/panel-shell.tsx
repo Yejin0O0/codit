@@ -22,7 +22,10 @@ interface PanelShellProps {
     className?: string;
 }
 
-/** `"n / N"` → `{ n, total }`. 형식 불일치 또는 `n` 이 `[1, N]` 밖이면 null. */
+/** 위젯 헤더 폭(320px)에서 도트가 읽히는 상한. 넘으면 파싱 실패로 폴백. */
+const MAX_STEP_DOTS = 8;
+
+/** `"n / N"` → `{ n, total }`. 형식 불일치 또는 `1 ≤ n ≤ N ≤ MAX_STEP_DOTS` 밖이면 null. */
 function parseStep(step: string): { n: number; total: number } | null {
     const match = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(step);
     if (!match) {
@@ -30,7 +33,7 @@ function parseStep(step: string): { n: number; total: number } | null {
     }
     const n = Number(match[1]);
     const total = Number(match[2]);
-    if (n < 1 || n > total) {
+    if (n < 1 || n > total || total > MAX_STEP_DOTS) {
         return null;
     }
     return { n, total };
@@ -51,7 +54,11 @@ function StepDots({ step }: { step: string }) {
 
     const { n, total } = parsed;
     return (
-        <span className="flex items-center gap-1" aria-label={`${n} / ${total} 단계`}>
+        <span
+            className="flex items-center gap-1"
+            role="img"
+            aria-label={`${n} / ${total} 단계`}
+        >
             {Array.from({ length: total }, (_, i) => {
                 const filled = i < n;
                 return (
@@ -99,17 +106,19 @@ export function PanelShell({
         // shadow-lg = primary 틴트 = 위젯 프레임을 SWEA 흰 페이지에서 분리 + "Codit 패널" 각인 (prd.md ADR-5)
         <Card className={cn('gap-0 overflow-hidden py-0 shadow-lg', className)}>
             <div
+                data-slot="panel-shell-header"
                 className={cn(
                     'flex items-center justify-between border-b px-4 py-3.5',
                     dragHandlers && 'cursor-grab',
                 )}
                 onPointerDown={handleHeaderPointerDown}
             >
-                <span className="flex items-center gap-1.5">
+                {/* h2 는 phrasing content 가 아니므로 wrapper 는 span 이 아닌 div */}
+                <div className="flex items-center gap-1.5">
                     {/* 브랜드 마크 — 접힌 pill 과 일관 (단색 C). docs/ui/brand/README.md */}
                     <CoditMark className="text-primary size-4 shrink-0" />
                     <h2 className="text-sm font-semibold">{title}</h2>
-                </span>
+                </div>
                 <span className="flex items-center gap-2">
                     {step ? <StepDots step={step} /> : null}
                     {onCollapse ? (
