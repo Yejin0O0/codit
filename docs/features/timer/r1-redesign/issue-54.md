@@ -49,11 +49,12 @@ interface TimerDisplayProps {
 - **[정상] 경과 시간 mm:ss 를 렌더한다** (`elapsedSeconds=125` → `02:05`)
 - **[정상] "측정 중" 캡션과 펄스 도트를 함께 렌더한다** (도트는 `aria-hidden`)
 - **[정상] "완료" 클릭 시 onComplete 를 호출한다**
-- **[회귀] onCollapse 주입 시 접기 버튼(`aria-label="Codit 타이머 접기"`)을 렌더한다** (프레임 위임)
+- **[회귀] onCollapse 주입 시 접기 버튼(`aria-label="Codit 위젯 접기"`)을 렌더한다** (프레임 위임)
 
 ### 신규 — `timer-display.test.tsx`
 
 - **[정상] seconds → formatDuration 결과 텍스트를 렌더한다** (`75` → `01:15`)
+- **[정상] 1시간 이상은 `h:mm:ss` 롤오버** (`7505` → `2:05:05` — 재리뷰 반영, 320px 폭 자릿수 폭증 방지)
 - **[정상] 타이머 값 요소에 `text-7xl` 클래스가 있다**
 - **[정상] running=true + caption → 캡션 앞에 `aria-hidden` 펄스 도트를 렌더한다**
 - **[정상] caption 만(running 없음) → 도트 없이 캡션 텍스트만 렌더한다** (기존 동작 보존)
