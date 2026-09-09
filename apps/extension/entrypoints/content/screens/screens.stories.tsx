@@ -85,7 +85,7 @@ export const 결과_선택: ResultStory = {
 export const 메모: MemoStory = {
     args: {
         result: 'CORRECT',
-        step: '2 / 4',
+        step: '2 / 3',
         memo: '다익스트라로 풀었다',
         memoOpen: true,
     },
@@ -111,13 +111,15 @@ export const 메모: MemoStory = {
 
 export const 태그_선택: TagStory = {
     args: {
-        step: '3 / 4',
+        result: 'CORRECT',
+        step: '3 / 3',
         coreTags: CORE_TAGS,
         categories: TAG_CATEGORIES,
         customTags: [],
         selectedTagIds: ['dfs', 'greedy'],
     },
     argTypes: {
+        result: { control: 'inline-radio', options: ['CORRECT', 'WRONG', 'HOLD'] },
         step: { control: 'text' },
         // 배열이라 Controls 로 직접 못 바꾼다 — 캔버스에서 태그를 눌러 확인한다.
         selectedTagIds: { control: false },
