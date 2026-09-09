@@ -9,6 +9,12 @@ describe('TimerDisplay', () => {
         expect(screen.getByText('01:15')).toBeInTheDocument();
     });
 
+    it('1시간 넘는 seconds 는 h:mm:ss 로 롤오버해 자릿수 폭증을 막는다', () => {
+        render(<TimerDisplay seconds={7505} />);
+
+        expect(screen.getByText('2:05:05')).toBeInTheDocument();
+    });
+
     it('타이머 값 요소에 text-7xl 클래스가 있다', () => {
         const { container } = render(<TimerDisplay seconds={0} />);
 

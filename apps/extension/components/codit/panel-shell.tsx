@@ -117,7 +117,10 @@ export function PanelShell({
                 <div className="flex min-w-0 items-center gap-1.5">
                     {/* 브랜드 마크 — 접힌 pill 과 일관 (단색 C). docs/ui/brand/README.md */}
                     <CoditMark className="text-primary size-4 shrink-0" />
-                    <h2 className="truncate text-sm font-semibold">{title}</h2>
+                    {/* title 속성 — truncate 로 잘린 긴 제목의 전체 텍스트를 hover 툴팁으로 확인 */}
+                    <h2 title={title} className="truncate text-sm font-semibold">
+                        {title}
+                    </h2>
                 </div>
                 <div className="flex items-center gap-2">
                     {step ? <StepDots step={step} /> : null}

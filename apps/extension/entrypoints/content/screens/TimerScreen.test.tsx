@@ -81,7 +81,7 @@ describe('TimerScreen — R1 재설계', () => {
         );
 
         expect(
-            screen.getByRole('button', { name: 'Codit 타이머 접기' }),
+            screen.getByRole('button', { name: 'Codit 위젯 접기' }),
         ).toBeInTheDocument();
     });
 });
