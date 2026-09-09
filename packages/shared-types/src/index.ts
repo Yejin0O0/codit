@@ -9,13 +9,24 @@ export interface Problem {
   url: string;
 }
 
-export interface Attempt {
-  id: string;
+/** POST /api/attempts 요청 본문. userId는 JWT에서 추출하므로 포함하지 않는다. */
+export interface CreateAttemptRequest {
   problemId: string;
-  submittedAt: string;
-  result: 'CORRECT' | 'WRONG' | 'TIMEOUT' | 'COMPILE_ERROR';
-  language: string;
-  memo?: string;
+  elapsedTime: number;
+  result: 'CORRECT' | 'WRONG' | 'HOLD';
+  tagIds: number[];
+  memo?: string | null;
+}
+
+/** POST /api/attempts 201 응답 본문. createdAt은 ISO 8601 UTC(Z 접미사). */
+export interface AttemptResponse {
+  id: number;
+  problemId: string;
+  elapsedTime: number;
+  result: 'CORRECT' | 'WRONG' | 'HOLD';
+  tags: Tag[];
+  memo: string | null;
+  createdAt: string;
 }
 
 export interface Tag {
