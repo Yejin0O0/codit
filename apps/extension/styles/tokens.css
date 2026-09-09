@@ -31,7 +31,9 @@
     --muted-foreground: oklch(0.5053 0.0174 294.11); /* #65636E */
     --accent: oklch(0.9561 0.0215 294.59); /* #F1EEFE */
     --accent-foreground: oklch(0.5111 0.1739 279.84); /* #5753C6 iris-11 */
-    --destructive: oklch(0.6256 0.1933 23.03); /* #E5484D red-9 */
+    /* red-9(#E5484D)는 흰 텍스트와 3.91:1 — WCAG AA(4.5:1) 미달(#66). 같은 hue·chroma에서
+       L 만 낮춰 4.93:1 확보 (Radix red-11 근사, 채움+흰 텍스트 조합 전용) */
+    --destructive: oklch(0.57 0.1933 23.03); /* #D1343D */
     --destructive-foreground: oklch(1 0 0);
     --success: oklch(0.6406 0.1329 157.68); /* #30A46C green-9 */
     --success-foreground: oklch(1 0 0);

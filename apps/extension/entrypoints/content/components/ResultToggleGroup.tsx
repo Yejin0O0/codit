@@ -11,7 +11,7 @@ interface ResultToggleGroupProps {
 const TONE_CLASS: Record<ResultType, string> = {
     CORRECT:
         'data-[state=on]:border-success data-[state=on]:bg-success data-[state=on]:text-success-foreground',
-    WRONG: 'data-[state=on]:border-destructive data-[state=on]:bg-destructive data-[state=on]:text-white',
+    WRONG: 'data-[state=on]:border-destructive data-[state=on]:bg-destructive data-[state=on]:text-destructive-foreground',
     HOLD: 'data-[state=on]:border-warning data-[state=on]:bg-warning data-[state=on]:text-warning-foreground',
 };
 

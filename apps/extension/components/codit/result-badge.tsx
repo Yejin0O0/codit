@@ -17,7 +17,7 @@ const LABELS: Record<ResultBadgeResult, string> = {
 
 const TONE: Record<ResultBadgeResult, string> = {
     CORRECT: 'border-success bg-success text-success-foreground',
-    WRONG: 'border-destructive bg-destructive text-white',
+    WRONG: 'border-destructive bg-destructive text-destructive-foreground',
     HOLD: 'border-warning bg-warning text-warning-foreground',
 };
 
