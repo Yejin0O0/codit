@@ -9,7 +9,6 @@ import { RESULT_LABELS, type ResultType } from '../screens';
 import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface MemoScreenProps {
-    /** HOLD 는 이 화면에 진입하지 않는다 */
     result: ResultType;
     step: string;
     memo: string;

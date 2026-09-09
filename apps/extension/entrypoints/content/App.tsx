@@ -31,11 +31,6 @@ interface AppProps {
     initialSession?: TimerSession;
 }
 
-/** 결과가 메모 화면을 거치는가 (HOLD 는 건너뜀) */
-function hasMemoStep(result: ResultType | null): boolean {
-    return result === 'CORRECT' || result === 'WRONG';
-}
-
 /** 복원된 세션이 이미 완료(stopped)면 결과 선택 화면에서 시작한다. */
 function initialScreen(initialSession?: TimerSession): Screen {
     if (initialSession && initialSession.status === 'stopped') {
@@ -99,8 +94,6 @@ export default function App({ problemId, problemTitle, containerEl, initialSessi
             .filter((tag): tag is Tag => tag !== undefined);
     }, [selectedTagIds, customTags]);
 
-    const tagStep = hasMemoStep(result) ? '3 / 3' : '2 / 2';
-
     const handleComplete = () => {
         stop();
         setScreen('result');
@@ -120,14 +113,7 @@ export default function App({ problemId, problemTitle, containerEl, initialSessi
         if (result === null) {
             return;
         }
-        if (hasMemoStep(result)) {
-            setScreen('memo');
-        } else {
-            // HOLD: 메모 화면을 거치지 않는다.
-            setMemo('');
-            setMemoOpen(false);
-            setScreen('tags');
-        }
+        setScreen('memo');
     };
 
     const handleAddCustomTag = (name: string) => {
@@ -180,7 +166,7 @@ export default function App({ problemId, problemTitle, containerEl, initialSessi
         );
     }
 
-    if (screen === 'memo' && result !== null && hasMemoStep(result)) {
+    if (screen === 'memo' && result !== null) {
         return (
             <CoditWidget>
                 <MemoScreen
@@ -204,14 +190,14 @@ export default function App({ problemId, problemTitle, containerEl, initialSessi
         return (
             <CoditWidget>
                 <TagSelectScreen
-                    step={tagStep}
+                    step="3 / 3"
                     coreTags={CORE_TAGS}
                     categories={TAG_CATEGORIES}
                     customTags={customTags}
                     selectedTagIds={selectedTagIds}
                     onSelectedTagIdsChange={setSelectedTagIds}
                     onAddCustomTag={handleAddCustomTag}
-                    onBack={() => setScreen(hasMemoStep(result) ? 'memo' : 'result')}
+                    onBack={() => setScreen('memo')}
                     onSave={handleSave}
                     onCollapse={handleCollapse}
                     collapseControlRef={collapseControlRef}
