@@ -119,8 +119,9 @@ describe('PanelShell — 제목 시맨틱 (신규)', () => {
     });
 
     it('긴 title 이 우측 그룹을 밀지 않도록 h2 는 truncate, 좌측 그룹은 min-w-0', () => {
+        const longTitle = '아주 긴 제목 '.repeat(20);
         render(
-            <PanelShell title={'아주 긴 제목 '.repeat(20)} onCollapse={vi.fn()} step="2 / 3">
+            <PanelShell title={longTitle} onCollapse={vi.fn()} step="2 / 3">
                 <div>body</div>
             </PanelShell>,
         );
@@ -128,6 +129,8 @@ describe('PanelShell — 제목 시맨틱 (신규)', () => {
         const heading = screen.getByRole('heading', { level: 2 });
         expect(heading.className).toMatch(/truncate/);
         expect(heading.parentElement!.className).toMatch(/min-w-0/);
+        // 잘린 제목의 전체 텍스트는 title 속성(hover 툴팁)으로 확인 가능
+        expect(heading).toHaveAttribute('title', longTitle);
         // 긴 제목이어도 도트 그룹과 접기 버튼은 그대로 렌더된다
         expect(screen.getByRole('img', { name: '2 / 3 단계' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Codit 위젯 접기' })).toBeInTheDocument();
