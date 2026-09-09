@@ -31,4 +31,33 @@ describe('LoginPage', () => {
         render(<LoginPage onLoginWithGoogle={vi.fn()} isLoading={false} />);
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
+
+    it('sessionExpiredMessage가 있으면 role="status"로 안내 문구가 표시되어야 한다', () => {
+        render(
+            <LoginPage
+                onLoginWithGoogle={vi.fn()}
+                isLoading={false}
+                sessionExpiredMessage="세션이 만료되었습니다"
+            />,
+        );
+        expect(screen.getByRole('status')).toHaveTextContent('세션이 만료되었습니다');
+    });
+
+    it('sessionExpiredMessage가 없으면 안내 문구가 표시되지 않아야 한다', () => {
+        render(<LoginPage onLoginWithGoogle={vi.fn()} isLoading={false} sessionExpiredMessage={null} />);
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+
+    it('error와 sessionExpiredMessage가 동시에 있으면 둘 다 표시되어야 한다', () => {
+        render(
+            <LoginPage
+                onLoginWithGoogle={vi.fn()}
+                isLoading={false}
+                error="로그인 실패"
+                sessionExpiredMessage="세션이 만료되었습니다"
+            />,
+        );
+        expect(screen.getByRole('alert')).toHaveTextContent('로그인 실패');
+        expect(screen.getByRole('status')).toHaveTextContent('세션이 만료되었습니다');
+    });
 });

@@ -180,6 +180,25 @@ describe('useAuth', () => {
         expect(stored.accessToken).toBeUndefined();
     });
 
+    it('chrome.storage.local.remove가 실패해도(익스텐션 컨텍스트 무효화 등) authState는 리셋되어야 한다', async () => {
+        await fakeBrowser.storage.local.set({
+            accessToken: 'test-token',
+            expiresAt: Date.now() + 1000 * 60 * 60,
+        });
+        vi.spyOn(chrome.storage.local, 'remove').mockRejectedValueOnce(
+            new Error('Extension context invalidated.'),
+        );
+        const { result } = renderHook(() => useAuth());
+        await act(async () => {});
+        expect(result.current.authState.status).toBe('authenticated');
+
+        await act(async () => {
+            await result.current.logout();
+        });
+
+        expect(result.current.authState.status).toBe('idle');
+    });
+
     it('logout 호출 시 백엔드 /api/auth/logout을 Authorization 헤더와 함께 호출한다', async () => {
         await fakeBrowser.storage.local.set({
             accessToken: 'test-token',

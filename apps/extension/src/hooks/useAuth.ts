@@ -175,7 +175,12 @@ export function useAuth(): {
                 // best-effort
             }
         }
-        await chrome.storage.local.remove(['accessToken', 'expiresAt', 'sessionExpiredMessage']);
+        try {
+            await chrome.storage.local.remove(['accessToken', 'expiresAt', 'sessionExpiredMessage']);
+        } catch {
+            // best-effort — 익스텐션 컨텍스트가 무효화된 경우(리로드/업데이트 직후)에도
+            // 로컬 authState는 반드시 리셋해 로그아웃 버튼이 먹통이 되지 않게 한다.
+        }
         setAuthState(RESET_AUTH_STATE);
     };
 
