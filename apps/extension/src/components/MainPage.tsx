@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 
 interface MainPageProps {
@@ -5,9 +7,16 @@ interface MainPageProps {
 }
 
 export default function MainPage({ onLogout }: MainPageProps) {
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        await onLogout();
+    };
+
     return (
         <div data-testid="main-page">
-            <Button type="button" variant="secondary" onClick={onLogout}>
+            <Button type="button" variant="secondary" onClick={handleLogout} disabled={isLoggingOut}>
                 로그아웃
             </Button>
         </div>
