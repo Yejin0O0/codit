@@ -1,13 +1,16 @@
 import type { Ref } from 'react';
 
 import { PanelShell } from '@/components/codit/panel-shell';
+import { ResultBadge } from '@/components/codit/result-badge';
 import { Button } from '@/components/ui/button';
 
 import { TagPicker } from '../components/TagPicker';
 import type { Tag, TagCategory } from '../mockData';
+import type { ResultType } from '../screens';
 import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface TagSelectScreenProps {
+    result: ResultType;
     step: string;
     coreTags: Tag[];
     categories: TagCategory[];
@@ -23,6 +26,7 @@ interface TagSelectScreenProps {
 }
 
 export function TagSelectScreen({
+    result,
     step,
     coreTags,
     categories,
@@ -56,14 +60,17 @@ export function TagSelectScreen({
                 </>
             }
         >
-            <TagPicker
-                coreTags={coreTags}
-                categories={categories}
-                customTags={customTags}
-                selectedIds={selectedTagIds}
-                onSelectedChange={onSelectedTagIdsChange}
-                onAddCustomTag={onAddCustomTag}
-            />
+            <div className="flex flex-col gap-4">
+                <ResultBadge result={result} className="w-fit" />
+                <TagPicker
+                    coreTags={coreTags}
+                    categories={categories}
+                    customTags={customTags}
+                    selectedIds={selectedTagIds}
+                    onSelectedChange={onSelectedTagIdsChange}
+                    onAddCustomTag={onAddCustomTag}
+                />
+            </div>
         </PanelShell>
     );
 }

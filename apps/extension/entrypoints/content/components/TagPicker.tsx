@@ -97,7 +97,7 @@ export function TagPicker({
                     placeholder="태그 직접 입력"
                     className="h-8 text-xs"
                 />
-                <Button type="button" size="sm" variant="secondary" onClick={submitDraft}>
+                <Button type="button" size="sm" variant="default" onClick={submitDraft}>
                     추가
                 </Button>
             </div>

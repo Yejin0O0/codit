@@ -346,7 +346,7 @@ function Playground() {
                         {screen === '메모' && (
                             <MemoScreen
                                 result="CORRECT"
-                                step="2 / 4"
+                                step="2 / 3"
                                 memo="다익스트라로 풀었다"
                                 onMemoChange={() => {}}
                                 memoOpen
@@ -357,7 +357,8 @@ function Playground() {
                         )}
                         {screen === '태그' && (
                             <TagSelectScreen
-                                step="3 / 4"
+                                result="CORRECT"
+                                step="3 / 3"
                                 coreTags={CORE_TAGS}
                                 categories={TAG_CATEGORIES}
                                 customTags={[]}

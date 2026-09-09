@@ -190,6 +190,7 @@ export default function App({ problemId, problemTitle, containerEl, initialSessi
         return (
             <CoditWidget>
                 <TagSelectScreen
+                    result={result}
                     step="3 / 3"
                     coreTags={CORE_TAGS}
                     categories={TAG_CATEGORIES}
