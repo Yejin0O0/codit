@@ -16,7 +16,7 @@ const MOCK_PROBLEM_PAGE_PATH = path.resolve(__dirname, 'mock-problem.html');
  * - `context.route()` 로 `swexpertacademy.com` 요청만 mock HTML 로 fulfill 한다 —
  *   manifest 의 `content_scripts.matches` 를 건드리지 않고 실제 주입 경로를 그대로 탄다.
  */
-export const test = base.extend<{ context: BrowserContext }>({
+export const test = base.extend<{ context: BrowserContext; extensionId: string }>({
     context: async ({}, use) => {
         const context = await chromium.launchPersistentContext('', {
             headless: false,
@@ -32,6 +32,15 @@ export const test = base.extend<{ context: BrowserContext }>({
 
         await use(context);
         await context.close();
+    },
+    // popup 등 익스텐션 페이지를 chrome-extension://{id}/... 로 열 때 필요 — 로드 시마다
+    // 동적으로 생성되므로 하드코딩하지 않고 service worker URL에서 추출한다.
+    extensionId: async ({ context }, use) => {
+        let [background] = context.serviceWorkers();
+        if (!background) {
+            background = await context.waitForEvent('serviceworker');
+        }
+        await use(background.url().split('/')[2]);
     },
 });
 
