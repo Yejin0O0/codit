@@ -33,7 +33,7 @@ TimerScreen
     └── (본문)
         └── <div flex-col items-center gap-3>
             └── TimerDisplay            → CUSTOM
-                ├── <div text-7xl tabular-nums>{mm:ss}</div>
+                ├── <div text-7xl tabular-nums>{mm:ss · 1h+ h:mm:ss}</div>
                 └── (running 시) <p>     → <span pulse-dot aria-hidden /> {caption}
 ```
 
@@ -48,7 +48,7 @@ TimerScreen
 |---------|------|--------|------|
 | 헤더 제목 | 제목 있음 | `problemTitle` truthy | 제목 텍스트, truncate |
 | 헤더 제목 | 폴백 | `problemTitle` 없음 | `문제 #{problemId}` |
-| TimerDisplay | 기본 | 항상 | `mm:ss` text-7xl |
+| TimerDisplay | 기본 | 항상 | `mm:ss` (1시간 이상 `h:mm:ss` 롤오버 — 320px 폭에서 자릿수 폭증 방지) text-7xl |
 | TimerDisplay 캡션 | running | `running` + `caption` | 펄스 도트 + caption |
 | TimerDisplay 캡션 | 캡션만 | `caption` (running 없음) | 텍스트만 (기존 동작) |
 | TimerDisplay 캡션 | 없음 | `caption` 미주입 | 미렌더 |
