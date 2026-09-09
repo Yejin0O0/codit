@@ -4,7 +4,8 @@ import { BrandHeader } from '@/components/codit/brand-header';
 
 /**
  * 브랜드 자산. 원본 = `docs/ui/brand/` (SoT). 사용 맵·색·규격은 `docs/ui/brand/README.md`.
- * 인앱 인라인 SVG(BrandHeader·CollapsedTimer) = 원호형 stroke C(iris) + 민트 체크.
+ * 인앱 인라인 SVG: BrandHeader = 굵은 stroke C(iris) + 민트 체크 (락업).
+ * CollapsedTimer pill = 굵은 C 단색 (~18px 판독 우선, 완료 체크는 pill 이 별도 렌더).
  * 워드마크 = `brand-wordmark` 그라데이션 텍스트.
  */
 const meta: Meta = {
@@ -60,7 +61,8 @@ export const 로고: Story = {
                     <BrandHeader variant="compact" />
                 </div>
                 <p style={{ margin: '12px 0 0', color: '#65636e', fontSize: 12 }}>
-                    원호형 stroke C — 16px pill 판독 우선. pill(`CollapsedTimer`)은 단색 C, 체크 생략.
+                    굵은 stroke C — ~18px pill 판독 우선. pill(`CollapsedTimer`)은 단색 C (체크 생략),
+                    완료 시 pill 이 별도 체크 아이콘을 붙인다.
                 </p>
             </div>
         </div>

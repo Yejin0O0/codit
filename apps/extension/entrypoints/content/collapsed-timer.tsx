@@ -52,7 +52,7 @@ export function CollapsedTimer({
             onPointerDown={dragHandlers?.onPointerDown}
             onClick={handleClick}
         >
-            {/* C 마크 — pill 은 단색(체크 생략). docs/ui/brand/README.md */}
+            {/* C 마크 — 로고 트레이스. pill 은 단색 C (~18px 판독 우선, 완료 체크와 중복 방지). docs/ui/brand/README.md */}
             <CoditMark className="text-primary" />
             <span className="sr-only">{srLabel}</span>
             <span className="text-base font-medium tabular-nums">{formatDuration(seconds)}</span>
