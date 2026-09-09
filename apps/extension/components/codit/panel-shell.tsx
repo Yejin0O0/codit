@@ -113,13 +113,13 @@ export function PanelShell({
                 )}
                 onPointerDown={handleHeaderPointerDown}
             >
-                {/* h2 는 phrasing content 가 아니므로 wrapper 는 span 이 아닌 div */}
+                {/* 좌우 그룹 모두 div — h2 가 phrasing content 가 아니라 span 에 못 담는다 */}
                 <div className="flex items-center gap-1.5">
                     {/* 브랜드 마크 — 접힌 pill 과 일관 (단색 C). docs/ui/brand/README.md */}
                     <CoditMark className="text-primary size-4 shrink-0" />
                     <h2 className="text-sm font-semibold">{title}</h2>
                 </div>
-                <span className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                     {step ? <StepDots step={step} /> : null}
                     {onCollapse ? (
                         <Button
@@ -148,7 +148,7 @@ export function PanelShell({
                             </svg>
                         </Button>
                     ) : null}
-                </span>
+                </div>
             </div>
 
             <div className="px-4 py-5">{children}</div>
