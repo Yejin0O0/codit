@@ -8,7 +8,11 @@ import PopupApp from './PopupApp';
 
 vi.mock('../hooks/useAuth');
 
-const mockAuthState = (status: AuthStatus, extra: object = {}) =>
+const mockAuthState = (
+    status: AuthStatus,
+    extra: object = {},
+    { logout = vi.fn() }: { logout?: ReturnType<typeof vi.fn> } = {},
+) =>
     vi.mocked(useAuthModule.useAuth).mockReturnValue({
         authState: {
             user: null,
@@ -20,7 +24,7 @@ const mockAuthState = (status: AuthStatus, extra: object = {}) =>
             ...extra,
         },
         loginWithGoogle: vi.fn(),
-        logout: vi.fn(),
+        logout,
     });
 
 describe('PopupApp', () => {
@@ -50,18 +54,7 @@ describe('PopupApp', () => {
 
     it('MainPage의 로그아웃 버튼 클릭 시 useAuth().logout이 호출되어야 한다', async () => {
         const logout = vi.fn().mockResolvedValue(undefined);
-        vi.mocked(useAuthModule.useAuth).mockReturnValue({
-            authState: {
-                user: null,
-                accessToken: 'token',
-                expiresAt: null,
-                error: null,
-                status: 'authenticated',
-                sessionExpiredMessage: null,
-            },
-            loginWithGoogle: vi.fn(),
-            logout,
-        });
+        mockAuthState('authenticated', { accessToken: 'token' }, { logout });
         const user = userEvent.setup();
         render(<PopupApp />);
 

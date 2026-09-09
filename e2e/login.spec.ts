@@ -1,3 +1,4 @@
+import { loginViaStorage } from './fixtures/auth';
 import { test, expect } from './fixtures/extension';
 
 /**
@@ -26,10 +27,7 @@ test.describe('login — 로그아웃 및 세션 만료 안내', () => {
 
         const page = await context.newPage();
         await page.goto(popupUrl(extensionId));
-        await page.evaluate(() =>
-            chrome.storage.local.set({ accessToken: 'e2e-access-token', expiresAt: Date.now() + 60 * 60 * 1000 }),
-        );
-        await page.reload();
+        await loginViaStorage(page);
 
         const logoutButton = page.getByRole('button', { name: '로그아웃' });
         await expect(logoutButton).toBeVisible();
@@ -48,10 +46,7 @@ test.describe('login — 로그아웃 및 세션 만료 안내', () => {
     }) => {
         const page = await context.newPage();
         await page.goto(popupUrl(extensionId));
-        await page.evaluate(() =>
-            chrome.storage.local.set({ accessToken: 'e2e-access-token', expiresAt: Date.now() + 60 * 60 * 1000 }),
-        );
-        await page.reload();
+        await loginViaStorage(page);
         await expect(page.getByRole('button', { name: '로그아웃' })).toBeVisible();
 
         // authenticatedFetch가 refresh 실패를 감지했을 때와 동일한 형태의 storage 쓰기를
