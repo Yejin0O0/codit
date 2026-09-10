@@ -4,6 +4,7 @@ import { storage } from 'wxt/utils/storage';
 // 번들 CSS(Tailwind @import) 는 이 단위 테스트의 관심사가 아니다.
 vi.mock('./style.css?inline', () => ({ default: ':host { display: block; }' }));
 
+import { ATTEMPT_DRAFT_VERSION, type AttemptDraft } from './attempt-draft/types';
 import { mountCoditWidget } from './mount';
 import * as titleResolver from './problem/resolve-problem-title';
 import * as sessionStore from './timer-session/store';
@@ -222,5 +223,82 @@ describe('mountCoditWidget — 문제 제목 캐싱 (#37)', () => {
         await flushMicrotasks();
 
         expect(appDivText()).toContain('다른 문제 제목');
+    });
+});
+
+describe('mountCoditWidget — attempt-draft 복원 + 세션 생성 락 (#73)', () => {
+    function appDivText(): string {
+        const root = document.getElementById('codit-root');
+        const appDiv = root!.shadowRoot!.querySelector('div:last-of-type');
+        return appDiv?.textContent ?? '';
+    }
+
+    function seedDraft(overrides: Partial<AttemptDraft> = {}): Promise<void> {
+        const draft: AttemptDraft = {
+            version: ATTEMPT_DRAFT_VERSION,
+            problemId: PROBLEM_ID,
+            screen: 'result',
+            result: 'WRONG',
+            memo: '',
+            memoOpen: false,
+            selectedTagIds: [],
+            customTags: [],
+            ...overrides,
+        };
+        return storage.setItem(`session:attempt-draft:${PROBLEM_ID}`, draft);
+    }
+
+    it('[정상] 저장된 draft 가 있으면 App 이 그 화면(결과 선택)으로 뜬다', async () => {
+        await seedDraft({ screen: 'result', result: 'WRONG' });
+
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(appDivText()).toContain('결과 선택');
+    });
+
+    it('[정상] draft 의 태그 화면·선택 태그가 복원된다', async () => {
+        await seedDraft({ screen: 'tags', result: 'CORRECT', selectedTagIds: ['implementation'] });
+
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(appDivText()).toContain('태그 선택');
+        expect(appDivText()).toContain('1개 선택됨');
+    });
+
+    it('[정상] 새 세션 생성이 withProblemLock 안에서 일어난다', async () => {
+        const lockSpy = vi.spyOn(sessionStore, 'withProblemLock');
+
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(lockSpy).toHaveBeenCalledWith(PROBLEM_ID, expect.any(Function));
+    });
+
+    it('[정상] 이미 세션이 있으면 락 안에서 재 write 하지 않는다', async () => {
+        const existing: TimerSession = {
+            version: TIMER_SESSION_VERSION,
+            problemId: PROBLEM_ID,
+            startedAt: Date.now() - 5_000,
+            status: 'running',
+            stoppedAt: null,
+        };
+        await storage.setItem(`session:timer-session:${PROBLEM_ID}`, existing);
+        const lockSpy = vi.spyOn(sessionStore, 'withProblemLock');
+        const writeSpy = vi.spyOn(sessionStore, 'writeTimerSession');
+
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(lockSpy).toHaveBeenCalledWith(PROBLEM_ID, expect.any(Function));
+        expect(writeSpy).not.toHaveBeenCalled();
+    });
+
+    it('[회귀] draft 가 없으면 기존대로 타이머 화면으로 뜬다', async () => {
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(appDivText()).toContain(`문제 #${PROBLEM_ID}`);
     });
 });

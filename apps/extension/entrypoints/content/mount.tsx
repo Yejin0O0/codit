@@ -2,12 +2,13 @@ import { flushSync } from 'react-dom';
 import ReactDOM from 'react-dom/client';
 
 import App from './App';
+import { readAttemptDraft } from './attempt-draft/store';
 import { readProblemTitle, writeProblemTitle } from './problem/problem-title-store';
 import { resolveProblemId } from './problem/resolve-problem-id';
 import { resolveProblemTitle } from './problem/resolve-problem-title';
 import css from './style.css?inline';
 import { deriveInitialState } from './timer-session/session';
-import { readTimerSession, writeTimerSession } from './timer-session/store';
+import { readTimerSession, withProblemLock, writeTimerSession } from './timer-session/store';
 
 const ROOT_ID = 'codit-root';
 
@@ -31,12 +32,15 @@ async function loadProblemTitle(problemId: string): Promise<string | null> {
 /** contestProbId 가 확정된 뒤 실제 위젯을 mount 한다(container/Shadow DOM/Timer Session/React). */
 function performMount(problemId: string): void {
     // 1. Codit Root
+    //    저장된 세션·초안·위치 읽기가 끝나기 전까지 비표시 — top-right 기본값으로
+    //    잠깐 깜빡였다가 제자리를 찾는 것을 막는다. useWidgetPosition 이 위치 확정 후 해제한다.
     const container = document.createElement('div');
     container.id = ROOT_ID;
     container.style.position = 'fixed';
     container.style.top = '20px';
     container.style.right = '20px';
     container.style.zIndex = '999999';
+    container.style.visibility = 'hidden';
     document.body.appendChild(container);
 
     // 2. Shadow DOM
@@ -56,12 +60,22 @@ function performMount(problemId: string): void {
     //    top:20/right:20 초기 스타일은 useWidgetPosition 이 top/left 로 전환한다.
     //    Timer Session 은 읽기(복원 시도) 뒤에만 App 을 mount 한다 (timer-persistence
     //    prd ADR-3) — 저장된 세션이 없었을 때만 새로 만들어 저장한다.
+    //    read-then-write 는 withProblemLock 으로 탭 간 직렬화한다 — 같은 문제를 두 탭에서
+    //    거의 동시에 처음 열어도 startedAt 레이스가 나지 않는다(#73).
+    //    결과 기록 초안(#73)도 함께 복원해 App 에 넘긴다.
     void (async () => {
-        const stored = await readTimerSession(problemId);
-        const session = deriveInitialState(problemId, stored, Date.now());
-        if (!stored) {
-            await writeTimerSession(problemId, session);
-        }
+        const [session, storedDraft] = await Promise.all([
+            withProblemLock(problemId, async () => {
+                const stored = await readTimerSession(problemId);
+                if (stored) {
+                    return stored;
+                }
+                const fresh = deriveInitialState(problemId, null, Date.now());
+                await writeTimerSession(problemId, fresh);
+                return fresh;
+            }),
+            readAttemptDraft(problemId),
+        ]);
 
         const problemTitle = await loadProblemTitle(problemId);
 
@@ -72,6 +86,7 @@ function performMount(problemId: string): void {
                     problemTitle={problemTitle}
                     containerEl={container}
                     initialSession={session}
+                    initialDraft={storedDraft ?? undefined}
                 />,
             );
         });

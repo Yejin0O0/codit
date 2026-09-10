@@ -4,6 +4,7 @@ import {
     isValidTimerSession,
     readTimerSession,
     removeTimerSession,
+    withProblemLock,
     writeTimerSession,
 } from './store';
 import { TIMER_SESSION_VERSION, type TimerSession } from './types';
@@ -104,5 +105,39 @@ describe('readTimerSession / writeTimerSession / removeTimerSession', () => {
 
         await expect(writeTimerSession('PROB-1', makeSession())).resolves.not.toThrow();
         expect(warn).toHaveBeenCalled();
+    });
+});
+
+describe('withProblemLock', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it('[정상] navigator.locks 가 있으면 problemId 스코프 락 이름으로 request 를 호출하고 fn 결과를 돌려준다', async () => {
+        const requestSpy = vi
+            .spyOn(navigator.locks, 'request')
+            .mockImplementation((_name, cb) => (cb as (l: unknown) => unknown)(null) as Promise<unknown>);
+
+        const result = await withProblemLock('PROB-42', async () => 'done');
+
+        expect(requestSpy).toHaveBeenCalledWith('codit:timer-session:PROB-42', expect.any(Function));
+        expect(result).toBe('done');
+    });
+
+    it('[정상] navigator.locks 가 없으면 fn 을 직접 실행해 결과를 돌려준다', async () => {
+        const original = navigator.locks;
+        delete (navigator as { locks?: unknown }).locks;
+        try {
+            const result = await withProblemLock('PROB-1', async () => 42);
+            expect(result).toBe(42);
+        } finally {
+            Object.defineProperty(navigator, 'locks', { configurable: true, value: original });
+        }
+    });
+
+    it('[예외] fn 이 throw 하면 그 에러를 그대로 전파한다', async () => {
+        await expect(
+            withProblemLock('PROB-1', async () => {
+                throw new Error('inside');
+            }),
+        ).rejects.toThrow('inside');
     });
 });

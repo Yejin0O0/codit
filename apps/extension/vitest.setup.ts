@@ -29,3 +29,15 @@ if (typeof Element.prototype.setPointerCapture === 'undefined') {
     Element.prototype.releasePointerCapture = () => {};
     Element.prototype.hasPointerCapture = () => false;
 }
+
+// jsdom 은 Web Locks API(navigator.locks)를 구현하지 않는다.
+// mount 의 동시 탭 세션 생성 직렬화(withProblemLock)가 이 API 를 쓰므로 최소 스텁을 둔다.
+// 단일 테스트 프로세스라 실제 상호 배제는 필요 없다 — 콜백을 즉시 실행한다.
+if (typeof navigator.locks === 'undefined') {
+    Object.defineProperty(navigator, 'locks', {
+        configurable: true,
+        value: {
+            request: (_name: string, callback: () => unknown) => callback(),
+        },
+    });
+}
