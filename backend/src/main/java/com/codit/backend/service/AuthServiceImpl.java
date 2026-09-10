@@ -45,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
         try {
             profile = googleOAuthClient.getProfile(code, redirectUri);
         } catch (Exception e) {
-            log.error("Google OAuth 실패 — redirectUri={} error={}", redirectUri, e.getMessage(), e);
+            log.warn("Google OAuth 실패 — redirectUri={} error={}", redirectUri, e.getMessage(), e);
             throw new AuthException(AuthErrorCode.OAUTH_FAILED);
         }
 
