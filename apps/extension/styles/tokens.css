@@ -52,7 +52,11 @@
     --duration-base: 200ms;
     --duration-slow: 300ms;
 
-    /* z-index — 위젯 mount 는 JS(mount.tsx)가 --z-widget 값과 동기화. prd.md ADR-7 */
+    /*
+     * z-index — CSS 참조용 상수. mount.tsx 는 호스트 컨테이너 z-index 를 별도 JS 리터럴
+     * '999999' 로 세팅하므로 --z-widget 을 읽지 않는다 (값 일치는 수동 유지). prd.md ADR-7.
+     * --z-overlay / --z-toast 는 Popover/Toast 프리미티브 도입 시 사용 예정 (현재 미사용).
+     */
     --z-widget: 999999;
     --z-overlay: 2147483000;
     --z-toast: 2147483001;

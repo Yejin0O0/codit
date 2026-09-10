@@ -39,7 +39,7 @@
 | `--accent` / `-foreground` | `#F1EEFE` / `#5753C6` | iris-3 / -11 | hover 배경 / 그 위 텍스트 |
 | `--background` | `#FAF9FC` | mauve-2 | 페이지·위젯 바탕 |
 | `--foreground` | `#1A1523` | mauve-12 | 본문·제목·타이머 |
-| `--card` / `--popover` | `#F1EFEF` | — | 카드·위젯 표면 (회색 패널 — SWEA 흰 페이지 위 분리). ≈ muted (알려진 트레이드오프) |
+| `--card` / `--popover` | `#F1EFEF` | — | 카드·위젯 표면 (회색 패널 — SWEA 흰 페이지 위 분리). ≈ muted (알려진 트레이드오프). `--popover`는 현재 미사용(Popover 프리미티브 미도입) — shadcn baseline 유지 |
 | `--muted` / `--secondary` | `#F1EFF5` | mauve-3 | 보조 표면·스켈레톤 / secondary 버튼·미선택 칩 |
 | `--muted-foreground` | `#65636E` | mauve-11 | 캡션·날짜·step. ~5:1 |
 | `--secondary-foreground` | `#211E28` | mauve-12 | |
@@ -58,10 +58,10 @@
 |------|-----|------|
 | radius | `--radius: 0.625rem`(10) + sm6/md8/lg10/xl14 · pill `rounded-full` | shadcn new-york |
 | 간격 | Tailwind 스페이싱 스케일 (4px 베이스, `.5` 하프스텝 허용). `gap` 우선. **위젯 프레임**(`PanelShell`): 헤더·푸터 `px-4 py-3.5`(16/14) · 본문 `px-4 py-5`(16/20) — roomy 밀도 (R0 스파이크 결정) | Tailwind |
-| 타이포 | 시스템 스택(웹폰트 X) · 본문 14px · **한글 line-height 1.6** · size xs12/sm13/base14/lg16/xl20/2xl24/4xl36(타이머) · weight 400/500/600/700 | Tailwind + Apple HIG |
+| 타이포 | 시스템 스택(웹폰트 X) · 본문 14px · **한글 line-height 1.6** · size xs12/sm14/base16/lg18/xl20/2xl24 (Tailwind v4 기본 — `--text-*` 오버라이드 없음) · 타이머 `text-7xl`(72, R1) · weight 400/500/600/700 | Tailwind + Apple HIG |
 | elevation | `@theme` `--shadow-2xs~xl`. **위젯 프레임 = `shadow-lg`** (primary 틴트 — "Codit 패널" 각인, SWEA 분리) | Material 3 |
 | motion | `--ease-out`/`--ease-in-out`, `--duration-fast120/base200/slow300`. **idle 위젯 무애니.** `prefers-reduced-motion` 전역 0 | Material 3 |
-| z-index | `--z-widget 999999`(mount.tsx JS와 동기) / `--z-overlay` / `--z-toast` | — |
+| z-index | `--z-widget 999999` — CSS 참조용 상수. `mount.tsx`는 호스트 컨테이너 z-index를 **별도 JS 리터럴 `'999999'`**로 세팅(값 일치는 수동 유지). `--z-overlay`/`--z-toast`는 Popover/Toast 미도입으로 미사용 | — |
 | 위젯 프레임 폭 | `320px` 고정 · collapsed pill `h-10`(40) | timer / timer-persistence |
 | Extension Page max-width | auth ≈ 400px / history ≈ 720px (구현 시) | auth / problem-history |
 
