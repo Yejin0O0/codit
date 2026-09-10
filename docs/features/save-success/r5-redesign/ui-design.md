@@ -27,8 +27,9 @@
 ```
 
 유일한 구조 변경: 요약 dl "결과" 행의 `<dd>` 안 `{RESULT_LABELS[result]}` 텍스트를
-`<ResultBadge result={result} />`로 교체. "결과" 행은 `<dd>`가 오른쪽 정렬이므로 배지도
-`w-fit` + 우측 정렬 컨테이너 안에 둔다. 정답=success / 오답=destructive / 보류=warning —
+`<ResultBadge result={result} className="w-fit" />`로 교체. "결과" 행은 `flex justify-between`
+이라 `<dd>`가 우측에 위치하고, 배지 높이가 텍스트보다 커서 행에 `items-center`를 추가한다.
+정답=success / 오답=destructive / 보류=warning —
 `ResultToggleGroup`·`ResultSelectScreen`·`MemoScreen`·`TagSelectScreen`과 동일한 배색 언어.
 
 ---
