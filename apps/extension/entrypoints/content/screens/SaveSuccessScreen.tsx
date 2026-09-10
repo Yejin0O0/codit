@@ -1,10 +1,11 @@
 import type { Ref } from 'react';
 
 import { PanelShell } from '@/components/codit/panel-shell';
+import { ResultBadge } from '@/components/codit/result-badge';
 import { formatDuration } from '@/lib/format-duration';
 
 import type { Tag } from '../mockData';
-import { RESULT_LABELS, type ResultType } from '../screens';
+import type { ResultType } from '../screens';
 import type { WidgetDragHandlers } from '../useWidgetPosition';
 
 interface SaveSuccessScreenProps {
@@ -50,9 +51,11 @@ export function SaveSuccessScreen({
                 </div>
 
                 <dl className="bg-muted/50 flex flex-col gap-2 rounded-lg p-3 text-sm">
-                    <div className="flex justify-between">
+                    <div className="flex items-center justify-between">
                         <dt className="text-muted-foreground">결과</dt>
-                        <dd className="font-medium">{RESULT_LABELS[result]}</dd>
+                        <dd>
+                            <ResultBadge result={result} className="w-fit" />
+                        </dd>
                     </div>
                     <div className="flex justify-between">
                         <dt className="text-muted-foreground">풀이 시간</dt>
