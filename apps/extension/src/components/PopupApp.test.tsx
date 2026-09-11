@@ -76,6 +76,8 @@ describe('PopupApp', () => {
         const { rerender } = render(<PopupApp />);
 
         await user.click(screen.getByRole('button', { name: '로그아웃' }));
+        expect(logout).toHaveBeenCalledTimes(1);
+
         mockAuthState('idle');
         rerender(<PopupApp />);
 
