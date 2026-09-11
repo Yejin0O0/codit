@@ -48,6 +48,11 @@ describe('LoginPage', () => {
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
 
+    it('sessionExpiredMessage가 빈 문자열이면 안내 문구가 표시되지 않아야 한다', () => {
+        render(<LoginPage onLoginWithGoogle={vi.fn()} isLoading={false} sessionExpiredMessage="" />);
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+
     it('error와 sessionExpiredMessage가 동시에 있으면 둘 다 표시되어야 한다', () => {
         render(
             <LoginPage

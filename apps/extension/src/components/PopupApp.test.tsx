@@ -68,4 +68,18 @@ describe('PopupApp', () => {
         render(<PopupApp />);
         expect(screen.getByRole('status')).toHaveTextContent('세션이 만료되었습니다');
     });
+
+    it('로그아웃 버튼 클릭 후 status가 idle로 바뀌면 MainPage 대신 LoginPage가 렌더링되어야 한다', async () => {
+        const logout = vi.fn().mockResolvedValue(undefined);
+        mockAuthState('authenticated', { accessToken: 'token' }, { logout });
+        const user = userEvent.setup();
+        const { rerender } = render(<PopupApp />);
+
+        await user.click(screen.getByRole('button', { name: '로그아웃' }));
+        mockAuthState('idle');
+        rerender(<PopupApp />);
+
+        expect(screen.queryByTestId('main-page')).not.toBeInTheDocument();
+        expect(screen.getByTestId('login-page')).toBeInTheDocument();
+    });
 });
