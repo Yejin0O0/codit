@@ -1,13 +1,15 @@
-import { storage } from 'wxt/utils/storage';
+import { createKeyedStore } from '@/lib/keyed-storage';
+
+import { RESULT_OPTIONS } from '../screens';
 
 import { ATTEMPT_DRAFT_VERSION, type AttemptDraft, type DraftScreen } from './types';
 
-function attemptDraftKey(problemId: string): `session:attempt-draft:${string}` {
-    return `session:attempt-draft:${problemId}`;
-}
-
 const DRAFT_SCREENS: readonly DraftScreen[] = ['result', 'memo', 'tags'];
-const ALLOWED_RESULTS: readonly string[] = ['CORRECT', 'WRONG', 'HOLD'];
+// screens.ts 의 RESULT_OPTIONS 에서 파생 — 따로 손으로 관리하면 결과 타입이 늘 때
+// 여기만 안 고쳐져 유효한 draft 가 "손상됨"으로 오판정될 수 있다(#73 PR 리뷰).
+const ALLOWED_RESULTS: readonly string[] = RESULT_OPTIONS.map((option) => option.value);
+
+const attemptDraftStore = createKeyedStore<AttemptDraft>('attempt-draft', '결과 기록 초안');
 
 /** 결과 기록 초안이 저장되는 화면인가 — App 의 저장 트리거와 초안 검증이 공유한다. */
 export function isDraftScreen(screen: unknown): screen is DraftScreen {
@@ -67,30 +69,12 @@ export function isValidAttemptDraft(value: unknown): value is AttemptDraft {
 }
 
 export async function readAttemptDraft(problemId: string): Promise<AttemptDraft | null> {
-    try {
-        const raw = await storage.getItem(attemptDraftKey(problemId));
-        if (isValidAttemptDraft(raw)) {
-            return raw;
-        }
-        return null;
-    } catch {
-        console.warn('[codit] 결과 기록 초안 읽기에 실패했습니다');
-        return null;
+    const raw = await attemptDraftStore.read(problemId);
+    if (isValidAttemptDraft(raw)) {
+        return raw;
     }
+    return null;
 }
 
-export async function writeAttemptDraft(problemId: string, draft: AttemptDraft): Promise<void> {
-    try {
-        await storage.setItem(attemptDraftKey(problemId), draft);
-    } catch {
-        console.warn('[codit] 결과 기록 초안 저장에 실패했습니다');
-    }
-}
-
-export async function removeAttemptDraft(problemId: string): Promise<void> {
-    try {
-        await storage.removeItem(attemptDraftKey(problemId));
-    } catch {
-        console.warn('[codit] 결과 기록 초안 삭제에 실패했습니다');
-    }
-}
+export const writeAttemptDraft = attemptDraftStore.write;
+export const removeAttemptDraft = attemptDraftStore.remove;

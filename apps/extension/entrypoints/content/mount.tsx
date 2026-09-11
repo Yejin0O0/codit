@@ -2,7 +2,7 @@ import { flushSync } from 'react-dom';
 import ReactDOM from 'react-dom/client';
 
 import App from './App';
-import { readAttemptDraft } from './attempt-draft/store';
+import { readAttemptDraft, removeAttemptDraft } from './attempt-draft/store';
 import { readProblemTitle, writeProblemTitle } from './problem/problem-title-store';
 import { resolveProblemId } from './problem/resolve-problem-id';
 import { resolveProblemTitle } from './problem/resolve-problem-title';
@@ -62,20 +62,28 @@ function performMount(problemId: string): void {
     //    prd ADR-3) — 저장된 세션이 없었을 때만 새로 만들어 저장한다.
     //    read-then-write 는 withProblemLock 으로 탭 간 직렬화한다 — 같은 문제를 두 탭에서
     //    거의 동시에 처음 열어도 startedAt 레이스가 나지 않는다(#73).
-    //    결과 기록 초안(#73)도 함께 복원해 App 에 넘긴다.
+    //    결과 기록 초안(#73)도 함께 복원해 App 에 넘긴다 — 단, 세션이 새로 생성됐다면(=저장된
+    //    세션이 없었다면) draft 는 신뢰하지 않는다. "저장" 시 removeTimerSession 은 성공하고
+    //    removeAttemptDraft 만 실패하는 경우, 다음 mount 는 새 세션을 만들면서 옛 draft 를
+    //    그대로 읽어와 새 시도 위에 옛 결과/메모/태그를 얹어버릴 수 있기 때문이다(#73 PR 리뷰).
     void (async () => {
-        const [session, storedDraft] = await Promise.all([
+        const [{ session, isFreshSession }, storedDraft] = await Promise.all([
             withProblemLock(problemId, async () => {
                 const stored = await readTimerSession(problemId);
                 if (stored) {
-                    return stored;
+                    return { session: stored, isFreshSession: false };
                 }
                 const fresh = deriveInitialState(problemId, null, Date.now());
                 await writeTimerSession(problemId, fresh);
-                return fresh;
+                return { session: fresh, isFreshSession: true };
             }),
             readAttemptDraft(problemId),
         ]);
+
+        const effectiveDraft = isFreshSession ? null : storedDraft;
+        if (isFreshSession && storedDraft) {
+            void removeAttemptDraft(problemId);
+        }
 
         const problemTitle = await loadProblemTitle(problemId);
 
@@ -86,7 +94,7 @@ function performMount(problemId: string): void {
                     problemTitle={problemTitle}
                     containerEl={container}
                     initialSession={session}
-                    initialDraft={storedDraft ?? undefined}
+                    initialDraft={effectiveDraft ?? undefined}
                 />,
             );
         });

@@ -4,6 +4,7 @@ import { storage } from 'wxt/utils/storage';
 // 번들 CSS(Tailwind @import) 는 이 단위 테스트의 관심사가 아니다.
 vi.mock('./style.css?inline', () => ({ default: ':host { display: block; }' }));
 
+import * as attemptDraftStore from './attempt-draft/store';
 import { ATTEMPT_DRAFT_VERSION, type AttemptDraft } from './attempt-draft/types';
 import { mountCoditWidget } from './mount';
 import * as titleResolver from './problem/resolve-problem-title';
@@ -248,7 +249,21 @@ describe('mountCoditWidget — attempt-draft 복원 + 세션 생성 락 (#73)', 
         return storage.setItem(`session:attempt-draft:${PROBLEM_ID}`, draft);
     }
 
-    it('[정상] 저장된 draft 가 있으면 App 이 그 화면(결과 선택)으로 뜬다', async () => {
+    /** draft 가 실제로 속한 시도의 TimerSession — 이게 저장돼 있어야 draft 가 신뢰된다. */
+    function seedSession(overrides: Partial<TimerSession> = {}): Promise<void> {
+        const session: TimerSession = {
+            version: TIMER_SESSION_VERSION,
+            problemId: PROBLEM_ID,
+            startedAt: Date.now() - 60_000,
+            status: 'running',
+            stoppedAt: null,
+            ...overrides,
+        };
+        return storage.setItem(`session:timer-session:${PROBLEM_ID}`, session);
+    }
+
+    it('[정상] 저장된 세션과 draft 가 함께 있으면 App 이 그 화면(결과 선택)으로 뜬다', async () => {
+        await seedSession();
         await seedDraft({ screen: 'result', result: 'WRONG' });
 
         mountCoditWidget(PROBLEM_URL);
@@ -258,6 +273,7 @@ describe('mountCoditWidget — attempt-draft 복원 + 세션 생성 락 (#73)', 
     });
 
     it('[정상] draft 의 태그 화면·선택 태그가 복원된다', async () => {
+        await seedSession();
         await seedDraft({ screen: 'tags', result: 'CORRECT', selectedTagIds: ['implementation'] });
 
         mountCoditWidget(PROBLEM_URL);
@@ -265,6 +281,18 @@ describe('mountCoditWidget — attempt-draft 복원 + 세션 생성 락 (#73)', 
 
         expect(appDivText()).toContain('태그 선택');
         expect(appDivText()).toContain('1개 선택됨');
+    });
+
+    it('[회귀] 저장된 세션 없이 draft만 남아있으면 stale 로 간주해 버리고 새 세션(타이머 화면)으로 시작한다 (#73 PR 리뷰)', async () => {
+        const removeDraftSpy = vi.spyOn(attemptDraftStore, 'removeAttemptDraft');
+        await seedDraft({ screen: 'tags', result: 'CORRECT', selectedTagIds: ['implementation'] });
+
+        mountCoditWidget(PROBLEM_URL);
+        await flushMicrotasks();
+
+        expect(appDivText()).toContain(`문제 #${PROBLEM_ID}`);
+        expect(appDivText()).not.toContain('태그 선택');
+        expect(removeDraftSpy).toHaveBeenCalledWith(PROBLEM_ID);
     });
 
     it('[정상] 새 세션 생성이 withProblemLock 안에서 일어난다', async () => {

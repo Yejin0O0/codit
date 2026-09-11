@@ -1,10 +1,8 @@
-import { storage } from 'wxt/utils/storage';
+import { createKeyedStore } from '@/lib/keyed-storage';
 
 import { TIMER_SESSION_VERSION, type TimerSession } from './types';
 
-function timerSessionKey(problemId: string): `session:timer-session:${string}` {
-    return `session:timer-session:${problemId}`;
-}
+const timerSessionStore = createKeyedStore<TimerSession>('timer-session', '타이머 세션');
 
 export function isValidTimerSession(value: unknown, now: number): value is TimerSession {
     if (typeof value !== 'object' || value === null) {
@@ -34,33 +32,15 @@ export function isValidTimerSession(value: unknown, now: number): value is Timer
 }
 
 export async function readTimerSession(problemId: string): Promise<TimerSession | null> {
-    try {
-        const raw = await storage.getItem(timerSessionKey(problemId));
-        if (isValidTimerSession(raw, Date.now())) {
-            return raw;
-        }
-        return null;
-    } catch {
-        console.warn('[codit] 타이머 세션 읽기에 실패했습니다');
-        return null;
+    const raw = await timerSessionStore.read(problemId);
+    if (isValidTimerSession(raw, Date.now())) {
+        return raw;
     }
+    return null;
 }
 
-export async function writeTimerSession(problemId: string, session: TimerSession): Promise<void> {
-    try {
-        await storage.setItem(timerSessionKey(problemId), session);
-    } catch {
-        console.warn('[codit] 타이머 세션 저장에 실패했습니다');
-    }
-}
-
-export async function removeTimerSession(problemId: string): Promise<void> {
-    try {
-        await storage.removeItem(timerSessionKey(problemId));
-    } catch {
-        console.warn('[codit] 타이머 세션 삭제에 실패했습니다');
-    }
-}
+export const writeTimerSession = timerSessionStore.write;
+export const removeTimerSession = timerSessionStore.remove;
 
 /**
  * 같은 problemId 에 대한 read-then-write 를 탭 간 직렬화한다.
