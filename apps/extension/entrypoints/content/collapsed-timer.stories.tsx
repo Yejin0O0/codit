@@ -6,7 +6,10 @@ const meta = {
     title: 'Widget/CollapsedTimer',
     component: CollapsedTimer,
     args: { seconds: 754, status: 'running', onExpand: () => {} },
-    argTypes: { status: { control: 'inline-radio', options: ['running', 'stopped'] } },
+    argTypes: {
+        status: { control: 'inline-radio', options: ['running', 'stopped'] },
+        seconds: { control: 'number' },
+    },
     parameters: { layout: 'centered', backgrounds: { value: 'swea' } },
 } satisfies Meta<typeof CollapsedTimer>;
 

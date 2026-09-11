@@ -173,3 +173,48 @@ describe('CollapsedTimer drag handle (#20)', () => {
         expect(onExpand).toHaveBeenCalledTimes(2);
     });
 });
+
+describe('CollapsedTimer — R6 running 펄스 (#81)', () => {
+    function renderPill(status: 'running' | 'stopped') {
+        return render(<CollapsedTimer seconds={135} status={status} onExpand={vi.fn()} />);
+    }
+
+    it('status=running 이면 aria-hidden 펄스 도트(LiveDot)를 렌더한다', () => {
+        const { container } = renderPill('running');
+
+        const dot = container.querySelector('span[aria-hidden="true"] .animate-ping');
+        expect(dot).not.toBeNull();
+    });
+
+    it('status=stopped 이면 펄스 도트를 렌더하지 않는다 (success 체크만)', () => {
+        const { container } = renderPill('stopped');
+
+        expect(container.querySelector('.animate-ping')).toBeNull();
+        expect(container.querySelector('svg path[d="M5 10.5l3.2 3.2L15 7"]')).not.toBeNull();
+    });
+
+    it('running 펄스 도트는 시간 텍스트보다 뒤, chevron 보다 앞이다', () => {
+        const { container } = renderPill('running');
+
+        const time = screen.getByText('02:15');
+        const dot = container.querySelector('span[aria-hidden="true"] .animate-ping')!
+            .closest('span[aria-hidden="true"]')!;
+        const chevron = container.querySelector('svg path[d="M4 10l4-4 4 4"]')!.closest('svg')!;
+
+        expect(time.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(dot.compareDocumentPosition(chevron) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('running 에서 SVG 는 여전히 2개다 (LiveDot 는 span 기반 — 마크 + chevron 만 SVG)', () => {
+        const { container } = renderPill('running');
+
+        expect(container.querySelectorAll('svg')).toHaveLength(2);
+    });
+
+    it('펄스 도트가 pill 의 accessible name 에 텍스트를 주입하지 않는다', () => {
+        renderPill('running');
+
+        // name-from-contents — 도트는 aria-hidden 이라 접근성 이름은 sr-only 레이블 + 시간만
+        expect(screen.getByRole('button')).toHaveAccessibleName(/경과 시간.*02:15/);
+    });
+});

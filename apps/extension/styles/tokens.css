@@ -45,13 +45,6 @@
     --input: oklch(0.8106 0.0301 300.89); /* #C4BDD2 mauve-8 */
     --ring: oklch(0.7293 0.1182 281.44); /* #9B9EF0 iris-8 */
 
-    /* motion — Material 3 easing/duration. idle 위젯 무애니(behavioral). prd.md ADR-6 */
-    --ease-out: cubic-bezier(0.2, 0, 0, 1);
-    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-    --duration-fast: 120ms;
-    --duration-base: 200ms;
-    --duration-slow: 300ms;
-
     /*
      * z-index — CSS 참조용 상수. mount.tsx 는 호스트 컨테이너 z-index 를 별도 JS 리터럴
      * '999999' 로 세팅하므로 --z-widget 을 읽지 않는다 (값 일치는 수동 유지). prd.md ADR-7.

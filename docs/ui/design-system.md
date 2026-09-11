@@ -60,7 +60,7 @@
 | 간격 | Tailwind 스페이싱 스케일 (4px 베이스, `.5` 하프스텝 허용). `gap` 우선. **위젯 프레임**(`PanelShell`): 헤더·푸터 `px-4 py-3.5`(16/14) · 본문 `px-4 py-5`(16/20) — roomy 밀도 (R0 스파이크 결정) | Tailwind |
 | 타이포 | 시스템 스택(웹폰트 X) · 본문 14px · **한글 line-height 1.6** · size xs12/sm14/base16/lg18/xl20/2xl24 (Tailwind v4 기본 — `--text-*` 오버라이드 없음) · 타이머 `text-7xl`(72, R1) · weight 400/500/600/700 | Tailwind + Apple HIG |
 | elevation | `@theme` `--shadow-2xs~xl`. **위젯 프레임 = `shadow-lg`** (primary 틴트 — "Codit 패널" 각인, SWEA 분리) | Material 3 |
-| motion | `--ease-out`/`--ease-in-out`, `--duration-fast120/base200/slow300`. **idle 위젯 무애니.** `prefers-reduced-motion` 전역 0 | Material 3 |
+| motion | 전환·애니메이션은 Tailwind 내장 유틸(`transition-*`, `animate-ping`/`animate-pulse`). 전용 `--ease-*`/`--duration-*` 토큰 없음(R6에서 미사용 5개 제거). **idle 위젯 무애니** — "측정 중" `LiveDot` 펄스 등 상태 표시만 예외. `prefers-reduced-motion` 전역 0 | Tailwind |
 | z-index | `--z-widget 999999` — CSS 참조용 상수. `mount.tsx`는 호스트 컨테이너 z-index를 **별도 JS 리터럴 `'999999'`**로 세팅(값 일치는 수동 유지). `--z-overlay`/`--z-toast`는 Popover/Toast 미도입으로 미사용 | — |
 | 위젯 프레임 폭 | `320px` 고정 · collapsed pill `h-10`(40) | timer / timer-persistence |
 | Extension Page max-width | auth ≈ 400px / history ≈ 720px (구현 시) | auth / problem-history |
@@ -135,14 +135,15 @@
 | 이름 | 근거 |
 |------|------|
 | `CoditWidget` | Shadow host 래퍼 / 위젯 프레임 (Floating Widget Surface) |
-| `TimerDisplay` | `tabular-nums` 대형 `mm:ss` 표시. 대응 primitive 없음 |
+| `TimerDisplay` | `tabular-nums` 대형 `mm:ss` 표시. 대응 primitive 없음. running 캡션 앞 `LiveDot` |
+| `LiveDot` | "측정 중" 민트 펄스 도트(`animate-ping` 후광 + 중심점). `aria-hidden`. `TimerDisplay`(캡션 앞) · `CollapsedTimer`(시간 뒤) 공유. 첫 사용 Feature: timer (R1) / 추출: collapsed-timer (R6) |
 | `ExtensionPageShell` | Extension Page Surface 프레임 (배경 / 중앙 정렬 컨테이너 / 헤더 슬롯). Auth·Problem History 공유 |
 | `PageHeader` | Extension Page 상단 바 (브랜드 + 현재 사용자(mock) + 로그아웃 자리). 대응 primitive 없음 |
 | `BrandHeader` | Codit 로고 마크(인라인 SVG) + 서비스명 + 문구. lucide 미도입 원칙에 따라 인라인 SVG |
 | `AttemptTimeline` | Attempt 회차 내림차순 나열 컨테이너 |
 | `AttemptItem` | 회차 / 결과 / 풀이 시간 / 태그 / 메모 / 날짜 표시. 구분선은 `border-t` 유틸. 대응 primitive 없음 |
 | `EmptyState` | empty / filtered-empty / 방어 3변형. 문구 + 선택적 액션 버튼 |
-| `CollapsedTimer` | Floating Widget 접힌 상태. Codit 아이콘 + `mm:ss`(`tabular-nums`) + 상시 펼치기 chevron(chevron-up) + stopped 시 인라인 check 아이콘. pill 전체가 펼치기 버튼 — accessible name 은 name-from-contents(sr-only 동작 문구 + 보이는 시간), 장식 아이콘 전부 `aria-hidden`, `aria-live` 미사용. Button 베이스(`h-10`) + 인라인 SVG. 첫 사용 Feature: timer-persistence |
+| `CollapsedTimer` | Floating Widget 접힌 상태. Codit 아이콘 + `mm:ss`(`tabular-nums`) + running 시 시간 뒤 `LiveDot` 펄스 / stopped 시 인라인 check 아이콘 + 상시 펼치기 chevron(chevron-up). pill 전체가 펼치기 버튼 — accessible name 은 name-from-contents(sr-only 동작 문구 + 보이는 시간), 장식 아이콘 전부 `aria-hidden`, `aria-live` 미사용. Button 베이스(`h-10`) + 인라인 SVG. 첫 사용 Feature: timer-persistence |
 
 ---
 

@@ -1,3 +1,4 @@
+import { LiveDot } from '@/components/codit/live-dot';
 import { formatDuration } from '@/lib/format-duration';
 import { cn } from '@/lib/utils';
 
@@ -21,12 +22,7 @@ export function TimerDisplay({ seconds, caption, running, className }: TimerDisp
             </div>
             {caption ? (
                 <p className="text-muted-foreground mt-1 flex items-center justify-center gap-1.5 text-xs">
-                    {running ? (
-                        <span className="relative flex size-1.5" aria-hidden="true">
-                            <span className="bg-success absolute inline-flex size-full animate-ping rounded-full opacity-60" />
-                            <span className="bg-success relative inline-flex size-1.5 rounded-full" />
-                        </span>
-                    ) : null}
+                    {running ? <LiveDot /> : null}
                     <span>{caption}</span>
                 </p>
             ) : null}

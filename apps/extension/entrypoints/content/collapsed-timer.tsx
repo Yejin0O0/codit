@@ -1,6 +1,7 @@
 import type { Ref } from 'react';
 
 import { CoditMark } from '@/components/codit/codit-mark';
+import { LiveDot } from '@/components/codit/live-dot';
 import { Button } from '@/components/ui/button';
 import { formatDuration } from '@/lib/format-duration';
 import { cn } from '@/lib/utils';
@@ -56,6 +57,8 @@ export function CollapsedTimer({
             <CoditMark className="text-primary" />
             <span className="sr-only">{srLabel}</span>
             <span className="text-base font-medium tabular-nums">{formatDuration(seconds)}</span>
+            {/* running = 측정 중 펄스 / stopped = 완료 체크 — "시간 뒤 슬롯"의 배타적 상태 글리프 */}
+            {status === 'running' ? <LiveDot /> : null}
             {status === 'stopped' ? (
                 <svg
                     viewBox="0 0 20 20"
