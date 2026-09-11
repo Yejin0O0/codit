@@ -67,10 +67,7 @@ tasks.named('bootRun') {
 			def allowedKeys = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'JWT_SECRET']
 			def loadedCount = 0
 			envFile.eachLine { line ->
-				def trimmedLine = line.trim()
-				if (trimmedLine.startsWith('export ')) {
-					trimmedLine = trimmedLine.substring('export '.length()).trim()
-				}
+				def trimmedLine = line.trim().replaceFirst(/^export\s+/, '')
 				def eqIdx = trimmedLine.indexOf('=')
 				if (eqIdx <= 0) {
 					return
@@ -79,7 +76,13 @@ tasks.named('bootRun') {
 				if (!allowedKeys.contains(key)) {
 					return
 				}
+				if (System.getenv(key) != null) {
+					return
+				}
 				def rawValue = trimmedLine.substring(eqIdx + 1).trim()
+				if ((rawValue.startsWith('"') ^ rawValue.endsWith('"')) || (rawValue.startsWith("'") ^ rawValue.endsWith("'"))) {
+					throw new GradleException(".env 의 ${key} 값에 닫히지 않은 따옴표가 있습니다: ${rawValue}")
+				}
 				def value
 				if (rawValue.length() >= 2 && ((rawValue.startsWith('"') && rawValue.endsWith('"')) || (rawValue.startsWith("'") && rawValue.endsWith("'")))) {
 					value = rawValue.substring(1, rawValue.length() - 1)
@@ -87,8 +90,8 @@ tasks.named('bootRun') {
 					def hashIdx = rawValue.indexOf(' #')
 					value = (hashIdx >= 0 ? rawValue.substring(0, hashIdx) : rawValue).trim()
 				}
-				if (System.getenv(key) != null) {
-					return
+				if (value.isEmpty()) {
+					throw new GradleException(".env 의 ${key} 값이 비어 있습니다")
 				}
 				environment key, value
 				loadedCount++
