@@ -68,20 +68,9 @@ describe('PopupApp', () => {
         render(<PopupApp />);
         expect(screen.getByRole('status')).toHaveTextContent('세션이 만료되었습니다');
     });
-
-    it('로그아웃 버튼 클릭 후 status가 idle로 바뀌면 MainPage 대신 LoginPage가 렌더링되어야 한다', async () => {
-        const logout = vi.fn().mockResolvedValue(undefined);
-        mockAuthState('authenticated', { accessToken: 'token' }, { logout });
-        const user = userEvent.setup();
-        const { rerender } = render(<PopupApp />);
-
-        await user.click(screen.getByRole('button', { name: '로그아웃' }));
-        expect(logout).toHaveBeenCalledTimes(1);
-
-        mockAuthState('idle');
-        rerender(<PopupApp />);
-
-        expect(screen.queryByTestId('main-page')).not.toBeInTheDocument();
-        expect(screen.getByTestId('login-page')).toBeInTheDocument();
-    });
 });
+
+// 로그아웃 클릭 → 실제 idle 전이 → LoginPage 렌더링까지 이어지는 인과관계는
+// useAuth를 모킹하지 않는 PopupApp.logoutFlow.test.tsx에서 검증한다.
+// (여기서는 useAuth 전체를 모킹하므로 mockAuthState('idle')로 상태를 강제 주입해야
+// 하고, 그러면 logout()이 실제로 전이를 유발하는지는 검증할 수 없다.)
