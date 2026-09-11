@@ -9,10 +9,6 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     plugins: [WxtVitest() as any],
-    esbuild: {
-        jsx: 'automatic',
-        jsxImportSource: 'react',
-    },
     resolve: {
         alias: {
             '@': rootDir,

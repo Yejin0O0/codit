@@ -16,5 +16,10 @@
     "@rolldown/binding-darwin-x64": "1.2.5",
     "@rollup/rollup-darwin-arm64": "^4.63.1",
     "husky": "^9.1.7"
+  },
+  "pnpm": {
+    "overrides": {
+      "js-yaml@>=4.0.0 <4.3.2": ">=4.3.2"
+    }
   }
 }
