@@ -11,7 +11,7 @@ vi.mock('../hooks/useAuth');
 const mockAuthState = (
     status: AuthStatus,
     extra: object = {},
-    { logout = vi.fn() }: { logout?: ReturnType<typeof vi.fn> } = {},
+    { logout = vi.fn<() => Promise<void>>() }: { logout?: () => Promise<void> } = {},
 ) =>
     vi.mocked(useAuthModule.useAuth).mockReturnValue({
         authState: {
