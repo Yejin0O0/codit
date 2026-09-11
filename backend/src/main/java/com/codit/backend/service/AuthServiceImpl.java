@@ -18,12 +18,14 @@ import com.codit.backend.security.JwtTokenProvider;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -43,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
         try {
             profile = googleOAuthClient.getProfile(code, redirectUri);
         } catch (Exception e) {
+            log.warn("Google OAuth 실패 — redirectUri={} error={}", redirectUri, e.getMessage(), e);
             throw new AuthException(AuthErrorCode.OAUTH_FAILED);
         }
 

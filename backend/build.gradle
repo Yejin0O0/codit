@@ -59,4 +59,44 @@ tasks.named('test') {
 tasks.named('bootRun') {
 	jvmArgs '-Dfile.encoding=UTF-8'
 	// TODO: Dockerfile / 배포 스크립트 추가 시 java -jar 실행에도 -Dfile.encoding=UTF-8 명시 필요
+	doFirst {
+		def envFile = file('.env')
+		if (envFile.exists()) {
+			// 지원 형식: KEY=VALUE, export KEY=VALUE, KEY="VALUE" / KEY='VALUE' (따옴표는 벗겨서 주입, 값 앞뒤 공백·인라인 주석 제거)
+			// 이미 export된 환경변수가 있으면 .env 값으로 덮어쓰지 않음
+			def allowedKeys = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'JWT_SECRET']
+			def loadedCount = 0
+			envFile.eachLine { line ->
+				def trimmedLine = line.trim().replaceFirst(/^export\s+/, '')
+				def eqIdx = trimmedLine.indexOf('=')
+				if (eqIdx <= 0) {
+					return
+				}
+				def key = trimmedLine.substring(0, eqIdx).trim()
+				if (!allowedKeys.contains(key)) {
+					return
+				}
+				if (System.getenv(key) != null) {
+					return
+				}
+				def rawValue = trimmedLine.substring(eqIdx + 1).trim()
+				if ((rawValue.startsWith('"') ^ rawValue.endsWith('"')) || (rawValue.startsWith("'") ^ rawValue.endsWith("'"))) {
+					throw new GradleException(".env 의 ${key} 값에 닫히지 않은 따옴표가 있습니다: ${rawValue}")
+				}
+				def value
+				if (rawValue.length() >= 2 && ((rawValue.startsWith('"') && rawValue.endsWith('"')) || (rawValue.startsWith("'") && rawValue.endsWith("'")))) {
+					value = rawValue.substring(1, rawValue.length() - 1)
+				} else {
+					def hashIdx = rawValue.indexOf(' #')
+					value = (hashIdx >= 0 ? rawValue.substring(0, hashIdx) : rawValue).trim()
+				}
+				if (value.isEmpty()) {
+					throw new GradleException(".env 의 ${key} 값이 비어 있습니다")
+				}
+				environment key, value
+				loadedCount++
+			}
+			logger.lifecycle(".env 에서 환경변수 ${loadedCount}개 로드됨 (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET 중)")
+		}
+	}
 }
