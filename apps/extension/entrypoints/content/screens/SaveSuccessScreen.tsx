@@ -3,8 +3,8 @@ import type { Ref } from 'react';
 import { PanelShell } from '@/components/codit/panel-shell';
 import { ResultBadge } from '@/components/codit/result-badge';
 import { formatDuration } from '@/lib/format-duration';
-
 import type { TagOption } from '@/lib/tag-catalog';
+
 import type { ResultType } from '../screens';
 import type { WidgetDragHandlers } from '../useWidgetPosition';
 
