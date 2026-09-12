@@ -69,3 +69,8 @@ describe('PopupApp', () => {
         expect(screen.getByRole('status')).toHaveTextContent('세션이 만료되었습니다');
     });
 });
+
+// 로그아웃 클릭 → 실제 idle 전이 → LoginPage 렌더링까지 이어지는 인과관계는
+// useAuth를 모킹하지 않는 PopupApp.logoutFlow.test.tsx에서 검증한다.
+// (여기서는 useAuth 전체를 모킹하므로 mockAuthState('idle')로 상태를 강제 주입해야
+// 하고, 그러면 logout()이 실제로 전이를 유발하는지는 검증할 수 없다.)
