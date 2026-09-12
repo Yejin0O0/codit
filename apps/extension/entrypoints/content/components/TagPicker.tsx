@@ -4,16 +4,15 @@ import { TagToggleGroup } from '@/components/codit/tag-toggle-group';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
-
-import type { Tag, TagCategory } from '../mockData';
+import type { TagCategory, TagOption } from '@/lib/tag-catalog';
 
 interface TagPickerProps {
-    coreTags: Tag[];
+    coreTags: TagOption[];
     categories: TagCategory[];
-    customTags: Tag[];
+    customTags: TagOption[];
     selectedIds: string[];
     onSelectedChange: (ids: string[]) => void;
-    onAddCustomTag: (name: string) => void;
+    onAddCustomTag: (name: string) => Promise<boolean>;
 }
 
 /**
@@ -30,14 +29,21 @@ export function TagPicker({
 }: TagPickerProps) {
     const [draft, setDraft] = useState('');
     const [moreOpen, setMoreOpen] = useState(false);
+    const [isAdding, setIsAdding] = useState(false);
+    const [addError, setAddError] = useState(false);
 
-    const submitDraft = () => {
+    const submitDraft = async () => {
         const name = draft.trim();
-        if (!name) {
-            return;
+        if (!name || isAdding) return;
+        setIsAdding(true);
+        setAddError(false);
+        const success = await onAddCustomTag(name);
+        setIsAdding(false);
+        if (success) {
+            setDraft('');
+        } else {
+            setAddError(true);
         }
-        onAddCustomTag(name);
-        setDraft('');
     };
 
     return (
@@ -91,16 +97,25 @@ export function TagPicker({
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') {
                             event.preventDefault();
-                            submitDraft();
+                            void submitDraft();
                         }
                     }}
                     placeholder="태그 직접 입력"
                     className="h-8 text-xs"
                 />
-                <Button type="button" size="sm" variant="secondary" onClick={submitDraft}>
-                    추가
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => void submitDraft()}
+                    disabled={isAdding}
+                >
+                    {isAdding ? '추가 중…' : '추가'}
                 </Button>
             </div>
+            {addError ? (
+                <p className="text-destructive text-xs">태그 추가에 실패했습니다. 다시 시도해 주세요.</p>
+            ) : null}
 
             <p className="text-muted-foreground text-xs">{selectedIds.length}개 선택됨</p>
         </div>

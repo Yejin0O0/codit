@@ -131,7 +131,7 @@ export const 태그_선택: TagStory = {
             <TagSelectScreen
                 {...args}
                 onSelectedTagIdsChange={(selectedTagIds) => updateArgs({ selectedTagIds })}
-                onAddCustomTag={() => {}}
+                onAddCustomTag={() => Promise.resolve(true)}
                 onBack={() => {}}
                 onSave={() => {}}
             />

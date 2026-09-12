@@ -5,6 +5,44 @@ import App from './App';
 import * as sessionStore from './timer-session/store';
 import { TIMER_SESSION_VERSION, type TimerSession } from './timer-session/types';
 
+vi.mock('@/lib/authenticatedFetch', () => {
+    const MOCK_API_TAGS = [
+        { id: 1, name: '구현', category: 'CORE' },
+        { id: 2, name: '시뮬레이션', category: 'CORE' },
+        { id: 3, name: '완전 검색(브루트포스)', category: 'CORE' },
+        { id: 4, name: '그리디', category: 'CORE' },
+        { id: 5, name: 'BFS', category: 'CORE' },
+        { id: 6, name: 'DFS', category: 'CORE' },
+        { id: 7, name: '정렬', category: 'CORE' },
+        { id: 8, name: '동적 계획법(DP)', category: 'CORE' },
+        { id: 9, name: '배열', category: 'CORE' },
+        { id: 10, name: '문자열', category: 'CORE' },
+        { id: 11, name: '스택/큐', category: 'CORE' },
+    ];
+
+    return {
+        authenticatedFetch: vi.fn(async (url: string, init?: RequestInit) => {
+            if (String(url).includes('/api/tags') && (!init?.method || init.method === 'GET')) {
+                return new Response(JSON.stringify(MOCK_API_TAGS), { status: 200 });
+            }
+            if (String(url).includes('/api/tags') && init?.method === 'POST') {
+                const body = JSON.parse(init.body as string) as { name: string };
+                const found = MOCK_API_TAGS.find(
+                    (t) => t.name.toLowerCase() === body.name.toLowerCase(),
+                );
+                if (found) {
+                    return new Response(JSON.stringify(found), { status: 200 });
+                }
+                return new Response(
+                    JSON.stringify({ id: 999, name: body.name, category: 'CUSTOM' }),
+                    { status: 201 },
+                );
+            }
+            return new Response(null, { status: 200 });
+        }),
+    };
+});
+
 const COLLAPSE = 'Codit 위젯 접기';
 const collapseBtn = () => screen.queryByRole('button', { name: COLLAPSE });
 const expandBtn = () => screen.queryByRole('button', { name: /펼치기/ });
