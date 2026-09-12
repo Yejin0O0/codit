@@ -2,8 +2,8 @@ import type { Ref } from 'react';
 
 import { PanelShell } from '@/components/codit/panel-shell';
 import { formatDuration } from '@/lib/format-duration';
-
 import type { TagOption } from '@/lib/tag-catalog';
+
 import { RESULT_LABELS, type ResultType } from '../screens';
 import type { WidgetDragHandlers } from '../useWidgetPosition';
 
