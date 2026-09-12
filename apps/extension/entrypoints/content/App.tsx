@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CoditWidget } from '@/components/codit/codit-widget';
+import type { TagOption } from '@/lib/tag-catalog';
 
+import { useTags } from '../../src/hooks/useTags';
 import { isDraftScreen, removeAttemptDraft, writeAttemptDraft } from './attempt-draft/store';
 import { ATTEMPT_DRAFT_VERSION, type AttemptDraft } from './attempt-draft/types';
 import { CollapsedTimer } from './collapsed-timer';
-import { CORE_TAGS, TAG_CATALOG, TAG_CATEGORIES, type Tag } from './mockData';
 import { type ResultType, type Screen } from './screens';
 import { MemoScreen } from './screens/MemoScreen';
 import { ResultSelectScreen } from './screens/ResultSelectScreen';
 import { SaveSuccessScreen } from './screens/SaveSuccessScreen';
 import { TagSelectScreen } from './screens/TagSelectScreen';
 import { TimerScreen } from './screens/TimerScreen';
-import { resolveCustomTagInput } from './tag-input';
 import { markCompleted } from './timer-session/session';
 import { removeTimerSession, writeTimerSession } from './timer-session/store';
 import type { TimerSession } from './timer-session/types';
@@ -77,7 +77,16 @@ export default function App({
     const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
         initialDraft?.selectedTagIds ?? [],
     );
-    const [customTags, setCustomTags] = useState<Tag[]>(initialDraft?.customTags ?? []);
+
+    const {
+        coreTags,
+        categories,
+        customTags,
+        isLoading: tagsLoading,
+        error: tagsError,
+        refetch: refetchTags,
+        addCustomTag,
+    } = useTags();
 
     const { elapsedSeconds, stop } = useTimer(initialTimerInit(initialSession));
 
@@ -125,12 +134,11 @@ export default function App({
     }, [problemId, screen, result, memo, memoOpen, selectedTagIds, customTags]);
 
     const selectedTags = useMemo(() => {
-        const pool = [...TAG_CATALOG, ...customTags];
-
+        const pool: TagOption[] = [...coreTags, ...categories.flatMap((c) => c.tags), ...customTags];
         return selectedTagIds
             .map((id) => pool.find((tag) => tag.id === id))
-            .filter((tag): tag is Tag => tag !== undefined);
-    }, [selectedTagIds, customTags]);
+            .filter((tag): tag is TagOption => tag !== undefined);
+    }, [selectedTagIds, coreTags, categories, customTags]);
 
     const handleComplete = () => {
         stop();
@@ -155,19 +163,11 @@ export default function App({
         setScreen('memo');
     };
 
-    const handleAddCustomTag = (name: string) => {
-        const resolved = resolveCustomTagInput(name, [...TAG_CATALOG, ...customTags]);
-        if (!resolved) {
-            return;
-        }
-
-        // 같은 이름이 이미 있으면 그 태그 id 를 선택한다 — 새 custom id 를 만들지 않는다.
-        if (resolved.isNew) {
-            setCustomTags((prev) => [...prev, resolved.tag]);
-        }
-        setSelectedTagIds((prev) =>
-            prev.includes(resolved.tag.id) ? prev : [...prev, resolved.tag.id],
-        );
+    const handleAddCustomTag = async (name: string): Promise<boolean> => {
+        const tag = await addCustomTag(name);
+        if (!tag) return false;
+        setSelectedTagIds((prev) => (prev.includes(tag.id) ? prev : [...prev, tag.id]));
+        return true;
     };
 
     const handleCollapse = () => setViewState('collapsed');
@@ -231,8 +231,8 @@ export default function App({
                 <TagSelectScreen
                     result={result}
                     step="3 / 3"
-                    coreTags={CORE_TAGS}
-                    categories={TAG_CATEGORIES}
+                    coreTags={coreTags}
+                    categories={categories}
                     customTags={customTags}
                     selectedTagIds={selectedTagIds}
                     onSelectedTagIdsChange={setSelectedTagIds}
@@ -242,6 +242,9 @@ export default function App({
                     onCollapse={handleCollapse}
                     collapseControlRef={collapseControlRef}
                     dragHandlers={dragHandlers}
+                    isLoading={tagsLoading}
+                    error={tagsError}
+                    onRetry={refetchTags}
                 />
             </CoditWidget>
         );
