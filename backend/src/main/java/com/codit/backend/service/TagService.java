@@ -2,11 +2,16 @@ package com.codit.backend.service;
 
 import java.util.List;
 
+import java.util.Optional;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.codit.backend.domain.Tag;
 import com.codit.backend.exception.InvalidRequestException;
+import com.codit.backend.exception.TagErrorCode;
+import com.codit.backend.exception.TagException;
 import com.codit.backend.repository.AttemptRepository;
 import com.codit.backend.repository.TagRepository;
 
@@ -34,12 +39,37 @@ public class TagService {
             .orElseGet(() -> createTag(name.trim(), normalizedName));
     }
 
+    @Transactional
     public Tag renameTag(Long id, String name) {
-        return new Tag(null, null, null); // TODO(tdd-green): Green 단계에서 구현
+        Tag tag = tagRepository.findById(id)
+            .orElseThrow(() -> new TagException(TagErrorCode.TAG_NOT_FOUND));
+        if (!tag.getCategory().equals("CUSTOM")) {
+            throw new TagException(TagErrorCode.TAG_NOT_EDITABLE);
+        }
+        if (name == null || name.isBlank()) {
+            throw new InvalidRequestException("name은 필수입니다.");
+        }
+
+        String normalizedName = name.trim().toLowerCase();
+        Optional<Tag> conflict = tagRepository.findByNormalizedName(normalizedName);
+        if (conflict.isPresent() && !conflict.get().getId().equals(id)) {
+            throw new TagException(TagErrorCode.TAG_NAME_CONFLICT);
+        }
+
+        tag.rename(name.trim(), normalizedName);
+        return tag;
     }
 
     public void deleteTag(Long id) {
-        // TODO(tdd-green): Green 단계에서 구현
+        Tag tag = tagRepository.findById(id)
+            .orElseThrow(() -> new TagException(TagErrorCode.TAG_NOT_FOUND));
+        if (!tag.getCategory().equals("CUSTOM")) {
+            throw new TagException(TagErrorCode.TAG_NOT_EDITABLE);
+        }
+        if (attemptRepository.existsByTagsContaining(tag)) {
+            throw new TagException(TagErrorCode.TAG_IN_USE);
+        }
+        tagRepository.delete(tag);
     }
 
     private TagUpsertResult createTag(String name, String normalizedName) {

@@ -35,6 +35,7 @@ public class Tag {
     }
 
     public void rename(String name, String normalizedName) {
-        // TODO(tdd-green): Green 단계에서 구현
+        this.name = name;
+        this.normalizedName = normalizedName;
     }
 }

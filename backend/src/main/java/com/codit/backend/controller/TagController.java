@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.codit.backend.controller.dto.CreateTagRequest;
 import com.codit.backend.controller.dto.TagResponse;
 import com.codit.backend.controller.dto.UpdateTagRequest;
+import com.codit.backend.domain.Tag;
 import com.codit.backend.service.TagService;
 import com.codit.backend.service.TagUpsertResult;
 
@@ -45,11 +46,13 @@ public class TagController {
 
     @PutMapping("/{id}")
     public ResponseEntity<TagResponse> updateTag(@PathVariable Long id, @RequestBody UpdateTagRequest request) {
-        return null; // TODO(tdd-green): Green 단계에서 구현
+        Tag tag = tagService.renameTag(id, request.name());
+        return ResponseEntity.ok(TagResponse.from(tag));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTag(@PathVariable Long id) {
-        return null; // TODO(tdd-green): Green 단계에서 구현
+        tagService.deleteTag(id);
+        return ResponseEntity.noContent().build();
     }
 }
