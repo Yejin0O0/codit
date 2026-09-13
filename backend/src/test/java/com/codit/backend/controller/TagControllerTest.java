@@ -228,6 +228,28 @@ class TagControllerTest {
     }
 
     @Test
+    void shouldReturn400WithInvalidRequestCodeWhenUpdateNameIsNull() throws Exception {
+        given(tagService.renameTag(26L, null)).willThrow(new InvalidRequestException("name은 필수입니다."));
+
+        mockMvc.perform(put("/api/tags/26")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new UpdateTagRequest(null))))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void shouldReturn400WithInvalidRequestCodeWhenUpdateBodyOmitsNameField() throws Exception {
+        given(tagService.renameTag(26L, null)).willThrow(new InvalidRequestException("name은 필수입니다."));
+
+        mockMvc.perform(put("/api/tags/26")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
     void shouldReturn409WithTagInUseCodeWhenDeletingTagReferencedByAttempt() throws Exception {
         willThrow(new TagException(TagErrorCode.TAG_IN_USE)).given(tagService).deleteTag(26L);
 

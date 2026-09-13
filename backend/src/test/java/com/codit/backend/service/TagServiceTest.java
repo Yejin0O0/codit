@@ -225,11 +225,44 @@ class TagServiceTest {
     }
 
     @Test
+    void shouldThrowTagNotEditableWhenRenamingCategoryTag() {
+        Tag category = new Tag("연결 리스트", "연결 리스트", "자료구조");
+        ReflectionTestUtils.setField(category, "id", 12L);
+        given(tagRepository.findById(12L)).willReturn(Optional.of(category));
+
+        assertThatThrownBy(() -> tagService.renameTag(12L, "새이름"))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_NOT_EDITABLE);
+    }
+
+    @Test
+    void shouldThrowTagNotEditableWhenDeletingCategoryTag() {
+        Tag category = new Tag("연결 리스트", "연결 리스트", "자료구조");
+        ReflectionTestUtils.setField(category, "id", 12L);
+        given(tagRepository.findById(12L)).willReturn(Optional.of(category));
+
+        assertThatThrownBy(() -> tagService.deleteTag(12L))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_NOT_EDITABLE);
+    }
+
+    @Test
     void shouldThrowInvalidRequestExceptionWhenRenamingWithBlankName() {
         Tag existing = customTag(26L, "이분그래프", "이분그래프");
         given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> tagService.renameTag(26L, "   "))
+            .isInstanceOf(InvalidRequestException.class);
+    }
+
+    @Test
+    void shouldThrowInvalidRequestExceptionWhenRenamingWithNullName() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> tagService.renameTag(26L, null))
             .isInstanceOf(InvalidRequestException.class);
     }
 
