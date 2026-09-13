@@ -3,6 +3,8 @@ package com.codit.backend.service;
 import com.codit.backend.domain.Attempt;
 import com.codit.backend.domain.AttemptResult;
 import com.codit.backend.domain.Tag;
+import com.codit.backend.exception.AttemptErrorCode;
+import com.codit.backend.exception.AttemptException;
 import com.codit.backend.exception.InvalidRequestException;
 import com.codit.backend.repository.AttemptRepository;
 import com.codit.backend.repository.TagRepository;
@@ -36,6 +38,11 @@ public class AttemptService {
 
         Attempt attempt = new Attempt(userId, problemId, elapsedTime, result, command.memo(), tags);
         return attemptRepository.save(attempt);
+    }
+
+    public Attempt replaceTags(Long userId, Long attemptId, List<Long> tagIds) {
+        return new Attempt(userId, "STUB", 0, AttemptResult.CORRECT, null, List.of());
+        // TODO(tdd-green): Green 단계에서 구현
     }
 
     private List<Tag> resolveTags(List<Long> tagIds) {

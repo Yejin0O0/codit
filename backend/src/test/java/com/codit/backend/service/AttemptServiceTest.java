@@ -10,16 +10,20 @@ import static org.mockito.Mockito.verify;
 import com.codit.backend.domain.Attempt;
 import com.codit.backend.domain.AttemptResult;
 import com.codit.backend.domain.Tag;
+import com.codit.backend.exception.AttemptErrorCode;
+import com.codit.backend.exception.AttemptException;
 import com.codit.backend.exception.InvalidRequestException;
 import com.codit.backend.repository.AttemptRepository;
 import com.codit.backend.repository.TagRepository;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class AttemptServiceTest {
@@ -219,5 +223,117 @@ class AttemptServiceTest {
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("빈 값");
         verify(attemptRepository, never()).save(any());
+    }
+
+    // ── replaceTags: 정상 ──────────────────────────────────
+
+    private Attempt attemptOwnedBy(Long userId, Long attemptId, List<Tag> tags) {
+        Attempt attempt = new Attempt(userId, PROBLEM_ID, 342, AttemptResult.CORRECT, null, tags);
+        ReflectionTestUtils.setField(attempt, "id", attemptId);
+        return attempt;
+    }
+
+    @Test
+    void shouldReplaceAttemptTagsAndReturnUpdatedAttemptWhenValidTagIdsGivenForOwnersAttempt() {
+        Attempt existing = attemptOwnedBy(1L, 10L, List.of(tag("구현")));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
+        given(tagRepository.findAllById(List.of(4L, 6L, 26L)))
+                .willReturn(List.of(tag("A"), tag("B"), tag("C")));
+
+        Attempt result = attemptService.replaceTags(1L, 10L, List.of(4L, 6L, 26L));
+
+        assertThat(result.getTags()).hasSize(3);
+    }
+
+    // ── replaceTags: 경계 ──────────────────────────────────
+
+    @Test
+    void shouldAcceptExactlyOneTagIdWhenReplacingTags() {
+        Attempt existing = attemptOwnedBy(1L, 10L, List.of(tag("구현")));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
+        given(tagRepository.findAllById(List.of(6L))).willReturn(List.of(tag("DFS")));
+
+        Attempt result = attemptService.replaceTags(1L, 10L, List.of(6L));
+
+        assertThat(result.getTags()).hasSize(1);
+    }
+
+    @Test
+    void shouldAcceptDuplicateTagIdsAndLinkEachDistinctTagOnceWhenReplacingTags() {
+        Attempt existing = attemptOwnedBy(1L, 10L, List.of(tag("구현")));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
+        given(tagRepository.findAllById(List.of(6L))).willReturn(List.of(tag("DFS")));
+
+        Attempt result = attemptService.replaceTags(1L, 10L, List.of(6L, 6L));
+
+        assertThat(result.getTags()).hasSize(1);
+    }
+
+    // ── replaceTags: 예외 ──────────────────────────────────
+
+    @Test
+    void shouldThrowAttemptNotFoundWhenReplacingTagsOnNonExistentAttempt() {
+        given(attemptRepository.findById(999L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> attemptService.replaceTags(1L, 999L, List.of(6L)))
+                .isInstanceOf(AttemptException.class)
+                .extracting(e -> ((AttemptException) e).getErrorCode())
+                .isEqualTo(AttemptErrorCode.ATTEMPT_NOT_FOUND);
+    }
+
+    @Test
+    void shouldThrowAttemptNotFoundWhenReplacingTagsOnAnotherUsersAttempt() {
+        Attempt ownedByUserA = attemptOwnedBy(100L, 10L, List.of(tag("구현")));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(ownedByUserA));
+
+        assertThatThrownBy(() -> attemptService.replaceTags(200L, 10L, List.of(6L)))
+                .isInstanceOf(AttemptException.class)
+                .extracting(e -> ((AttemptException) e).getErrorCode())
+                .isEqualTo(AttemptErrorCode.ATTEMPT_NOT_FOUND);
+    }
+
+    @Test
+    void shouldThrowMinTagRequiredWhenReplacingWithNullTagIds() {
+        Attempt existing = attemptOwnedBy(1L, 10L, List.of(tag("구현")));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> attemptService.replaceTags(1L, 10L, null))
+                .isInstanceOf(AttemptException.class)
+                .extracting(e -> ((AttemptException) e).getErrorCode())
+                .isEqualTo(AttemptErrorCode.MIN_TAG_REQUIRED);
+    }
+
+    @Test
+    void shouldThrowMinTagRequiredWhenReplacingWithEmptyTagIds() {
+        Attempt existing = attemptOwnedBy(1L, 10L, List.of(tag("구현")));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> attemptService.replaceTags(1L, 10L, List.of()))
+                .isInstanceOf(AttemptException.class)
+                .extracting(e -> ((AttemptException) e).getErrorCode())
+                .isEqualTo(AttemptErrorCode.MIN_TAG_REQUIRED);
+    }
+
+    @Test
+    void shouldThrowInvalidRequestExceptionWhenReplaceTagIdsContainsNullElement() {
+        Attempt existing = attemptOwnedBy(1L, 10L, List.of(tag("구현")));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> attemptService.replaceTags(1L, 10L, Arrays.asList(6L, null)))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("빈 값");
+    }
+
+    @Test
+    void shouldThrowInvalidRequestExceptionAndNotReplaceWhenReplaceTagIdsContainsIdNotInTagTable() {
+        Tag original = tag("구현");
+        Attempt existing = attemptOwnedBy(1L, 10L, List.of(original));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
+        given(tagRepository.findAllById(List.of(6L, 999L))).willReturn(List.of(tag("DFS")));
+
+        assertThatThrownBy(() -> attemptService.replaceTags(1L, 10L, List.of(6L, 999L)))
+                .isInstanceOf(InvalidRequestException.class);
+
+        assertThat(existing.getTags()).containsExactly(original);
     }
 }

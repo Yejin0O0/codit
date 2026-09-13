@@ -58,4 +58,8 @@ public class Attempt {
         this.tags = new ArrayList<>(tags);
         this.createdAt = Instant.now();
     }
+
+    public void replaceTags(List<Tag> newTags) {
+        // TODO(tdd-green): Green 단계에서 구현
+    }
 }
