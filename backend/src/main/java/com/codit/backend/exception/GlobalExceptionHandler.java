@@ -21,6 +21,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(new ErrorResponse("INVALID_REQUEST", e.getMessage()));
     }
 
+    @ExceptionHandler(TagException.class)
+    public ResponseEntity<ErrorResponse> handleTagException(TagException e) {
+        return ResponseEntity
+            .status(e.getErrorCode().getHttpStatus())
+            .body(new ErrorResponse(e.getErrorCode().name(), e.getMessage()));
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException e) {
         return ResponseEntity.badRequest()

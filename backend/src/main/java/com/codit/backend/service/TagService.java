@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.codit.backend.domain.Tag;
 import com.codit.backend.exception.InvalidRequestException;
+import com.codit.backend.repository.AttemptRepository;
 import com.codit.backend.repository.TagRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 public class TagService {
 
     private final TagRepository tagRepository;
+    private final AttemptRepository attemptRepository;
 
     public List<Tag> getAllTags() {
         return tagRepository.findAll();
@@ -30,6 +32,14 @@ public class TagService {
         return tagRepository.findByNormalizedName(normalizedName)
             .map(existing -> new TagUpsertResult(existing, false))
             .orElseGet(() -> createTag(name.trim(), normalizedName));
+    }
+
+    public Tag renameTag(Long id, String name) {
+        return new Tag(null, null, null); // TODO(tdd-green): Green 단계에서 구현
+    }
+
+    public void deleteTag(Long id) {
+        // TODO(tdd-green): Green 단계에서 구현
     }
 
     private TagUpsertResult createTag(String name, String normalizedName) {

@@ -3,6 +3,7 @@ package com.codit.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
@@ -16,9 +17,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.codit.backend.domain.Tag;
 import com.codit.backend.exception.InvalidRequestException;
+import com.codit.backend.exception.TagErrorCode;
+import com.codit.backend.exception.TagException;
+import com.codit.backend.repository.AttemptRepository;
 import com.codit.backend.repository.TagRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,8 +32,17 @@ class TagServiceTest {
     @Mock
     private TagRepository tagRepository;
 
+    @Mock
+    private AttemptRepository attemptRepository;
+
     @InjectMocks
     private TagService tagService;
+
+    private Tag customTag(Long id, String name, String normalizedName) {
+        Tag tag = new Tag(name, normalizedName, "CUSTOM");
+        ReflectionTestUtils.setField(tag, "id", id);
+        return tag;
+    }
 
     @Test
     void shouldReturnAllTagsFromRepository() {
@@ -130,5 +144,131 @@ class TagServiceTest {
 
         assertThat(result.created()).isFalse();
         assertThat(result.tag()).isEqualTo(existing);
+    }
+
+    @Test
+    void shouldRenameTagAndReturnUpdatedTagWhenValidNewNameGivenForCustomTag() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+        given(tagRepository.findByNormalizedName("이분 그래프")).willReturn(Optional.empty());
+
+        Tag result = tagService.renameTag(26L, "이분 그래프");
+
+        assertThat(result.getName()).isEqualTo("이분 그래프");
+        assertThat(result.getCategory()).isEqualTo("CUSTOM");
+    }
+
+    @Test
+    void shouldSucceedWithoutConflictWhenRenamingToItsOwnCurrentName() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+        given(tagRepository.findByNormalizedName("이분그래프")).willReturn(Optional.of(existing));
+
+        Tag result = tagService.renameTag(26L, "이분그래프");
+
+        assertThat(result.getName()).isEqualTo("이분그래프");
+    }
+
+    @Test
+    void shouldNormalizeNameWithTrimAndLowercaseBeforeConflictCheck() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+        given(tagRepository.findByNormalizedName("dfs")).willReturn(Optional.empty());
+
+        tagService.renameTag(26L, " DFS ");
+
+        verify(tagRepository).findByNormalizedName(eq("dfs"));
+    }
+
+    @Test
+    void shouldThrowTagNotFoundWhenRenamingNonExistentTagId() {
+        given(tagRepository.findById(999L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tagService.renameTag(999L, "이분 그래프"))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_NOT_FOUND);
+    }
+
+    @Test
+    void shouldThrowTagNotFoundWhenDeletingNonExistentTagId() {
+        given(tagRepository.findById(999L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tagService.deleteTag(999L))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_NOT_FOUND);
+    }
+
+    @Test
+    void shouldThrowTagNotEditableWhenRenamingCoreTag() {
+        Tag core = new Tag("DFS", "dfs", "CORE");
+        ReflectionTestUtils.setField(core, "id", 6L);
+        given(tagRepository.findById(6L)).willReturn(Optional.of(core));
+
+        assertThatThrownBy(() -> tagService.renameTag(6L, "새이름"))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_NOT_EDITABLE);
+    }
+
+    @Test
+    void shouldThrowTagNotEditableWhenDeletingCoreTag() {
+        Tag core = new Tag("DFS", "dfs", "CORE");
+        ReflectionTestUtils.setField(core, "id", 6L);
+        given(tagRepository.findById(6L)).willReturn(Optional.of(core));
+
+        assertThatThrownBy(() -> tagService.deleteTag(6L))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_NOT_EDITABLE);
+    }
+
+    @Test
+    void shouldThrowInvalidRequestExceptionWhenRenamingWithBlankName() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> tagService.renameTag(26L, "   "))
+            .isInstanceOf(InvalidRequestException.class);
+    }
+
+    @Test
+    void shouldThrowTagNameConflictWhenNormalizedNewNameMatchesDifferentExistingTag() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        Tag other = new Tag("DFS", "dfs", "CORE");
+        ReflectionTestUtils.setField(other, "id", 6L);
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+        given(tagRepository.findByNormalizedName("dfs")).willReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> tagService.renameTag(26L, "dfs"))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_NAME_CONFLICT);
+    }
+
+    @Test
+    void shouldDeleteTagWhenCustomTagIsNotReferencedByAnyAttempt() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+        given(attemptRepository.existsByTagsContaining(existing)).willReturn(false);
+
+        tagService.deleteTag(26L);
+
+        verify(tagRepository).delete(existing);
+    }
+
+    @Test
+    void shouldThrowTagInUseWhenDeletingTagReferencedByAtLeastOneAttempt() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+        given(attemptRepository.existsByTagsContaining(existing)).willReturn(true);
+
+        assertThatThrownBy(() -> tagService.deleteTag(26L))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_IN_USE);
+
+        verify(tagRepository, never()).delete(any());
     }
 }
