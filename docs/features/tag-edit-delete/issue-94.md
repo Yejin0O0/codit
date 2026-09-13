@@ -93,6 +93,7 @@ public ResponseEntity<AttemptResponse> replaceTags(
 
 - [정상] AttemptService.replaceTags — should replace attempt's tags and return updated attempt when valid tagIds given for the owner's attempt
 - [정상] AttemptController.replaceTags — should return 200 with updated attempt body when replace succeeds
+- [정상] AttemptServiceIntegrationTest — should persist replaced tags to the database (real JPA dirty-checking, @DataJpaTest) when replaceTags commits — ac-verifier 권고로 추가
 
 ### 경계
 
@@ -103,6 +104,7 @@ public ResponseEntity<AttemptResponse> replaceTags(
 
 - [예외] AttemptService.replaceTags — should throw AttemptException(ATTEMPT_NOT_FOUND) when attempt id does not exist
 - [예외] AttemptService.replaceTags — should throw AttemptException(ATTEMPT_NOT_FOUND) when attempt belongs to a different user
+- [예외] AttemptController.replaceTags — should return 404 ATTEMPT_NOT_FOUND when replacing tags on another user's attempt (존재하지 않는 경우와 별개로 독립 검증) — ac-verifier 권고로 추가
 - [예외] AttemptService.replaceTags — should throw AttemptException(MIN_TAG_REQUIRED) when tagIds is null
 - [예외] AttemptService.replaceTags — should throw AttemptException(MIN_TAG_REQUIRED) when tagIds is empty
 - [예외] AttemptService.replaceTags — should throw InvalidRequestException when tagIds contains a null element

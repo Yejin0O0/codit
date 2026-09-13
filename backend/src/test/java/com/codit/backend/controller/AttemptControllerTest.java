@@ -242,6 +242,20 @@ class AttemptControllerTest {
     }
 
     @Test
+    void shouldReturn404WithAttemptNotFoundCodeWhenReplacingTagsOnAnotherUsersAttempt() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(2L);
+        given(attemptService.replaceTags(2L, 10L, List.of(6L)))
+                .willThrow(new AttemptException(AttemptErrorCode.ATTEMPT_NOT_FOUND));
+
+        mockMvc.perform(put("/api/attempts/10/tags")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new ReplaceAttemptTagsRequest(List.of(6L)))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ATTEMPT_NOT_FOUND"));
+    }
+
+    @Test
     void shouldReturn409WithMinTagRequiredCodeWhenReplaceTagsIsEmpty() throws Exception {
         given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
         given(attemptService.replaceTags(1L, 10L, List.of()))
