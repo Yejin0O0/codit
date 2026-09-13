@@ -33,4 +33,9 @@ public class Tag {
         this.normalizedName = normalizedName;
         this.category = category;
     }
+
+    public void rename(String name, String normalizedName) {
+        this.name = name;
+        this.normalizedName = normalizedName;
+    }
 }
