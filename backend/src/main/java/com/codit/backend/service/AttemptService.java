@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -40,15 +41,26 @@ public class AttemptService {
         return attemptRepository.save(attempt);
     }
 
+    @Transactional
     public Attempt replaceTags(Long userId, Long attemptId, List<Long> tagIds) {
-        return new Attempt(userId, "STUB", 0, AttemptResult.CORRECT, null, List.of());
-        // TODO(tdd-green): Green 단계에서 구현
+        Attempt attempt = attemptRepository.findById(attemptId)
+            .filter(a -> a.getUserId().equals(userId))
+            .orElseThrow(() -> new AttemptException(AttemptErrorCode.ATTEMPT_NOT_FOUND));
+        if (tagIds == null || tagIds.isEmpty()) {
+            throw new AttemptException(AttemptErrorCode.MIN_TAG_REQUIRED);
+        }
+        attempt.replaceTags(findTagsByIds(tagIds));
+        return attempt;
     }
 
     private List<Tag> resolveTags(List<Long> tagIds) {
         if (tagIds == null || tagIds.isEmpty()) {
             throw new InvalidRequestException("태그를 1개 이상 선택해야 합니다.");
         }
+        return findTagsByIds(tagIds);
+    }
+
+    private List<Tag> findTagsByIds(List<Long> tagIds) {
         if (tagIds.stream().anyMatch(Objects::isNull)) {
             throw new InvalidRequestException("태그 id에 빈 값이 포함될 수 없습니다.");
         }

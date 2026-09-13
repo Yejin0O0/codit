@@ -60,6 +60,6 @@ public class Attempt {
     }
 
     public void replaceTags(List<Tag> newTags) {
-        // TODO(tdd-green): Green 단계에서 구현
+        this.tags = new ArrayList<>(newTags);
     }
 }

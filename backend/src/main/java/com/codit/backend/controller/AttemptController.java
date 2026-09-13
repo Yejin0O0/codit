@@ -42,7 +42,8 @@ public class AttemptController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id,
             @RequestBody ReplaceAttemptTagsRequest request) {
-        return null; // TODO(tdd-green): Green 단계에서 구현
+        Attempt attempt = attemptService.replaceTags(userId, id, request.tagIds());
+        return ResponseEntity.ok(toResponse(attempt));
     }
 
     private AttemptResponse toResponse(Attempt attempt) {
