@@ -1,7 +1,6 @@
 package com.codit.backend.service;
 
 import java.util.List;
-
 import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -20,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class TagService {
+
+    private static final String CUSTOM_CATEGORY = "CUSTOM";
 
     private final TagRepository tagRepository;
     private final AttemptRepository attemptRepository;
@@ -41,11 +42,7 @@ public class TagService {
 
     @Transactional
     public Tag renameTag(Long id, String name) {
-        Tag tag = tagRepository.findById(id)
-            .orElseThrow(() -> new TagException(TagErrorCode.TAG_NOT_FOUND));
-        if (!tag.getCategory().equals("CUSTOM")) {
-            throw new TagException(TagErrorCode.TAG_NOT_EDITABLE);
-        }
+        Tag tag = findEditableCustomTag(id);
         if (name == null || name.isBlank()) {
             throw new InvalidRequestException("name은 필수입니다.");
         }
@@ -61,20 +58,25 @@ public class TagService {
     }
 
     public void deleteTag(Long id) {
-        Tag tag = tagRepository.findById(id)
-            .orElseThrow(() -> new TagException(TagErrorCode.TAG_NOT_FOUND));
-        if (!tag.getCategory().equals("CUSTOM")) {
-            throw new TagException(TagErrorCode.TAG_NOT_EDITABLE);
-        }
+        Tag tag = findEditableCustomTag(id);
         if (attemptRepository.existsByTagsContaining(tag)) {
             throw new TagException(TagErrorCode.TAG_IN_USE);
         }
         tagRepository.delete(tag);
     }
 
+    private Tag findEditableCustomTag(Long id) {
+        Tag tag = tagRepository.findById(id)
+            .orElseThrow(() -> new TagException(TagErrorCode.TAG_NOT_FOUND));
+        if (!tag.getCategory().equals(CUSTOM_CATEGORY)) {
+            throw new TagException(TagErrorCode.TAG_NOT_EDITABLE);
+        }
+        return tag;
+    }
+
     private TagUpsertResult createTag(String name, String normalizedName) {
         try {
-            Tag saved = tagRepository.save(new Tag(name, normalizedName, "CUSTOM"));
+            Tag saved = tagRepository.save(new Tag(name, normalizedName, CUSTOM_CATEGORY));
             return new TagUpsertResult(saved, true);
         } catch (DataIntegrityViolationException e) {
             Tag existing = tagRepository.findByNormalizedName(normalizedName).orElseThrow();
