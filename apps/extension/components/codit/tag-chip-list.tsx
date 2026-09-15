@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { tagColorClass } from '@/lib/tag-colors';
 import { cn } from '@/lib/utils';
 
 // history/types.ts 에 의존하지 않는다 — 필요한 최소 shape만 사용.
@@ -24,7 +25,7 @@ export function TagChipList({ tagIds, catalog, className }: TagChipListProps) {
     return (
         <div className={cn('flex flex-wrap gap-1', className)}>
             {chips.map((tag) => (
-                <Badge key={tag.id} variant="secondary">
+                <Badge key={tag.id} className={cn('font-normal', tagColorClass(tag.id))}>
                     {tag.name}
                 </Badge>
             ))}

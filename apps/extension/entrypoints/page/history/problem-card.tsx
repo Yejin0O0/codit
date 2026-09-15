@@ -14,7 +14,10 @@ interface ProblemCardProps {
 export function ProblemCard({ problem, tagCatalog, onSelect }: ProblemCardProps) {
     return (
         <button type="button" onClick={onSelect} className="w-full text-left">
+            {/* [UI-L2 R9] Option 5 — 태그(유형)가 1차 스캔 포인트가 되도록 맨 윗줄에 배치 */}
             <Card className="hover:border-ring gap-2 p-4">
+                <TagChipList tagIds={problem.tagIds} catalog={tagCatalog} />
+
                 <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold">#{problem.problemId}</span>
                     <ResultBadge result={problem.latestResult} />
@@ -33,8 +36,6 @@ export function ProblemCard({ problem, tagCatalog, onSelect }: ProblemCardProps)
                         </>
                     ) : null}
                 </p>
-
-                <TagChipList tagIds={problem.tagIds} catalog={tagCatalog} />
             </Card>
         </button>
     );
