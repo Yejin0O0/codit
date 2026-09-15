@@ -114,13 +114,50 @@ result 값이 코드베이스 3곳에서 다르다.
 - (-) PR #34가 develop에 머지돼야 이 이슈를 시작할 수 있다.
 - (-) 컨트롤러 슬라이스 테스트에서 Security 필터가 적용되므로 인증 요청 흉내 셋업이 필요하다 (`spring-security-test`).
 
+### ADR-5. 히스토리 조회 API는 `GET /api/attempts`(문제별 집계 목록) + `GET /api/attempts/{problemId}`(회차별 상세)로 나눈다
+
+**Context**
+
+이슈 #88. 익스텐션 페이지의 "내 문제풀이" 화면(`docs/features/problem-history/`)이 지금까지 mock 데이터로만 동작했고(`Known Gaps`: "실제 API 없음"), 이를 FE에 연동하는 이슈 #91(예진)이 `GET /api/attempts`(목록)와 `GET /api/attempts/{id}`(상세)를 의존성으로 명시했다. `attempt`/`attempt_tag` 테이블은 이미 이 기능(ADR-1~4)이 채우고 있다.
+
+FE의 feature-local 뷰모델(`entrypoints/page/history/types.ts`)이 요구하는 형태(Product Rule):
+
+- 1 Problem : N Attempts. 목록은 문제당 1행.
+- `latestResult`/`latestElapsedTime` = 그 문제의 attempt 중 가장 최근(createdAt 최대) 것 기준.
+- 문제의 `tags` = 그 문제에 속한 모든 attempt의 태그 합집합(unique).
+- 상세의 `attempts[].seq` = 그 문제 안에서 createdAt 오름차순 순번(1부터).
+
+**Decision**
+
+- 엔드포인트: `GET /api/attempts`(로그인 유저의 문제별 집계 목록) / `GET /api/attempts/{problemId}`(특정 문제의 회차별 시도 상세, `{problemId}`는 Attempt PK가 아니라 문제 비즈니스 id 문자열).
+- 인증은 ADR-4와 동일하게 `@AuthenticationPrincipal Long userId` 재사용, 본인 데이터만 조회.
+- 응답의 `tags`는 `TagResponse[]`(id/name/category 전체 객체) — 이미 나간 `AttemptResponse`(POST) 응답과 형태를 통일해, FE가 id→이름 매핑을 위해 `GET /api/tags` 캐시와 재조인하지 않아도 되게 한다.
+- 필드명은 `elapsedTime`/`createdAt`을 유지한다 — `AttemptResponse`(POST)와 동일한 이름. FE mock의 `durationSeconds`/`recordedAt`은 #91에서 이 이름에 맞춰 매핑한다.
+- 목록 정렬은 `latestSolvedAt`(= 그 문제 최신 attempt의 `createdAt`) 내림차순 — 최근 푼 문제가 위로. `problemId`는 의미 없는 문자열이라 정렬 기준으로 부적절.
+- `Problem` 엔티티에 `title` 필드가 없어(ADR-3 참고, `problemId`/`url`/`createdAt`만 존재) 응답에 `title`을 포함하지 않는다. FE 뷰모델의 `title?`이 optional이라 문제없다.
+- 페이지네이션 없음 (MVP 범위, 이슈 #9의 Out of Scope와 동일). 기록 없음은 `200 []`(404 아님). 본인이 시도한 적 없는 `problemId` 상세 조회는 `404`.
+
+**Alternatives**
+
+- **`tagIds: number[]`만 반환 (안 B)**: FE mock 필드명(`tagIds`)과 표면적으로 비슷해 변경이 적어 보이지만, 값 타입 자체(string→number)는 어차피 바뀌어야 하고, 렌더링을 위해 클라이언트가 `GET /api/tags` 캐시와 다시 조인해야 한다. 이미 검증된 `TagResponse[]` 패턴을 버릴 이유가 없다.
+- **FE mock 필드명(`durationSeconds`/`recordedAt`) 그대로 맞춤**: 같은 API 표면(`/api/attempts` 계열)에서 같은 개념에 두 가지 이름이 공존하게 돼 오히려 혼란을 키운다.
+- **`GET /api/problems/{problemId}/attempts`로 경로 구성**: 더 RESTful해 보이지만 이슈 #91이 이미 `/api/attempts/{id}` 형태로 의존성을 명시했고, `Problem` 리소스가 아직 얕아(title 없음) 이점이 없다.
+
+**Consequences**
+
+- (+) `AttemptResponse`(POST)와 응답 형태·필드명이 일관돼 FE가 두 세트의 파싱 로직을 만들 필요가 없다.
+- (+) 집계 로직(Product Rule)이 문서에 이미 정의돼 있어 구현·테스트 기준이 명확하다.
+- (-) 태그가 나중에 이름이 바뀌거나(#95/#96, 지은) 삭제되면 히스토리 조회 시점의 현재 값을 보여준다(과거 시점 스냅샷 아님) — 대부분의 서비스에서 기대하는 동작이라 별도 처리 안 함.
+- (-) FE는 #91에서 필드명(`elapsedTime`/`createdAt`)과 태그 타입(객체) 차이를 흡수하는 매핑이 필요하다.
+
 ## 4. Out of Scope
 
+- **문제별/전체 통계 API** (평균 소요시간, 정답률, 태그별 취약도 등) — 대시보드 범위. #88은 목록·상세 조회만.
 - **유형 태그 조회·생성 백엔드** (`GET /api/tags`, `POST /api/tags`, `Tag` 엔티티, 25종 시딩) — 이슈 #40 / PR #41이 담당. 이 기능은 그 `tag` 테이블을 숫자 id로 참조만 한다 (ADR-1).
 - **커스텀 태그**(FR-011) 백엔드 처리 — 이슈 #40의 `POST /api/tags`가 담당. FE가 커스텀 태그를 먼저 생성해 받은 숫자 id를 넘기므로, attempts는 태그 종류를 구분하지 않고 id만 저장한다.
 - **타이머/스톱워치 자체** (FR-002/003) — 백엔드 API 없음. `elapsedTime`은 값으로만 받는다.
 - **Attempt 수정 API** (`PATCH /api/attempts/{id}`) — 결과·메모 변경 시나리오(원본 명세 7.3). MVP 이후 또는 대시보드.
-- **Attempt 조회·목록·통계 API** — 대시보드 범위.
+- **Attempt 통계 API** — 대시보드 범위. (조회·목록은 ADR-5/#88에서 다룸)
 - **보류(HOLD) → 재도전으로 결과 갱신** — 새 Attempt 생성인지 기존 수정인지 미정, 범위 아님.
 - **제출 결과 자동 파싱** (FR-007) — SWEA 연동 방법 미확보. `TIMEOUT`/`COMPILE_ERROR` 결과값도 여기 종속.
 - **서버 측 중복 저장 멱등 처리** — 프론트 버튼 비활성화로 1차 방어. 필요 시 별도 이슈.

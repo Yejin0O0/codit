@@ -15,6 +15,7 @@ import com.codit.backend.exception.AttemptException;
 import com.codit.backend.exception.InvalidRequestException;
 import com.codit.backend.repository.AttemptRepository;
 import com.codit.backend.repository.TagRepository;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +52,17 @@ class AttemptServiceTest {
         Tag tag = tag(name);
         ReflectionTestUtils.setField(tag, "id", id);
         return tag;
+    }
+
+    private Tag tagWithId(long id, String name) {
+        return tag(id, name);
+    }
+
+    private Attempt attemptAt(Long userId, String problemId, AttemptResult result, int elapsedTime,
+            String memo, List<Tag> tags, Instant createdAt) {
+        Attempt a = new Attempt(userId, problemId, elapsedTime, result, memo, tags);
+        ReflectionTestUtils.setField(a, "createdAt", createdAt);
+        return a;
     }
 
     // ── 정상 ──────────────────────────────────────────────
@@ -367,5 +379,214 @@ class AttemptServiceTest {
                 .isInstanceOf(InvalidRequestException.class);
 
         assertThat(existing.getTags()).containsExactly(original);
+    }
+
+    // ── #88 getHistory — 정상/경계 ──────────────────────────
+
+    @Test
+    void shouldReturnOneSummaryPerDistinctProblemId() {
+        Attempt p1 = attemptAt(1L, "P1", AttemptResult.WRONG, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        Attempt p2 = attemptAt(1L, "P2", AttemptResult.CORRECT, 200, null, List.of(),
+                Instant.parse("2026-01-02T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdWithTags(1L)).willReturn(List.of(p1, p2));
+
+        List<AttemptHistorySummary> result = attemptService.getHistory(1L);
+
+        assertThat(result).extracting(AttemptHistorySummary::problemId)
+                .containsExactlyInAnyOrder("P1", "P2");
+    }
+
+    @Test
+    void shouldSetLatestFieldsFromMostRecentAttempt() {
+        Attempt older = attemptAt(1L, "P1", AttemptResult.WRONG, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        Attempt newer = attemptAt(1L, "P1", AttemptResult.CORRECT, 200, null, List.of(),
+                Instant.parse("2026-01-02T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdWithTags(1L)).willReturn(List.of(older, newer));
+
+        AttemptHistorySummary summary = attemptService.getHistory(1L).get(0);
+
+        assertThat(summary.latestResult()).isEqualTo(AttemptResult.CORRECT);
+        assertThat(summary.latestElapsedTime()).isEqualTo(200);
+        assertThat(summary.latestSolvedAt()).isEqualTo(Instant.parse("2026-01-02T00:00:00Z"));
+    }
+
+    @Test
+    void shouldSetAttemptCountToNumberOfAttemptsForThatProblem() {
+        Attempt a1 = attemptAt(1L, "P1", AttemptResult.WRONG, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        Attempt a2 = attemptAt(1L, "P1", AttemptResult.WRONG, 120, null, List.of(),
+                Instant.parse("2026-01-02T00:00:00Z"));
+        Attempt a3 = attemptAt(1L, "P1", AttemptResult.CORRECT, 90, null, List.of(),
+                Instant.parse("2026-01-03T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdWithTags(1L)).willReturn(List.of(a1, a2, a3));
+
+        AttemptHistorySummary summary = attemptService.getHistory(1L).get(0);
+
+        assertThat(summary.attemptCount()).isEqualTo(3);
+    }
+
+    @Test
+    void shouldUnionTagsAcrossAttemptsOfSameProblemWithoutDuplicates() {
+        Tag dfs = tagWithId(6L, "DFS");
+        Tag greedy = tagWithId(4L, "그리디");
+        Attempt a1 = attemptAt(1L, "P1", AttemptResult.WRONG, 100, null, List.of(dfs),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        Attempt a2 = attemptAt(1L, "P1", AttemptResult.CORRECT, 200, null, List.of(dfs, greedy),
+                Instant.parse("2026-01-02T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdWithTags(1L)).willReturn(List.of(a1, a2));
+
+        AttemptHistorySummary summary = attemptService.getHistory(1L).get(0);
+
+        assertThat(summary.tags()).extracting(Tag::getId).containsExactlyInAnyOrder(6L, 4L);
+    }
+
+    @Test
+    void shouldSortSummariesByLatestSolvedAtDescending() {
+        Attempt p1 = attemptAt(1L, "P1", AttemptResult.WRONG, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        Attempt p2 = attemptAt(1L, "P2", AttemptResult.CORRECT, 200, null, List.of(),
+                Instant.parse("2026-01-03T00:00:00Z"));
+        Attempt p3 = attemptAt(1L, "P3", AttemptResult.HOLD, 300, null, List.of(),
+                Instant.parse("2026-01-02T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdWithTags(1L)).willReturn(List.of(p1, p2, p3));
+
+        List<AttemptHistorySummary> result = attemptService.getHistory(1L);
+
+        assertThat(result).extracting(AttemptHistorySummary::problemId)
+                .containsExactly("P2", "P3", "P1");
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenUserHasNoAttempts() {
+        given(attemptRepository.findAllByUserIdWithTags(1L)).willReturn(List.of());
+
+        assertThat(attemptService.getHistory(1L)).isEmpty();
+    }
+
+    @Test
+    void shouldReturnSingleSummaryWithAttemptCountOneForSingleAttemptProblem() {
+        Attempt only = attemptAt(1L, "P1", AttemptResult.CORRECT, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdWithTags(1L)).willReturn(List.of(only));
+
+        List<AttemptHistorySummary> result = attemptService.getHistory(1L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).attemptCount()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldQueryHistoryOnlyForGivenUserId() {
+        Attempt mine = attemptAt(1L, "P1", AttemptResult.CORRECT, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdWithTags(1L)).willReturn(List.of(mine));
+
+        attemptService.getHistory(1L);
+
+        verify(attemptRepository).findAllByUserIdWithTags(1L);
+    }
+
+    // ── #88 getHistoryDetail — 정상/경계 ─────────────────────
+
+    @Test
+    void shouldAssignSeqStartingAt1InChronologicalOrder() {
+        Attempt a1 = attemptAt(1L, "P1", AttemptResult.WRONG, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        Attempt a2 = attemptAt(1L, "P1", AttemptResult.CORRECT, 200, null, List.of(),
+                Instant.parse("2026-01-02T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdAndProblemIdWithTags(1L, "P1")).willReturn(List.of(a1, a2));
+
+        AttemptHistoryDetail detail = attemptService.getHistoryDetail(1L, "P1");
+
+        assertThat(detail.attempts())
+                .filteredOn(e -> e.seq() == 1)
+                .extracting(e -> e.attempt().getElapsedTime())
+                .containsExactly(100);
+        assertThat(detail.attempts())
+                .filteredOn(e -> e.seq() == 2)
+                .extracting(e -> e.attempt().getElapsedTime())
+                .containsExactly(200);
+    }
+
+    @Test
+    void shouldReturnAttemptsSortedBySeqDescending() {
+        Attempt a1 = attemptAt(1L, "P1", AttemptResult.WRONG, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        Attempt a2 = attemptAt(1L, "P1", AttemptResult.WRONG, 120, null, List.of(),
+                Instant.parse("2026-01-02T00:00:00Z"));
+        Attempt a3 = attemptAt(1L, "P1", AttemptResult.CORRECT, 90, null, List.of(),
+                Instant.parse("2026-01-03T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdAndProblemIdWithTags(1L, "P1"))
+                .willReturn(List.of(a1, a2, a3));
+
+        AttemptHistoryDetail detail = attemptService.getHistoryDetail(1L, "P1");
+
+        assertThat(detail.attempts()).extracting(AttemptHistoryEntry::seq).containsExactly(3, 2, 1);
+    }
+
+    @Test
+    void shouldAggregateDetailFieldsTheSameWayAsGetHistory() {
+        Tag dfs = tagWithId(6L, "DFS");
+        Attempt a1 = attemptAt(1L, "P1", AttemptResult.WRONG, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        Attempt a2 = attemptAt(1L, "P1", AttemptResult.CORRECT, 200, null, List.of(dfs),
+                Instant.parse("2026-01-02T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdAndProblemIdWithTags(1L, "P1")).willReturn(List.of(a1, a2));
+
+        AttemptHistoryDetail detail = attemptService.getHistoryDetail(1L, "P1");
+
+        assertThat(detail.problemId()).isEqualTo("P1");
+        assertThat(detail.latestResult()).isEqualTo(AttemptResult.CORRECT);
+        assertThat(detail.attemptCount()).isEqualTo(2);
+        assertThat(detail.tags()).extracting(Tag::getId).containsExactly(6L);
+    }
+
+    @Test
+    void shouldIncludeMemoAndTagsPerIndividualAttemptEntry() {
+        Tag dfs = tagWithId(6L, "DFS");
+        Attempt a1 = attemptAt(1L, "P1", AttemptResult.WRONG, 100, "메모1", List.of(dfs),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdAndProblemIdWithTags(1L, "P1")).willReturn(List.of(a1));
+
+        AttemptHistoryEntry entry = attemptService.getHistoryDetail(1L, "P1").attempts().get(0);
+
+        assertThat(entry.attempt().getMemo()).isEqualTo("메모1");
+        assertThat(entry.attempt().getTags()).extracting(Tag::getId).containsExactly(6L);
+    }
+
+    @Test
+    void shouldReturnSeq1ForProblemWithExactlyOneAttempt() {
+        Attempt only = attemptAt(1L, "P1", AttemptResult.CORRECT, 100, null, List.of(),
+                Instant.parse("2026-01-01T00:00:00Z"));
+        given(attemptRepository.findAllByUserIdAndProblemIdWithTags(1L, "P1")).willReturn(List.of(only));
+
+        AttemptHistoryDetail detail = attemptService.getHistoryDetail(1L, "P1");
+
+        assertThat(detail.attempts()).hasSize(1);
+        assertThat(detail.attempts().get(0).seq()).isEqualTo(1);
+    }
+
+    // ── #88 getHistoryDetail — 예외 ──────────────────────────
+
+    @Test
+    void shouldThrowAttemptNotFoundWhenUserHasNoAttemptsForGivenProblemId() {
+        given(attemptRepository.findAllByUserIdAndProblemIdWithTags(1L, "UNKNOWN")).willReturn(List.of());
+
+        assertThatThrownBy(() -> attemptService.getHistoryDetail(1L, "UNKNOWN"))
+                .isInstanceOf(AttemptException.class)
+                .extracting(e -> ((AttemptException) e).getErrorCode())
+                .isEqualTo(AttemptErrorCode.ATTEMPT_NOT_FOUND);
+    }
+
+    @Test
+    void shouldThrowAttemptNotFoundWhenProblemIdBelongsOnlyToAnotherUser() {
+        given(attemptRepository.findAllByUserIdAndProblemIdWithTags(2L, "P1")).willReturn(List.of());
+
+        assertThatThrownBy(() -> attemptService.getHistoryDetail(2L, "P1"))
+                .isInstanceOf(AttemptException.class)
+                .extracting(e -> ((AttemptException) e).getErrorCode())
+                .isEqualTo(AttemptErrorCode.ATTEMPT_NOT_FOUND);
     }
 }

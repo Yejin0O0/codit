@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -22,7 +23,11 @@ import com.codit.backend.exception.InvalidRequestException;
 import com.codit.backend.security.JwtAuthenticationEntryPoint;
 import com.codit.backend.security.JwtTokenProvider;
 import com.codit.backend.security.SecurityConfig;
+import com.codit.backend.service.AttemptHistoryDetail;
+import com.codit.backend.service.AttemptHistoryEntry;
+import com.codit.backend.service.AttemptHistorySummary;
 import com.codit.backend.service.AttemptService;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -213,6 +218,8 @@ class AttemptControllerTest {
                 .andExpect(jsonPath("$.message").isNotEmpty());
     }
 
+    // ── PUT /api/attempts/{id}/tags (태그 교체) ─────────────
+
     @Test
     void shouldReturn200WithUpdatedAttemptBodyWhenReplaceTagsSucceeds() throws Exception {
         given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
@@ -281,5 +288,113 @@ class AttemptControllerTest {
                         .content(objectMapper.writeValueAsString(new ReplaceAttemptTagsRequest(List.of(999L)))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
+
+    // ── #88 GET /api/attempts (목록) ─────────────────────────
+
+    @Test
+    void shouldReturn200WithHistoryListWhenAuthenticated() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        Tag dfs = new Tag("DFS", "dfs", "CORE");
+        ReflectionTestUtils.setField(dfs, "id", 6L);
+        AttemptHistorySummary summary = new AttemptHistorySummary(
+                PROBLEM_ID, AttemptResult.CORRECT, 3, 342, Instant.parse("2026-09-15T04:12:00Z"), List.of(dfs));
+        given(attemptService.getHistory(1L)).willReturn(List.of(summary));
+
+        mockMvc.perform(get("/api/attempts").header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].problemId").value(PROBLEM_ID))
+                .andExpect(jsonPath("$[0].latestResult").value("CORRECT"))
+                .andExpect(jsonPath("$[0].attemptCount").value(3))
+                .andExpect(jsonPath("$[0].latestElapsedTime").value(342))
+                .andExpect(jsonPath("$[0].latestSolvedAt").value(endsWith("Z")));
+    }
+
+    @Test
+    void shouldReturn200WithEmptyArrayWhenNoHistory() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        given(attemptService.getHistory(1L)).willReturn(List.of());
+
+        mockMvc.perform(get("/api/attempts").header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void shouldSerializeHistoryTagsAsObjectsWithIdNameCategory() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        Tag dfs = new Tag("DFS", "dfs", "CORE");
+        ReflectionTestUtils.setField(dfs, "id", 6L);
+        AttemptHistorySummary summary = new AttemptHistorySummary(
+                PROBLEM_ID, AttemptResult.WRONG, 1, 100, Instant.EPOCH, List.of(dfs));
+        given(attemptService.getHistory(1L)).willReturn(List.of(summary));
+
+        mockMvc.perform(get("/api/attempts").header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].tags[0].id").value(6))
+                .andExpect(jsonPath("$[0].tags[0].name").value("DFS"))
+                .andExpect(jsonPath("$[0].tags[0].category").value("CORE"));
+    }
+
+    @Test
+    void shouldReturn401WhenNoAuthenticationForHistoryList() throws Exception {
+        mockMvc.perform(get("/api/attempts"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ── #88 GET /api/attempts/{problemId} (상세) ─────────────
+
+    @Test
+    void shouldReturn200WithDetailBodyWhenAuthenticated() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        Tag dfs = new Tag("DFS", "dfs", "CORE");
+        ReflectionTestUtils.setField(dfs, "id", 6L);
+        Attempt attempt = new Attempt(1L, PROBLEM_ID, 342, AttemptResult.CORRECT, "메모 내용", List.of(dfs));
+        AttemptHistoryDetail detail = new AttemptHistoryDetail(PROBLEM_ID, AttemptResult.CORRECT, 1,
+                List.of(dfs), List.of(new AttemptHistoryEntry(1, attempt)));
+        given(attemptService.getHistoryDetail(1L, PROBLEM_ID)).willReturn(detail);
+
+        mockMvc.perform(get("/api/attempts/" + PROBLEM_ID).header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.problemId").value(PROBLEM_ID))
+                .andExpect(jsonPath("$.latestResult").value("CORRECT"))
+                .andExpect(jsonPath("$.attemptCount").value(1))
+                .andExpect(jsonPath("$.tags[0].id").value(6))
+                .andExpect(jsonPath("$.attempts[0].seq").value(1))
+                .andExpect(jsonPath("$.attempts[0].result").value("CORRECT"))
+                .andExpect(jsonPath("$.attempts[0].elapsedTime").value(342))
+                .andExpect(jsonPath("$.attempts[0].memo").value("메모 내용"))
+                .andExpect(jsonPath("$.attempts[0].tags[0].id").value(6))
+                .andExpect(jsonPath("$.attempts[0].createdAt").value(endsWith("Z")));
+    }
+
+    @Test
+    void shouldPassJwtUserIdAndPathProblemIdToService() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(42L);
+        given(attemptService.getHistoryDetail(eq(42L), eq(PROBLEM_ID))).willReturn(
+                new AttemptHistoryDetail(PROBLEM_ID, AttemptResult.CORRECT, 0, List.of(), List.of()));
+
+        mockMvc.perform(get("/api/attempts/" + PROBLEM_ID).header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isOk());
+
+        verify(attemptService).getHistoryDetail(42L, PROBLEM_ID);
+    }
+
+    @Test
+    void shouldReturn404WithAttemptNotFoundCodeWhenServiceThrowsNotFound() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        given(attemptService.getHistoryDetail(1L, PROBLEM_ID))
+                .willThrow(new AttemptException(AttemptErrorCode.ATTEMPT_NOT_FOUND));
+
+        mockMvc.perform(get("/api/attempts/" + PROBLEM_ID).header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ATTEMPT_NOT_FOUND"));
+    }
+
+    @Test
+    void shouldReturn401WhenNoAuthenticationForHistoryDetail() throws Exception {
+        mockMvc.perform(get("/api/attempts/" + PROBLEM_ID))
+                .andExpect(status().isUnauthorized());
     }
 }
