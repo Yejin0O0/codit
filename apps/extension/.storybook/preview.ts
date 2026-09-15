@@ -7,7 +7,7 @@ const preview: Preview = {
         layout: 'centered',
         options: {
             storySort: {
-                order: ['시작하기', 'Foundations', ['기초', 'Playground'], 'Primitives', 'Codit', 'Widget'],
+                order: ['시작하기', 'Foundations', ['기초', 'Playground'], 'Primitives', 'Codit', 'Widget', 'Page'],
             },
         },
         controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
