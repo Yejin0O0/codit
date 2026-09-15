@@ -1,10 +1,19 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { AttemptTimeline } from './attempt-timeline';
 import { ATTEMPT_1, ATTEMPT_2, ATTEMPT_3, CATALOG_FX } from './test-fixtures';
 
 describe('AttemptTimeline', () => {
-    it('AttemptItem을 seq 내림차순으로 표시한다', () => {
+    it('attempts 길이가 1이면 회차 목록 없이 AttemptItem 하나만 표시한다', () => {
+        render(<AttemptTimeline attempts={[ATTEMPT_2]} tagCatalog={CATALOG_FX} />);
+
+        expect(screen.queryAllByText(/회차/).length).toBe(1);
+        expect(screen.queryByText(/2회차/)).not.toBeNull();
+        expect(screen.queryByRole('group', { name: '회차 목록' })).toBeNull();
+    });
+
+    it('[UI-L2 R10] 여러 회차면 회차 목록(사이드바)을 seq 내림차순으로 표시하고, 기본으로 최신 회차 상세를 보여준다', () => {
         render(
             <AttemptTimeline
                 attempts={[ATTEMPT_1, ATTEMPT_2, ATTEMPT_3]}
@@ -12,17 +21,37 @@ describe('AttemptTimeline', () => {
             />,
         );
 
-        const labels = screen.queryAllByText(/회차/).map((n) => n.textContent ?? '');
-        expect(labels.length).toBe(3);
-        expect(labels[0]).toMatch(/3회차/);
-        expect(labels[2]).toMatch(/1회차/);
+        const list = screen.getByRole('group', { name: '회차 목록' });
+        const buttons = within(list).getAllByRole('button');
+        expect(buttons.map((b) => b.textContent)).toEqual([
+            expect.stringContaining('3회차'),
+            expect.stringContaining('2회차'),
+            expect.stringContaining('1회차'),
+        ]);
+        expect(buttons[0]).toHaveAttribute('aria-current', 'true');
+
+        // 상세 패널 = 최신(3회차) — 메모까지 보이는 건 AttemptItem(상세)에서만 렌더된다.
+        expect(screen.queryByText(/점화식 다시 세워 통과/)).not.toBeNull();
     });
 
-    it('attempts 길이가 1이면 AttemptItem 하나만 표시한다', () => {
-        render(<AttemptTimeline attempts={[ATTEMPT_2]} tagCatalog={CATALOG_FX} />);
+    it('[UI-L2 R10] 다른 회차 버튼을 클릭하면 상세 패널이 그 회차로 바뀐다', async () => {
+        const user = userEvent.setup();
+        render(
+            <AttemptTimeline
+                attempts={[ATTEMPT_1, ATTEMPT_2, ATTEMPT_3]}
+                tagCatalog={CATALOG_FX}
+            />,
+        );
 
-        expect(screen.queryAllByText(/회차/).length).toBe(1);
-        expect(screen.queryByText(/2회차/)).not.toBeNull();
+        const list = screen.getByRole('group', { name: '회차 목록' });
+        await user.click(within(list).getByText('1회차'));
+
+        expect(within(list).getByText('1회차').closest('button')).toHaveAttribute(
+            'aria-current',
+            'true',
+        );
+        expect(screen.queryByText(/점화식 다시 세워 통과/)).toBeNull();
+        expect(screen.queryByText(/시간 초과/)).toBeNull();
     });
 
     it('정렬 시 입력 attempts 배열을 변경하지 않는다', () => {
@@ -31,7 +60,6 @@ describe('AttemptTimeline', () => {
 
         render(<AttemptTimeline attempts={input} tagCatalog={CATALOG_FX} />);
 
-        expect(screen.queryByText(/3회차/)).not.toBeNull();
         expect(input).toEqual(snapshot);
         expect(input[0]).toBe(ATTEMPT_1);
     });

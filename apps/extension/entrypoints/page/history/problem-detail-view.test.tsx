@@ -25,7 +25,8 @@ describe('ProblemDetailView', () => {
         });
 
         expect(screen.queryByText(/1859/)).not.toBeNull();
-        expect(screen.queryByText(/3회차/)).not.toBeNull();
+        // R10 — 좌우 분할: 3회차가 사이드바 버튼 + 상세 패널 양쪽에 나타날 수 있다.
+        expect(screen.queryAllByText(/3회차/).length).toBeGreaterThan(0);
     });
 
     it('로딩 중에는 상세 스켈레톤을 표시한다', () => {
