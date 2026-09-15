@@ -2,6 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import App from './App';
+import * as attemptDraftStore from './attempt-draft/store';
+import { ATTEMPT_DRAFT_VERSION, type AttemptDraft } from './attempt-draft/types';
 import * as sessionStore from './timer-session/store';
 import { TIMER_SESSION_VERSION, type TimerSession } from './timer-session/types';
 
@@ -878,5 +880,221 @@ describe('App problem title (#37)', () => {
 
         expect(screen.getByText('26837. DNA 수열')).toBeInTheDocument();
         expect(screen.queryByText(`문제 #${PROBLEM_ID}`)).not.toBeInTheDocument();
+    });
+});
+
+describe('App attempt-draft 영속 (#73)', () => {
+    function makeDraft(overrides: Partial<AttemptDraft> = {}): AttemptDraft {
+        return {
+            version: ATTEMPT_DRAFT_VERSION,
+            problemId: PROBLEM_ID,
+            screen: 'result',
+            result: 'WRONG',
+            memo: '',
+            memoOpen: false,
+            selectedTagIds: [],
+            customTags: [],
+            ...overrides,
+        };
+    }
+
+    it('[정상] initialDraft.screen 이 "result" 면 결과 선택 화면으로 뜨고 그 결과가 선택돼 있다', () => {
+        render(
+            <App
+                problemId={PROBLEM_ID}
+                initialSession={makeSession()}
+                initialDraft={makeDraft({ screen: 'result', result: 'WRONG' })}
+            />,
+        );
+
+        expect(screen.getByText('결과 선택')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '다음' })).toBeEnabled();
+    });
+
+    it('[정상] initialDraft.screen 이 "memo" 면 메모 화면으로 뜨고 저장된 메모가 채워져 있다', () => {
+        render(
+            <App
+                problemId={PROBLEM_ID}
+                initialSession={makeSession()}
+                initialDraft={makeDraft({ screen: 'memo', result: 'WRONG', memo: '이분탐색 경계 실수' })}
+            />,
+        );
+
+        expect(screen.getByLabelText('2 / 3 단계')).toBeInTheDocument();
+        expect(screen.getByRole('textbox')).toHaveValue('이분탐색 경계 실수');
+    });
+
+    it('[정상] initialDraft.screen 이 "tags" 면 태그 화면으로 뜨고 저장된 태그가 선택돼 있다', () => {
+        render(
+            <App
+                problemId={PROBLEM_ID}
+                initialSession={makeSession()}
+                initialDraft={makeDraft({
+                    screen: 'tags',
+                    result: 'CORRECT',
+                    selectedTagIds: ['implementation'],
+                })}
+            />,
+        );
+
+        expect(screen.getByText('태그 선택')).toBeInTheDocument();
+        expect(screen.getByText('1개 선택됨')).toBeInTheDocument();
+    });
+
+    it('[정상] initialDraft.memoOpen 이 true 면 CORRECT 메모 화면에서 textarea 가 바로 노출된다', () => {
+        render(
+            <App
+                problemId={PROBLEM_ID}
+                initialSession={makeSession()}
+                initialDraft={makeDraft({
+                    screen: 'memo',
+                    result: 'CORRECT',
+                    memo: '접근 정리',
+                    memoOpen: true,
+                })}
+            />,
+        );
+
+        expect(screen.getByRole('textbox')).toHaveValue('접근 정리');
+    });
+
+    it('[정상] initialDraft.customTags 가 태그 pool 로 복원돼 선택 상태로 표시된다', () => {
+        render(
+            <App
+                problemId={PROBLEM_ID}
+                initialSession={makeSession()}
+                initialDraft={makeDraft({
+                    screen: 'tags',
+                    result: 'CORRECT',
+                    selectedTagIds: ['custom:내태그'],
+                    customTags: [{ id: 'custom:내태그', name: '내태그' }],
+                })}
+            />,
+        );
+
+        expect(screen.getByRole('button', { name: '내태그' })).toHaveAttribute('data-state', 'on');
+    });
+
+    it('[경계] 완료 전 타이머 화면에서는 writeAttemptDraft 를 호출하지 않고, 완료 후 결과 화면에서 호출한다', async () => {
+        const writeSpy = vi
+            .spyOn(attemptDraftStore, 'writeAttemptDraft')
+            .mockResolvedValue(undefined);
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={makeSession()} />);
+
+        expect(writeSpy).not.toHaveBeenCalled();
+
+        await user.click(screen.getByRole('button', { name: '완료' }));
+
+        expect(writeSpy).toHaveBeenCalledWith(
+            PROBLEM_ID,
+            expect.objectContaining({ screen: 'result' }),
+        );
+    });
+
+    it('[정상] 결과를 고르면 writeAttemptDraft 가 그 result 로 호출된다', async () => {
+        const writeSpy = vi
+            .spyOn(attemptDraftStore, 'writeAttemptDraft')
+            .mockResolvedValue(undefined);
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={makeSession()} />);
+
+        await user.click(screen.getByRole('button', { name: '완료' }));
+        await user.click(screen.getByText('오답'));
+
+        expect(writeSpy).toHaveBeenCalledWith(
+            PROBLEM_ID,
+            expect.objectContaining({ result: 'WRONG', screen: 'result' }),
+        );
+    });
+
+    it('[정상] 메모를 입력하면 그 memo 로 writeAttemptDraft 가 즉시 호출된다', async () => {
+        const writeSpy = vi
+            .spyOn(attemptDraftStore, 'writeAttemptDraft')
+            .mockResolvedValue(undefined);
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={makeSession()} />);
+
+        await pickResultAndNext(user, '오답'); // → 메모 화면
+        await user.type(screen.getByRole('textbox'), '경계');
+
+        expect(writeSpy).toHaveBeenCalledWith(
+            PROBLEM_ID,
+            expect.objectContaining({ memo: '경계', screen: 'memo' }),
+        );
+    });
+
+    it('[정상] memo → tags 로 전환하면 writeAttemptDraft 가 screen "tags" 로 호출된다', async () => {
+        const writeSpy = vi
+            .spyOn(attemptDraftStore, 'writeAttemptDraft')
+            .mockResolvedValue(undefined);
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={makeSession()} />);
+
+        await pickResultAndNext(user, '오답'); // → 메모
+        await user.click(screen.getByRole('button', { name: '다음' })); // → 태그
+
+        expect(writeSpy).toHaveBeenCalledWith(
+            PROBLEM_ID,
+            expect.objectContaining({ screen: 'tags' }),
+        );
+    });
+
+    it('[정상] "저장" 클릭 시 removeAttemptDraft(problemId) 가 호출된다', async () => {
+        const removeSpy = vi
+            .spyOn(attemptDraftStore, 'removeAttemptDraft')
+            .mockResolvedValue(undefined);
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={makeSession()} />);
+
+        await pickResultAndNext(user, '보류'); // → 메모
+        await user.click(screen.getByRole('button', { name: '다음' })); // → 태그
+        await user.click(screen.getByRole('button', { name: 'DFS' }));
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(screen.getByText('저장되었어요')).toBeInTheDocument();
+        expect(removeSpy).toHaveBeenCalledWith(PROBLEM_ID);
+    });
+
+    it('[정상] "저장" 클릭 시 removeTimerSession 과 removeAttemptDraft 가 같은 이벤트에서 모두 호출된다', async () => {
+        const removeSessionSpy = vi
+            .spyOn(sessionStore, 'removeTimerSession')
+            .mockResolvedValue(undefined);
+        const removeDraftSpy = vi
+            .spyOn(attemptDraftStore, 'removeAttemptDraft')
+            .mockResolvedValue(undefined);
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={makeSession()} />);
+
+        await pickResultAndNext(user, '보류');
+        await user.click(screen.getByRole('button', { name: '다음' }));
+        await user.click(screen.getByRole('button', { name: 'DFS' }));
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(removeSessionSpy).toHaveBeenCalledWith(PROBLEM_ID);
+        expect(removeDraftSpy).toHaveBeenCalledWith(PROBLEM_ID);
+    });
+
+    it('[예외] writeAttemptDraft 가 실패해도 화면 흐름은 정상 진행된다', async () => {
+        vi.spyOn(attemptDraftStore, 'writeAttemptDraft').mockRejectedValue(new Error('quota'));
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={makeSession()} />);
+
+        await pickResultAndNext(user, '오답');
+
+        expect(screen.getByLabelText('2 / 3 단계')).toBeInTheDocument();
+    });
+
+    it('[예외] removeAttemptDraft 가 실패해도 success 화면은 정상 표시된다', async () => {
+        vi.spyOn(attemptDraftStore, 'removeAttemptDraft').mockRejectedValue(new Error('boom'));
+        const user = userEvent.setup();
+        render(<App problemId={PROBLEM_ID} initialSession={makeSession()} />);
+
+        await pickResultAndNext(user, '보류');
+        await user.click(screen.getByRole('button', { name: '다음' }));
+        await user.click(screen.getByRole('button', { name: 'DFS' }));
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(screen.getByText('저장되었어요')).toBeInTheDocument();
     });
 });

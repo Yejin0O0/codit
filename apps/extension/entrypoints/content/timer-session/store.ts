@@ -1,10 +1,8 @@
-import { storage } from 'wxt/utils/storage';
+import { createKeyedStore } from '@/lib/keyed-storage';
 
 import { TIMER_SESSION_VERSION, type TimerSession } from './types';
 
-function timerSessionKey(problemId: string): `session:timer-session:${string}` {
-    return `session:timer-session:${problemId}`;
-}
+const timerSessionStore = createKeyedStore<TimerSession>('timer-session', '타이머 세션');
 
 export function isValidTimerSession(value: unknown, now: number): value is TimerSession {
     if (typeof value !== 'object' || value === null) {
@@ -34,30 +32,26 @@ export function isValidTimerSession(value: unknown, now: number): value is Timer
 }
 
 export async function readTimerSession(problemId: string): Promise<TimerSession | null> {
-    try {
-        const raw = await storage.getItem(timerSessionKey(problemId));
-        if (isValidTimerSession(raw, Date.now())) {
-            return raw;
-        }
-        return null;
-    } catch {
-        console.warn('[codit] 타이머 세션 읽기에 실패했습니다');
-        return null;
+    const raw = await timerSessionStore.read(problemId);
+    if (isValidTimerSession(raw, Date.now())) {
+        return raw;
     }
+    return null;
 }
 
-export async function writeTimerSession(problemId: string, session: TimerSession): Promise<void> {
-    try {
-        await storage.setItem(timerSessionKey(problemId), session);
-    } catch {
-        console.warn('[codit] 타이머 세션 저장에 실패했습니다');
-    }
-}
+export const writeTimerSession = timerSessionStore.write;
+export const removeTimerSession = timerSessionStore.remove;
 
-export async function removeTimerSession(problemId: string): Promise<void> {
-    try {
-        await storage.removeItem(timerSessionKey(problemId));
-    } catch {
-        console.warn('[codit] 타이머 세션 삭제에 실패했습니다');
+/**
+ * 같은 problemId 에 대한 read-then-write 를 탭 간 직렬화한다.
+ * Web Locks 는 same-origin(SWEA 페이지) 전역이라 두 탭이 동시에 "세션 없음" 을
+ * 읽고 각자 다른 startedAt 으로 새 세션을 만드는 레이스를 막는다.
+ * navigator.locks 미지원 환경에서는 fn 을 그대로 실행한다(fail-soft).
+ */
+export async function withProblemLock<T>(problemId: string, fn: () => Promise<T>): Promise<T> {
+    const { locks } = navigator;
+    if (!locks) {
+        return fn();
     }
+    return locks.request(`codit:timer-session:${problemId}`, fn);
 }

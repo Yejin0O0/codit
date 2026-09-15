@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CoditWidget } from '@/components/codit/codit-widget';
 
+import { isDraftScreen, removeAttemptDraft, writeAttemptDraft } from './attempt-draft/store';
+import { ATTEMPT_DRAFT_VERSION, type AttemptDraft } from './attempt-draft/types';
 import { CollapsedTimer } from './collapsed-timer';
 import { CORE_TAGS, TAG_CATALOG, TAG_CATEGORIES, type Tag } from './mockData';
 import { type ResultType, type Screen } from './screens';
@@ -29,10 +31,19 @@ interface AppProps {
     containerEl?: HTMLElement | null;
     /** mount.tsx 가 복원/생성한 Timer Session. 생략 시 fresh 세션으로 동작(테스트 편의). */
     initialSession?: TimerSession;
+    /** mount.tsx 가 복원한 결과 기록 초안. 생략 시 fresh 흐름(#73). */
+    initialDraft?: AttemptDraft;
 }
 
-/** 복원된 세션이 이미 완료(stopped)면 결과 선택 화면에서 시작한다. */
-function initialScreen(initialSession?: TimerSession): Screen {
+/**
+ * 시작 화면을 정한다.
+ * - 복원된 결과 기록 초안이 있으면 그 화면(#73) — 세션 상태보다 우선.
+ * - 없고 복원된 세션이 이미 완료(stopped)면 결과 선택 화면.
+ */
+function initialScreen(initialSession?: TimerSession, initialDraft?: AttemptDraft): Screen {
+    if (initialDraft) {
+        return initialDraft.screen;
+    }
     if (initialSession && initialSession.status === 'stopped') {
         return 'result';
     }
@@ -49,16 +60,24 @@ function initialTimerInit(
     return { startedAt: initialSession.startedAt, stoppedAt: initialSession.stoppedAt };
 }
 
-export default function App({ problemId, problemTitle, containerEl, initialSession }: AppProps) {
+export default function App({
+    problemId,
+    problemTitle,
+    containerEl,
+    initialSession,
+    initialDraft,
+}: AppProps) {
     const { dragHandlers, reclamp } = useWidgetPosition(containerEl);
 
     const [viewState, setViewState] = useState<WidgetViewState>('expanded');
-    const [screen, setScreen] = useState<Screen>(() => initialScreen(initialSession));
-    const [result, setResult] = useState<ResultType | null>(null);
-    const [memo, setMemo] = useState('');
-    const [memoOpen, setMemoOpen] = useState(false);
-    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-    const [customTags, setCustomTags] = useState<Tag[]>([]);
+    const [screen, setScreen] = useState<Screen>(() => initialScreen(initialSession, initialDraft));
+    const [result, setResult] = useState<ResultType | null>(initialDraft?.result ?? null);
+    const [memo, setMemo] = useState(initialDraft?.memo ?? '');
+    const [memoOpen, setMemoOpen] = useState(initialDraft?.memoOpen ?? false);
+    const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+        initialDraft?.selectedTagIds ?? [],
+    );
+    const [customTags, setCustomTags] = useState<Tag[]>(initialDraft?.customTags ?? []);
 
     const { elapsedSeconds, stop } = useTimer(initialTimerInit(initialSession));
 
@@ -86,6 +105,25 @@ export default function App({ problemId, problemTitle, containerEl, initialSessi
         reclamp();
     }, [viewState, reclamp]);
 
+    // 결과 기록 흐름(result/memo/tags)의 입력을 매 변경마다 storage 에 저장해
+    // 새로고침·탭 이동 시 유실을 막는다(#73). timer/success 화면은 저장 대상 아님.
+    // "저장" 도달 시 handleSave 가 removeAttemptDraft 로 정리한다.
+    useEffect(() => {
+        if (!isDraftScreen(screen)) {
+            return;
+        }
+        void writeAttemptDraft(problemId, {
+            version: ATTEMPT_DRAFT_VERSION,
+            problemId,
+            screen,
+            result,
+            memo,
+            memoOpen,
+            selectedTagIds,
+            customTags,
+        });
+    }, [problemId, screen, result, memo, memoOpen, selectedTagIds, customTags]);
+
     const selectedTags = useMemo(() => {
         const pool = [...TAG_CATALOG, ...customTags];
 
@@ -107,6 +145,7 @@ export default function App({ problemId, problemTitle, containerEl, initialSessi
         if (initialSession) {
             void removeTimerSession(problemId);
         }
+        void removeAttemptDraft(problemId);
     };
 
     const handleNextFromResult = () => {
