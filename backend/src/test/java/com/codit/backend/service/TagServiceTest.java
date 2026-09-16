@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 
@@ -162,11 +163,11 @@ class TagServiceTest {
     void shouldSucceedWithoutConflictWhenRenamingToItsOwnCurrentName() {
         Tag existing = customTag(26L, "이분그래프", "이분그래프");
         given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
-        given(tagRepository.findByNormalizedName("이분그래프")).willReturn(Optional.of(existing));
 
         Tag result = tagService.renameTag(26L, "이분그래프");
 
         assertThat(result.getName()).isEqualTo("이분그래프");
+        verify(tagRepository, never()).findByNormalizedName(any());
     }
 
     @Test
@@ -267,6 +268,20 @@ class TagServiceTest {
     }
 
     @Test
+    void shouldThrowTagNameConflictWhenRenameCommitViolatesUniqueConstraint() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+        given(tagRepository.findByNormalizedName("dfs")).willReturn(Optional.empty());
+        org.mockito.Mockito.doThrow(new DataIntegrityViolationException("duplicate"))
+            .when(tagRepository).flush();
+
+        assertThatThrownBy(() -> tagService.renameTag(26L, "DFS"))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_NAME_CONFLICT);
+    }
+
+    @Test
     void shouldThrowTagNameConflictWhenNormalizedNewNameMatchesDifferentExistingTag() {
         Tag existing = customTag(26L, "이분그래프", "이분그래프");
         Tag other = new Tag("DFS", "dfs", "CORE");
@@ -303,5 +318,19 @@ class TagServiceTest {
             .isEqualTo(TagErrorCode.TAG_IN_USE);
 
         verify(tagRepository, never()).delete(any());
+    }
+
+    @Test
+    void shouldThrowTagInUseWhenDeleteCommitViolatesForeignKeyConstraint() {
+        Tag existing = customTag(26L, "이분그래프", "이분그래프");
+        given(tagRepository.findById(26L)).willReturn(Optional.of(existing));
+        given(attemptRepository.existsByTagsContaining(existing)).willReturn(false);
+        org.mockito.Mockito.doThrow(new DataIntegrityViolationException("fk violation"))
+            .when(tagRepository).flush();
+
+        assertThatThrownBy(() -> tagService.deleteTag(26L))
+            .isInstanceOf(TagException.class)
+            .extracting(e -> ((TagException) e).getErrorCode())
+            .isEqualTo(TagErrorCode.TAG_IN_USE);
     }
 }

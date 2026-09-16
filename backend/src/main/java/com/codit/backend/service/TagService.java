@@ -34,10 +34,11 @@ public class TagService {
             throw new InvalidRequestException("name은 필수입니다.");
         }
 
-        String normalizedName = name.trim().toLowerCase();
+        String trimmedName = name.trim();
+        String normalizedName = normalize(trimmedName);
         return tagRepository.findByNormalizedName(normalizedName)
             .map(existing -> new TagUpsertResult(existing, false))
-            .orElseGet(() -> createTag(name.trim(), normalizedName));
+            .orElseGet(() -> createTag(trimmedName, normalizedName));
     }
 
     @Transactional
@@ -47,22 +48,40 @@ public class TagService {
             throw new InvalidRequestException("name은 필수입니다.");
         }
 
-        String normalizedName = name.trim().toLowerCase();
-        Optional<Tag> conflict = tagRepository.findByNormalizedName(normalizedName);
-        if (conflict.isPresent() && !conflict.get().getId().equals(id)) {
-            throw new TagException(TagErrorCode.TAG_NAME_CONFLICT);
+        String trimmedName = name.trim();
+        String normalizedName = normalize(trimmedName);
+        if (!normalizedName.equals(tag.getNormalizedName())) {
+            Optional<Tag> conflict = tagRepository.findByNormalizedName(normalizedName);
+            if (conflict.isPresent() && !conflict.get().getId().equals(id)) {
+                throw new TagException(TagErrorCode.TAG_NAME_CONFLICT);
+            }
         }
 
-        tag.rename(name.trim(), normalizedName);
+        try {
+            tag.rename(trimmedName, normalizedName);
+            tagRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new TagException(TagErrorCode.TAG_NAME_CONFLICT);
+        }
         return tag;
     }
 
+    @Transactional
     public void deleteTag(Long id) {
         Tag tag = findEditableCustomTag(id);
         if (attemptRepository.existsByTagsContaining(tag)) {
             throw new TagException(TagErrorCode.TAG_IN_USE);
         }
-        tagRepository.delete(tag);
+        try {
+            tagRepository.delete(tag);
+            tagRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new TagException(TagErrorCode.TAG_IN_USE);
+        }
+    }
+
+    private static String normalize(String name) {
+        return name.trim().toLowerCase();
     }
 
     private Tag findEditableCustomTag(Long id) {

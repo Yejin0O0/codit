@@ -257,4 +257,20 @@ class TagControllerTest {
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.code").value("TAG_IN_USE"));
     }
+
+    @Test
+    void shouldReturn400WithInvalidRequestCodeWhenUpdatePathIdIsNotNumeric() throws Exception {
+        mockMvc.perform(put("/api/tags/abc")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new UpdateTagRequest("이분 그래프"))))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void shouldReturn400WithInvalidRequestCodeWhenDeletePathIdIsNotNumeric() throws Exception {
+        mockMvc.perform(delete("/api/tags/abc"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
 }
