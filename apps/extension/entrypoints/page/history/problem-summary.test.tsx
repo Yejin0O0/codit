@@ -21,4 +21,20 @@ describe('ProblemSummary', () => {
         expect(screen.queryByText(/3회/)).not.toBeNull();
         expect(screen.queryByText('DP')).not.toBeNull();
     });
+
+    it('[UI-L2 R9] TagChipList 공유로 태그에 색상 클래스가 적용된다 (CORE=filled primary)', () => {
+        render(
+            <ProblemSummary
+                detail={{
+                    problemId: '1859',
+                    latestResult: 'CORRECT',
+                    attemptCount: 3,
+                    tagIds: ['bfs'],
+                }}
+                tagCatalog={CATALOG_FX}
+            />,
+        );
+
+        expect(screen.getByText('BFS')).toHaveClass('bg-primary', 'text-primary-foreground');
+    });
 });
