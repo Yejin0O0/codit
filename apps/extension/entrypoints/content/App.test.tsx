@@ -962,7 +962,7 @@ describe('App attempt-draft 영속 (#73)', () => {
         expect(screen.getByRole('textbox')).toHaveValue('이분탐색 경계 실수');
     });
 
-    it('[정상] initialDraft.screen 이 "tags" 면 태그 화면으로 뜨고 저장된 태그가 선택돼 있다', () => {
+    it('[정상] initialDraft.screen 이 "tags" 면 태그 화면으로 뜨고 저장된 태그가 선택돼 있다', async () => {
         render(
             <App
                 problemId={PROBLEM_ID}
@@ -976,7 +976,7 @@ describe('App attempt-draft 영속 (#73)', () => {
         );
 
         expect(screen.getByText('태그 선택')).toBeInTheDocument();
-        expect(screen.getByText('1개 선택됨')).toBeInTheDocument();
+        expect(await screen.findByText('1개 선택됨')).toBeInTheDocument();
     });
 
     it('[정상] initialDraft.memoOpen 이 true 면 CORRECT 메모 화면에서 textarea 가 바로 노출된다', () => {
@@ -996,7 +996,7 @@ describe('App attempt-draft 영속 (#73)', () => {
         expect(screen.getByRole('textbox')).toHaveValue('접근 정리');
     });
 
-    it('[정상] initialDraft.customTags 가 태그 pool 로 복원돼 선택 상태로 표시된다', () => {
+    it('[정상] initialDraft.customTags 가 태그 pool 로 복원돼 선택 상태로 표시된다', async () => {
         render(
             <App
                 problemId={PROBLEM_ID}
@@ -1010,7 +1010,10 @@ describe('App attempt-draft 영속 (#73)', () => {
             />,
         );
 
-        expect(screen.getByRole('button', { name: '내태그' })).toHaveAttribute('data-state', 'on');
+        expect(await screen.findByRole('button', { name: '내태그' })).toHaveAttribute(
+            'data-state',
+            'on',
+        );
     });
 
     it('[경계] 완료 전 타이머 화면에서는 writeAttemptDraft 를 호출하지 않고, 완료 후 결과 화면에서 호출한다', async () => {

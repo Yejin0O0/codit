@@ -4,6 +4,13 @@ import { storage } from 'wxt/utils/storage';
 // 번들 CSS(Tailwind @import) 는 이 단위 테스트의 관심사가 아니다.
 vi.mock('./style.css?inline', () => ({ default: ':host { display: block; }' }));
 
+// App 이 마운트되면 useTags() 가 GET /api/tags 를 호출한다 — 실제 네트워크로 새지 않도록 고정 응답으로 막는다.
+vi.mock('@/lib/authenticatedFetch', () => ({
+    authenticatedFetch: vi.fn(async () =>
+        new Response(JSON.stringify([{ id: 1, name: '구현', category: 'CORE' }]), { status: 200 }),
+    ),
+}));
+
 import * as attemptDraftStore from './attempt-draft/store';
 import { ATTEMPT_DRAFT_VERSION, type AttemptDraft } from './attempt-draft/types';
 import { mountCoditWidget } from './mount';
