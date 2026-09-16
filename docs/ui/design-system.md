@@ -82,7 +82,7 @@
 | 인라인 텍스트 링크 | `Button` `link` | 문장 안에서만 |
 | 결과 선택/표시 | `ResultToggleGroup` / `ResultBadge` | 정답 success / 오답 destructive / 보류 warning, 채운 배경 |
 | 결과 필터 탭 | `ResultFilterToggleGroup` | **중립색** segmented — 의미색은 배지에만 |
-| 태그 | `TagToggleGroup`(미선택 secondary / 선택 primary) · `TagChipList`(secondary) | |
+| 태그 | `TagToggleGroup`(미선택 secondary / 선택 primary) · `TagChipList`(CORE=primary / 카테고리=`--tag-*` 4색 / CUSTOM=secondary, R9) | |
 | 화면 프레임 | `PanelShell`(위젯) / `ExtensionPageShell`(페이지) | |
 
 **Do / Don't**: 화면당 primary 1개 · 의미색은 결과에만(필터·중립 배지 X) · idle 위젯 저채도(primary는 버튼·링크·마크에만, 큰 표면 X) · 클릭 타깃 ≥ 36px(pill 40).
