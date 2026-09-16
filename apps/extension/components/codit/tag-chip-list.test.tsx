@@ -39,7 +39,7 @@ describe('TagChipList', () => {
 
         // filled primary — 파스텔 4색(카테고리) 중 어느 것과도 안 헷갈리도록 톤 자체를 다르게.
         expect(screen.getByText('BFS')).toHaveClass('bg-primary', 'text-primary-foreground');
-        expect(screen.getByText('연결 리스트').className).toMatch(/bg-\[#E6EEFC\]/);
+        expect(screen.getByText('연결 리스트')).toHaveClass('bg-tag-blue', 'text-tag-blue-foreground');
         expect(screen.getByText('내가 만든 태그')).toHaveClass('bg-secondary', 'text-secondary-foreground');
     });
 });

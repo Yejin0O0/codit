@@ -46,6 +46,23 @@
     --ring: oklch(0.7293 0.1182 281.44); /* #9B9EF0 iris-8 */
 
     /*
+     * 문제유형 태그 색 — 7개 백엔드 카테고리를 4개 hue 패밀리로 그룹(UI-L2 R9, 이슈 #100).
+     * dataviz 팔레트 8색 중 앱 상태색(success 초록·destructive 빨강·warning 호박)과
+     * 가까운 aqua/yellow/green/red 를 빼고, 검증기(validate_palette.js)를 통과한
+     * blue/orange/violet/magenta 만 채택. Extension Page 전용 — SWEA 파랑 회피 밴드
+     * (host-audit-swea.md)는 위젯(SWEA 페이지 위 오버레이) 한정이라 여긴 해당 없음.
+     * 근거: docs/features/problem-history/r9-redesign/prd.md
+     */
+    --tag-blue: oklch(0.9472 0.0207 261.77); /* #E6EEFC */
+    --tag-blue-foreground: oklch(0.4941 0.141 258.85); /* #2A5FB0 */
+    --tag-orange: oklch(0.9443 0.0257 48.43); /* #FCE8DE */
+    --tag-orange-foreground: oklch(0.5578 0.1483 43.46); /* #B8501C */
+    --tag-violet: oklch(0.9448 0.0218 297.42); /* #EEEAFA */
+    --tag-violet-foreground: oklch(0.4331 0.1671 283.62); /* #4A3AA7 */
+    --tag-magenta: oklch(0.9484 0.0231 350.09); /* #FBE8F0 */
+    --tag-magenta-foreground: oklch(0.5146 0.1603 353.15); /* #A8356F */
+
+    /*
      * z-index — CSS 참조용 상수. mount.tsx 는 호스트 컨테이너 z-index 를 별도 JS 리터럴
      * '999999' 로 세팅하므로 --z-widget 을 읽지 않는다 (값 일치는 수동 유지). prd.md ADR-7.
      * --z-overlay / --z-toast 는 Popover/Toast 프리미티브 도입 시 사용 예정 (현재 미사용).
@@ -170,4 +187,13 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
+
+    --color-tag-blue: var(--tag-blue);
+    --color-tag-blue-foreground: var(--tag-blue-foreground);
+    --color-tag-orange: var(--tag-orange);
+    --color-tag-orange-foreground: var(--tag-orange-foreground);
+    --color-tag-violet: var(--tag-violet);
+    --color-tag-violet-foreground: var(--tag-violet-foreground);
+    --color-tag-magenta: var(--tag-magenta);
+    --color-tag-magenta-foreground: var(--tag-magenta-foreground);
 }

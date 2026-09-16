@@ -17,16 +17,21 @@ import { CORE_TAGS, TAG_CATEGORIES } from './tag-catalog';
  * 건드리지 않고, 대신 CORE를 파스텔이 아니라 filled(--primary)로 바꿔 톤 자체를
  * 다르게 만들었다 — hue가 얼마나 가깝든 파스텔 4색 중 어느 것과도 안 헷갈린다.
  * TagToggleGroup의 선택 상태도 이미 bg-primary/text-primary-foreground라 톤이 낯설지 않다.
+ *
+ * 값 자체는 `styles/tokens.css`의 `--tag-*`/`--tag-*-foreground` 토큰 + `@theme inline`
+ * 매핑으로 정식 등록돼 있다 (docs/ui/design-system.md ## 기초 색 토큰 참조) — 여기서는
+ * 임의 hex(`bg-[#...]`)가 아니라 그 토큰이 만드는 `bg-tag-*`/`text-tag-*-foreground`
+ * Tailwind 클래스만 조합한다.
  */
 export type TagColorFamily = 'core' | 'custom' | 'blue' | 'orange' | 'violet' | 'magenta';
 
 const FAMILY_CLASS: Record<TagColorFamily, string> = {
     core: 'bg-primary text-primary-foreground',
     custom: 'bg-secondary text-secondary-foreground',
-    blue: 'bg-[#E6EEFC] text-[#2A5FB0]',
-    orange: 'bg-[#FCE8DE] text-[#B8501C]',
-    violet: 'bg-[#EEEAFA] text-[#4A3AA7]',
-    magenta: 'bg-[#FBE8F0] text-[#A8356F]',
+    blue: 'bg-tag-blue text-tag-blue-foreground',
+    orange: 'bg-tag-orange text-tag-orange-foreground',
+    violet: 'bg-tag-violet text-tag-violet-foreground',
+    magenta: 'bg-tag-magenta text-tag-magenta-foreground',
 };
 
 const CATEGORY_FAMILY: Record<string, TagColorFamily> = {
