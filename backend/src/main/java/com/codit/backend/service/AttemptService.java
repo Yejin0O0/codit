@@ -8,10 +8,13 @@ import com.codit.backend.exception.AttemptException;
 import com.codit.backend.exception.InvalidRequestException;
 import com.codit.backend.repository.AttemptRepository;
 import com.codit.backend.repository.TagRepository;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -79,6 +82,59 @@ public class AttemptService {
             throw new InvalidRequestException("존재하지 않는 태그가 포함되어 있습니다.");
         }
         return distinctTagIds.stream().map(tagsById::get).toList();
+    }
+
+    public List<AttemptHistorySummary> getHistory(Long userId) {
+        List<Attempt> attempts = attemptRepository.findAllByUserIdWithTags(userId);
+        Map<String, List<Attempt>> byProblemId = attempts.stream()
+                .collect(Collectors.groupingBy(Attempt::getProblemId, LinkedHashMap::new, Collectors.toList()));
+
+        List<AttemptHistorySummary> summaries = byProblemId.values().stream()
+                .map(this::toSummary)
+                .collect(Collectors.toCollection(ArrayList::new));
+        summaries.sort(Comparator.comparing(AttemptHistorySummary::latestSolvedAt).reversed());
+        return summaries;
+    }
+
+    public AttemptHistoryDetail getHistoryDetail(Long userId, String problemId) {
+        List<Attempt> attempts = attemptRepository.findAllByUserIdAndProblemIdWithTags(userId, problemId);
+        if (attempts.isEmpty()) {
+            throw new AttemptException(AttemptErrorCode.ATTEMPT_NOT_FOUND);
+        }
+
+        // attempts는 createdAt 오름차순이므로 뒤에서부터 채우면 seq 내림차순(최신순)이
+        // 바로 나온다 — 정렬을 별도로 호출할 필요가 없다.
+        List<AttemptHistoryEntry> entries = new ArrayList<>();
+        for (int i = attempts.size() - 1; i >= 0; i--) {
+            entries.add(new AttemptHistoryEntry(i + 1, attempts.get(i)));
+        }
+
+        Attempt latest = mostRecent(attempts);
+        return new AttemptHistoryDetail(problemId, latest.getResult(), attempts.size(),
+                unionTags(attempts), entries);
+    }
+
+    private AttemptHistorySummary toSummary(List<Attempt> problemAttempts) {
+        Attempt latest = mostRecent(problemAttempts);
+        return new AttemptHistorySummary(
+                latest.getProblemId(), latest.getResult(), problemAttempts.size(),
+                latest.getElapsedTime(), latest.getCreatedAt(), unionTags(problemAttempts));
+    }
+
+    /** attempts는 createdAt 오름차순으로 주어진다고 가정한다 — 마지막 원소가 가장 최근 시도다. */
+    private Attempt mostRecent(List<Attempt> attempts) {
+        return attempts.get(attempts.size() - 1);
+    }
+
+    /** 여러 attempt에 걸친 태그를 id 기준으로 중복 없이 합친다. */
+    private List<Tag> unionTags(List<Attempt> attempts) {
+        Map<Long, Tag> tagsById = new LinkedHashMap<>();
+        for (Attempt attempt : attempts) {
+            for (Tag tag : attempt.getTags()) {
+                tagsById.putIfAbsent(tag.getId(), tag);
+            }
+        }
+        return new ArrayList<>(tagsById.values());
     }
 
     private AttemptResult parseResult(String value) {

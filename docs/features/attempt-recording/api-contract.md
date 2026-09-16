@@ -8,6 +8,8 @@
 | Method | Path | 역할 |
 |--------|------|------|
 | POST   | `/api/attempts` | 풀이 결과(결과·메모·태그·소요시간) 저장 |
+| GET    | `/api/attempts` | 로그인 유저의 문제별 풀이 이력 **목록** (문제당 1행으로 집계) |
+| GET    | `/api/attempts/{problemId}` | 특정 문제의 **회차별 시도 상세** |
 
 ---
 
@@ -85,6 +87,95 @@ Content-Type: application/json
 
 ---
 
+### GET /api/attempts — 풀이 이력 목록 (#88, ADR-5)
+
+익스텐션 페이지의 "내 문제풀이" 화면(#91)이 진입 시 호출한다. 인증 필수.
+본인이 저장한 `attempt`만 대상이며, `problemId`별로 묶어 문제당 1행으로 반환한다.
+
+**Request**
+```
+GET /api/attempts
+Authorization: Bearer <accessToken>
+```
+쿼리 파라미터 없음(페이지네이션·필터는 FE가 클라이언트에서 처리, `spec-current.md` 참고).
+
+**Response** `200 OK`
+```json
+[
+  {
+    "problemId": "AZ8R8haaeYnHBITH",
+    "latestResult": "CORRECT",
+    "attemptCount": 3,
+    "latestElapsedTime": 754,
+    "latestSolvedAt": "2026-09-15T04:12:00Z",
+    "tags": [
+      { "id": 6, "name": "DFS", "category": "CORE" },
+      { "id": 4, "name": "그리디", "category": "CORE" }
+    ]
+  }
+]
+```
+
+- 문제당 1행. `latestResult`/`latestElapsedTime`/`latestSolvedAt`은 그 문제의 attempt 중
+  `createdAt`이 가장 최근인 것 기준(ADR-5 Product Rule).
+- `tags`는 그 문제에 속한 모든 attempt의 태그 합집합(id 기준 unique). `POST /api/attempts`
+  응답과 동일하게 전체 객체(`id`/`name`/`category`)로 반환한다(안 A, ADR-5).
+- `title` 필드는 포함하지 않는다 — `Problem` 엔티티에 `title`이 없다(ADR-3). FE의 `title?`은
+  optional이라 문제없다.
+- 목록 정렬은 `latestSolvedAt` 내림차순(최근 푼 문제가 먼저).
+- 기록이 하나도 없으면 `200 []` (404 아님).
+
+**Error**
+
+| 조건 | Status | Body |
+|------|--------|------|
+| 유효한 인증 토큰 없음 | 401 | `{ "code": "UNAUTHENTICATED", "message": "..." }` |
+
+---
+
+### GET /api/attempts/{problemId} — 문제별 시도 상세 (#88, ADR-5)
+
+히스토리 목록에서 문제 카드를 클릭했을 때 호출한다(#91). 인증 필수.
+`{problemId}`는 Attempt의 PK가 아니라 **문제 비즈니스 id 문자열**이다 (`POST /api/attempts`
+요청의 `problemId`와 동일한 값).
+
+**Request**
+```
+GET /api/attempts/AZ8R8haaeYnHBITH
+Authorization: Bearer <accessToken>
+```
+
+**Response** `200 OK`
+```json
+{
+  "problemId": "AZ8R8haaeYnHBITH",
+  "latestResult": "CORRECT",
+  "attemptCount": 3,
+  "tags": [
+    { "id": 6, "name": "DFS", "category": "CORE" }
+  ],
+  "attempts": [
+    { "seq": 3, "result": "CORRECT", "elapsedTime": 754, "tags": [{ "id": 6, "name": "DFS", "category": "CORE" }], "memo": null, "createdAt": "2026-09-15T04:12:00Z" },
+    { "seq": 2, "result": "WRONG", "elapsedTime": 1201, "tags": [], "memo": "그리디로 접근했는데 반례 존재", "createdAt": "2026-09-14T09:00:00Z" },
+    { "seq": 1, "result": "WRONG", "elapsedTime": 944, "tags": [], "memo": null, "createdAt": "2026-09-13T08:00:00Z" }
+  ]
+}
+```
+
+- `seq`는 그 문제 안에서 시도 순번(1부터, `createdAt` 오름차순 부여).
+- `attempts`는 최신순(seq 내림차순)으로 정렬해서 반환한다 — FE(`AttemptTimeline`)가 다시
+  정렬하지 않아도 된다.
+- 각 시도의 `tags`/`elapsedTime`/`createdAt` 필드명은 `POST /api/attempts` 응답과 동일.
+
+**Error**
+
+| 조건 | Status | Body |
+|------|--------|------|
+| 본인이 시도한 적 없는(또는 존재하지 않는) `problemId` | 404 | `{ "code": "ATTEMPT_NOT_FOUND", "message": "..." }` |
+| 유효한 인증 토큰 없음 | 401 | `{ "code": "UNAUTHENTICATED", "message": "..." }` |
+
+---
+
 ## shared-types 변경 목록
 
 ### 삭제
@@ -123,10 +214,39 @@ Content-Type: application/json
     memo: string | null;
     createdAt: string;
   }
+
+  // #88 / ADR-5 — GET /api/attempts, GET /api/attempts/{problemId}
+  export interface AttemptHistoryListItem {
+    problemId: string;
+    latestResult: 'CORRECT' | 'WRONG' | 'HOLD';
+    attemptCount: number;
+    latestElapsedTime: number;
+    latestSolvedAt: string;
+    tags: { id: number; name: string; category: string }[];
+  }
+
+  export interface AttemptHistoryItem {
+    seq: number;
+    result: 'CORRECT' | 'WRONG' | 'HOLD';
+    elapsedTime: number;
+    tags: { id: number; name: string; category: string }[];
+    memo: string | null;
+    createdAt: string;
+  }
+
+  export interface AttemptHistoryDetail {
+    problemId: string;
+    latestResult: 'CORRECT' | 'WRONG' | 'HOLD';
+    attemptCount: number;
+    tags: { id: number; name: string; category: string }[];
+    attempts: AttemptHistoryItem[];
+  }
   ```
 
 > 실제 파일 작성은 tdd-red 단계에서 한다.
 > 참고: 같은 파일의 `Problem` interface도 실제 백엔드 계약과 어긋나 있으나(`title`/`number`/`difficulty` 등) 이 이슈 범위 밖이라 수정하지 않는다.
+> 참고: `entrypoints/page/history/types.ts`(FE feature-local mock 타입)의 `tagIds: string[]` /
+> `durationSeconds` / `recordedAt`은 위 타입과 이름·형태가 다르다. #91에서 FE가 매핑한다(ADR-5).
 
 ---
 
@@ -136,17 +256,21 @@ Content-Type: application/json
 |--------|------|-----------|
 | 400 | `problemId` / `elapsedTime` / `result` / `tagIds` 형식·필수 위반, 존재하지 않는 `tagId`, 요청 본문 타입 불일치·깨진 JSON | `{ "code": "INVALID_REQUEST", "message": "..." }` |
 | 401 | 유효한 인증 토큰 없음 | `{ "code": "UNAUTHENTICATED", "message": "..." }` |
+| 404 | `GET /api/attempts/{problemId}` — 본인이 시도한 적 없는 `problemId` | `{ "code": "ATTEMPT_NOT_FOUND", "message": "..." }` |
 
 ## 인증
 
-- `POST /api/attempts`는 인증 필수다. `SecurityConfig`의 `anyRequest().authenticated()`에
-  따라 자동 적용되므로 `SecurityConfig` 수정이 필요 없다 (`/api/attempts/**`를 permitAll에
-  추가하지 않는다).
+- `/api/attempts`(`POST`/`GET` 모두)는 인증 필수다. `SecurityConfig`의
+  `anyRequest().authenticated()`에 따라 자동 적용되므로 `SecurityConfig` 수정이 필요 없다
+  (`/api/attempts/**`를 permitAll에 추가하지 않는다).
 - 컨트롤러는 `@AuthenticationPrincipal Long userId`로 사용자 id를 받는다
-  (develop `UserController.getMyInfo` 동일 패턴).
+  (develop `UserController.getMyInfo` 동일 패턴). `GET` 두 엔드포인트 모두 본인
+  `userId`로만 조회하고, 다른 유저의 attempt는 응답에 포함하지 않는다.
 
 ## 의존
 
 - **이슈 #40 / PR #41 (tag-catalog)** — `Tag` 엔티티·`TagRepository`가 develop에 있어야
   `@ManyToMany` 매핑과 `tagId` 실재 검증이 가능하다. tdd-red까지는 이 계약 기준으로
   선행 가능하나 tdd-green은 `feature/tag-catalog`의 develop 병합 이후 시작한다.
+- **이슈 #88의 소비처는 이슈 #91(예진, 히스토리 FE 연동)** — `GET /api/attempts`,
+  `GET /api/attempts/{problemId}`가 develop에 머지된 뒤 #91이 이 계약 기준으로 시작한다.
