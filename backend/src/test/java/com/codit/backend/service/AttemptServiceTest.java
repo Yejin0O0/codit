@@ -47,6 +47,12 @@ class AttemptServiceTest {
         return new Tag(name, name.toLowerCase(), "CORE");
     }
 
+    private Tag tag(Long id, String name) {
+        Tag tag = tag(name);
+        ReflectionTestUtils.setField(tag, "id", id);
+        return tag;
+    }
+
     // ── 정상 ──────────────────────────────────────────────
 
     @Test
@@ -97,7 +103,7 @@ class AttemptServiceTest {
 
     @Test
     void shouldLinkAllTagsResolvedFromTagIds() {
-        given(tagRepository.findAllById(List.of(1L, 2L))).willReturn(List.of(tag("DFS"), tag("그리디")));
+        given(tagRepository.findAllById(List.of(1L, 2L))).willReturn(List.of(tag(1L, "DFS"), tag(2L, "그리디")));
         given(attemptRepository.save(any(Attempt.class))).willAnswer(inv -> inv.getArgument(0));
 
         Attempt result = attemptService.createAttempt(1L, command("CORRECT", List.of(1L, 2L), null));
@@ -238,11 +244,23 @@ class AttemptServiceTest {
         Attempt existing = attemptOwnedBy(1L, 10L, List.of(tag("구현")));
         given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
         given(tagRepository.findAllById(List.of(4L, 6L, 26L)))
-                .willReturn(List.of(tag("A"), tag("B"), tag("C")));
+                .willReturn(List.of(tag(4L, "A"), tag(6L, "B"), tag(26L, "C")));
 
         Attempt result = attemptService.replaceTags(1L, 10L, List.of(4L, 6L, 26L));
 
         assertThat(result.getTags()).hasSize(3);
+    }
+
+    @Test
+    void shouldReturnTagsInRequestedTagIdOrderRegardlessOfRepositoryReturnOrder() {
+        Attempt existing = attemptOwnedBy(1L, 10L, List.of(tag("구현")));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
+        given(tagRepository.findAllById(List.of(4L, 6L, 26L)))
+                .willReturn(List.of(tag(26L, "C"), tag(4L, "A"), tag(6L, "B")));
+
+        Attempt result = attemptService.replaceTags(1L, 10L, List.of(4L, 6L, 26L));
+
+        assertThat(result.getTags()).extracting(Tag::getId).containsExactly(4L, 6L, 26L);
     }
 
     // ── replaceTags: 경계 ──────────────────────────────────
@@ -270,6 +288,20 @@ class AttemptServiceTest {
     }
 
     // ── replaceTags: 예외 ──────────────────────────────────
+
+    @Test
+    void shouldThrowAttemptConflictWhenConcurrentReplaceCausesOptimisticLockFailure() {
+        Attempt existing = attemptOwnedBy(1L, 10L, List.of(tag("구현")));
+        given(attemptRepository.findById(10L)).willReturn(Optional.of(existing));
+        given(tagRepository.findAllById(List.of(6L))).willReturn(List.of(tag(6L, "DFS")));
+        org.mockito.Mockito.doThrow(new org.springframework.orm.ObjectOptimisticLockingFailureException(Attempt.class, 10L))
+                .when(attemptRepository).flush();
+
+        assertThatThrownBy(() -> attemptService.replaceTags(1L, 10L, List.of(6L)))
+                .isInstanceOf(AttemptException.class)
+                .extracting(e -> ((AttemptException) e).getErrorCode())
+                .isEqualTo(AttemptErrorCode.ATTEMPT_CONFLICT);
+    }
 
     @Test
     void shouldThrowAttemptNotFoundWhenReplacingTagsOnNonExistentAttempt() {

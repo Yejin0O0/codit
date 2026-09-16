@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,10 @@ public class Attempt {
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long version;
 
     public Attempt(Long userId, String problemId, int elapsedTime, AttemptResult result, String memo, List<Tag> tags) {
         this.userId = userId;
