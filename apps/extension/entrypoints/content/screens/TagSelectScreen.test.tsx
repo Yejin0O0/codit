@@ -17,7 +17,7 @@ function renderTagSelect(result: ResultType) {
             customTags={[]}
             selectedTagIds={[]}
             onSelectedTagIdsChange={noop}
-            onAddCustomTag={noop}
+            onAddCustomTag={() => Promise.resolve(true)}
             onBack={noop}
             onSave={noop}
         />,

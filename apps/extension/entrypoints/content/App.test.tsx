@@ -7,6 +7,44 @@ import { ATTEMPT_DRAFT_VERSION, type AttemptDraft } from './attempt-draft/types'
 import * as sessionStore from './timer-session/store';
 import { TIMER_SESSION_VERSION, type TimerSession } from './timer-session/types';
 
+vi.mock('@/lib/authenticatedFetch', () => {
+    const MOCK_API_TAGS = [
+        { id: 1, name: '구현', category: 'CORE' },
+        { id: 2, name: '시뮬레이션', category: 'CORE' },
+        { id: 3, name: '완전 검색(브루트포스)', category: 'CORE' },
+        { id: 4, name: '그리디', category: 'CORE' },
+        { id: 5, name: 'BFS', category: 'CORE' },
+        { id: 6, name: 'DFS', category: 'CORE' },
+        { id: 7, name: '정렬', category: 'CORE' },
+        { id: 8, name: '동적 계획법(DP)', category: 'CORE' },
+        { id: 9, name: '배열', category: 'CORE' },
+        { id: 10, name: '문자열', category: 'CORE' },
+        { id: 11, name: '스택/큐', category: 'CORE' },
+    ];
+
+    return {
+        authenticatedFetch: vi.fn(async (url: string, init?: RequestInit) => {
+            if (String(url).includes('/api/tags') && (!init?.method || init.method === 'GET')) {
+                return new Response(JSON.stringify(MOCK_API_TAGS), { status: 200 });
+            }
+            if (String(url).includes('/api/tags') && init?.method === 'POST') {
+                const body = JSON.parse(init.body as string) as { name: string };
+                const found = MOCK_API_TAGS.find(
+                    (t) => t.name.toLowerCase() === body.name.toLowerCase(),
+                );
+                if (found) {
+                    return new Response(JSON.stringify(found), { status: 200 });
+                }
+                return new Response(
+                    JSON.stringify({ id: 999, name: body.name, category: 'CUSTOM' }),
+                    { status: 201 },
+                );
+            }
+            return new Response(null, { status: 200 });
+        }),
+    };
+});
+
 const COLLAPSE = 'Codit 위젯 접기';
 const collapseBtn = () => screen.queryByRole('button', { name: COLLAPSE });
 const expandBtn = () => screen.queryByRole('button', { name: /펼치기/ });
@@ -924,7 +962,7 @@ describe('App attempt-draft 영속 (#73)', () => {
         expect(screen.getByRole('textbox')).toHaveValue('이분탐색 경계 실수');
     });
 
-    it('[정상] initialDraft.screen 이 "tags" 면 태그 화면으로 뜨고 저장된 태그가 선택돼 있다', () => {
+    it('[정상] initialDraft.screen 이 "tags" 면 태그 화면으로 뜨고 저장된 태그가 선택돼 있다', async () => {
         render(
             <App
                 problemId={PROBLEM_ID}
@@ -938,7 +976,7 @@ describe('App attempt-draft 영속 (#73)', () => {
         );
 
         expect(screen.getByText('태그 선택')).toBeInTheDocument();
-        expect(screen.getByText('1개 선택됨')).toBeInTheDocument();
+        expect(await screen.findByText('1개 선택됨')).toBeInTheDocument();
     });
 
     it('[정상] initialDraft.memoOpen 이 true 면 CORRECT 메모 화면에서 textarea 가 바로 노출된다', () => {
@@ -958,7 +996,7 @@ describe('App attempt-draft 영속 (#73)', () => {
         expect(screen.getByRole('textbox')).toHaveValue('접근 정리');
     });
 
-    it('[정상] initialDraft.customTags 가 태그 pool 로 복원돼 선택 상태로 표시된다', () => {
+    it('[정상] initialDraft.customTags 가 태그 pool 로 복원돼 선택 상태로 표시된다', async () => {
         render(
             <App
                 problemId={PROBLEM_ID}
@@ -972,7 +1010,10 @@ describe('App attempt-draft 영속 (#73)', () => {
             />,
         );
 
-        expect(screen.getByRole('button', { name: '내태그' })).toHaveAttribute('data-state', 'on');
+        expect(await screen.findByRole('button', { name: '내태그' })).toHaveAttribute(
+            'data-state',
+            'on',
+        );
     });
 
     it('[경계] 완료 전 타이머 화면에서는 writeAttemptDraft 를 호출하지 않고, 완료 후 결과 화면에서 호출한다', async () => {

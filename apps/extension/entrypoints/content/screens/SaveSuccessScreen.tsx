@@ -3,8 +3,8 @@ import type { Ref } from 'react';
 import { PanelShell } from '@/components/codit/panel-shell';
 import { ResultBadge } from '@/components/codit/result-badge';
 import { formatDuration } from '@/lib/format-duration';
+import type { TagOption } from '@/lib/tag-catalog';
 
-import type { Tag } from '../mockData';
 import type { ResultType } from '../screens';
 import type { WidgetDragHandlers } from '../useWidgetPosition';
 
@@ -12,7 +12,7 @@ interface SaveSuccessScreenProps {
     result: ResultType;
     elapsedSeconds: number;
     memo: string;
-    tags: Tag[];
+    tags: TagOption[];
     onCollapse?: () => void;
     collapseControlRef?: Ref<HTMLButtonElement>;
     dragHandlers?: WidgetDragHandlers;
