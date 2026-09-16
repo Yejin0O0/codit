@@ -4,6 +4,7 @@ import { CoditWidget } from '@/components/codit/codit-widget';
 import type { TagOption } from '@/lib/tag-catalog';
 
 import { useTags } from '../../src/hooks/useTags';
+
 import { isDraftScreen, removeAttemptDraft, writeAttemptDraft } from './attempt-draft/store';
 import { ATTEMPT_DRAFT_VERSION, type AttemptDraft } from './attempt-draft/types';
 import { CollapsedTimer } from './collapsed-timer';
@@ -81,12 +82,22 @@ export default function App({
     const {
         coreTags,
         categories,
-        customTags,
+        customTags: fetchedCustomTags,
         isLoading: tagsLoading,
         error: tagsError,
         refetch: refetchTags,
         addCustomTag,
     } = useTags();
+
+    // 새로고침 직후엔 서버 재조회가 아직 끝나지 않았을 수 있으므로, draft 에 저장된 커스텀 태그를
+    // 서버 목록과 합쳐서 즉시 보여준다(#73 복원 흐름). 같은 id 는 서버 값을 우선한다.
+    const customTags = useMemo(() => {
+        const draftCustomTags = initialDraft?.customTags ?? [];
+        if (draftCustomTags.length === 0) return fetchedCustomTags;
+        const fetchedIds = new Set(fetchedCustomTags.map((tag) => tag.id));
+        const missing = draftCustomTags.filter((tag) => !fetchedIds.has(tag.id));
+        return missing.length === 0 ? fetchedCustomTags : [...fetchedCustomTags, ...missing];
+    }, [fetchedCustomTags, initialDraft]);
 
     const { elapsedSeconds, stop } = useTimer(initialTimerInit(initialSession));
 

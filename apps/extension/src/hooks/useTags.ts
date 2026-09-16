@@ -37,13 +37,15 @@ function groupByCategory(tags: ApiTag[]): TagCategory[] {
         if (!map.has(label)) map.set(label, []);
         map.get(label)!.push(toTagOption(tag));
     }
-    const known = CATEGORY_ORDER.filter((key) => map.has(CATEGORY_LABELS[key])).map((key) => {
+    const known: TagCategory[] = [];
+    for (const key of CATEGORY_ORDER) {
         const label = CATEGORY_LABELS[key];
-        return { title: label, tags: map.get(label)! };
-    });
-    if (map.has(FALLBACK_LABEL)) {
-        known.push({ title: FALLBACK_LABEL, tags: map.get(FALLBACK_LABEL)! });
+        if (label === undefined) continue;
+        const tagsForLabel = map.get(label);
+        if (tagsForLabel) known.push({ title: label, tags: tagsForLabel });
     }
+    const fallbackTags = map.get(FALLBACK_LABEL);
+    if (fallbackTags) known.push({ title: FALLBACK_LABEL, tags: fallbackTags });
     return known;
 }
 
