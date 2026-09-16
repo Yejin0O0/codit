@@ -10,11 +10,18 @@ import { CORE_TAGS, TAG_CATEGORIES } from './tag-catalog';
  * 7개 백엔드 카테고리를 억지로 7색으로 나누면 검증을 통과하지 못해 이 4개 패밀리로 묶었다
  * — 칩에는 항상 태그 이름 텍스트가 함께 보이므로(색만으로 식별하지 않음) 한 패밀리 안
  * 카테고리끼리는 색만으론 구분되지 않는 절충을 받아들인다.
+ *
+ * CORE는 처음에 새 색 없이 --accent(파스텔 iris)를 재사용했는데, 실제로 렌더해 보니
+ * --accent-foreground(hue ≈ 280°)가 violet 패밀리(hue ≈ 258°, #4A3AA7)와 육안으로
+ * 거의 구분이 안 됐다(스크린샷으로 확인). violet 자체는 CVD 검증기를 통과한 값이라
+ * 건드리지 않고, 대신 CORE를 파스텔이 아니라 filled(--primary)로 바꿔 톤 자체를
+ * 다르게 만들었다 — hue가 얼마나 가깝든 파스텔 4색 중 어느 것과도 안 헷갈린다.
+ * TagToggleGroup의 선택 상태도 이미 bg-primary/text-primary-foreground라 톤이 낯설지 않다.
  */
 export type TagColorFamily = 'core' | 'custom' | 'blue' | 'orange' | 'violet' | 'magenta';
 
 const FAMILY_CLASS: Record<TagColorFamily, string> = {
-    core: 'bg-accent text-accent-foreground',
+    core: 'bg-primary text-primary-foreground',
     custom: 'bg-secondary text-secondary-foreground',
     blue: 'bg-[#E6EEFC] text-[#2A5FB0]',
     orange: 'bg-[#FCE8DE] text-[#B8501C]',
