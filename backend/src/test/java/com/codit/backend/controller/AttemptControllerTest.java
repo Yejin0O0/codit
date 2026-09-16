@@ -6,13 +6,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.codit.backend.controller.dto.CreateAttemptRequest;
+import com.codit.backend.controller.dto.ReplaceAttemptTagsRequest;
 import com.codit.backend.domain.Attempt;
 import com.codit.backend.domain.AttemptResult;
 import com.codit.backend.domain.Tag;
+import com.codit.backend.exception.AttemptErrorCode;
+import com.codit.backend.exception.AttemptException;
 import com.codit.backend.exception.GlobalExceptionHandler;
 import com.codit.backend.exception.InvalidRequestException;
 import com.codit.backend.security.JwtAuthenticationEntryPoint;
@@ -207,5 +211,75 @@ class AttemptControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
+    }
+
+    @Test
+    void shouldReturn200WithUpdatedAttemptBodyWhenReplaceTagsSucceeds() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        given(attemptService.replaceTags(1L, 10L, List.of(4L, 6L))).willReturn(sampleAttempt());
+
+        mockMvc.perform(put("/api/attempts/10/tags")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new ReplaceAttemptTagsRequest(List.of(4L, 6L)))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(101))
+                .andExpect(jsonPath("$.tags[0].id").value(6));
+    }
+
+    @Test
+    void shouldReturn404WithAttemptNotFoundCodeWhenReplacingTagsOnNonExistentOrOthersAttempt() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        given(attemptService.replaceTags(1L, 999L, List.of(6L)))
+                .willThrow(new AttemptException(AttemptErrorCode.ATTEMPT_NOT_FOUND));
+
+        mockMvc.perform(put("/api/attempts/999/tags")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new ReplaceAttemptTagsRequest(List.of(6L)))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ATTEMPT_NOT_FOUND"));
+    }
+
+    @Test
+    void shouldReturn404WithAttemptNotFoundCodeWhenReplacingTagsOnAnotherUsersAttempt() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(2L);
+        given(attemptService.replaceTags(2L, 10L, List.of(6L)))
+                .willThrow(new AttemptException(AttemptErrorCode.ATTEMPT_NOT_FOUND));
+
+        mockMvc.perform(put("/api/attempts/10/tags")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new ReplaceAttemptTagsRequest(List.of(6L)))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ATTEMPT_NOT_FOUND"));
+    }
+
+    @Test
+    void shouldReturn409WithMinTagRequiredCodeWhenReplaceTagsIsEmpty() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        given(attemptService.replaceTags(1L, 10L, List.of()))
+                .willThrow(new AttemptException(AttemptErrorCode.MIN_TAG_REQUIRED));
+
+        mockMvc.perform(put("/api/attempts/10/tags")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new ReplaceAttemptTagsRequest(List.of()))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("MIN_TAG_REQUIRED"));
+    }
+
+    @Test
+    void shouldReturn400WithInvalidRequestCodeWhenReplaceTagsContainsInvalidTagId() throws Exception {
+        given(jwtTokenProvider.getUserId("valid-token")).willReturn(1L);
+        given(attemptService.replaceTags(1L, 10L, List.of(999L)))
+                .willThrow(new InvalidRequestException("존재하지 않는 태그가 포함되어 있습니다."));
+
+        mockMvc.perform(put("/api/attempts/10/tags")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new ReplaceAttemptTagsRequest(List.of(999L)))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
     }
 }
