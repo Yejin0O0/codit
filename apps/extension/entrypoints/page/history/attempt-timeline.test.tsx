@@ -63,4 +63,58 @@ describe('AttemptTimeline', () => {
         expect(input).toEqual(snapshot);
         expect(input[0]).toBe(ATTEMPT_1);
     });
+
+    it('[UI-L2 R10 · ac-verifier] 회차 버튼을 Tab으로 포커스하고 Enter를 누르면 선택이 전환된다', async () => {
+        const user = userEvent.setup();
+        render(
+            <AttemptTimeline
+                attempts={[ATTEMPT_1, ATTEMPT_2, ATTEMPT_3]}
+                tagCatalog={CATALOG_FX}
+            />,
+        );
+
+        const list = screen.getByRole('group', { name: '회차 목록' });
+        const firstAttemptButton = within(list).getByText('1회차').closest('button')!;
+
+        firstAttemptButton.focus();
+        await user.keyboard('{Enter}');
+
+        expect(firstAttemptButton).toHaveAttribute('aria-current', 'true');
+        expect(screen.queryByText(/점화식 다시 세워 통과/)).toBeNull();
+    });
+
+    it('[UI-L2 R10 · ac-verifier] 회차 버튼의 점 색은 ResultBadge와 같은 톤(success/destructive/warning)이다', () => {
+        const holdAttempt = { ...ATTEMPT_2, seq: 4, result: 'HOLD' as const, memo: undefined };
+        render(
+            <AttemptTimeline
+                attempts={[ATTEMPT_1, ATTEMPT_3, holdAttempt]}
+                tagCatalog={CATALOG_FX}
+            />,
+        );
+
+        const list = screen.getByRole('group', { name: '회차 목록' });
+        const dotFor = (label: string) =>
+            within(list)
+                .getByText(label)
+                .closest('button')!
+                .querySelector('span[aria-hidden="true"]')!;
+
+        expect(dotFor('1회차')).toHaveClass('bg-destructive'); // WRONG
+        expect(dotFor('3회차')).toHaveClass('bg-success'); // CORRECT
+        expect(dotFor('4회차')).toHaveClass('bg-warning'); // HOLD
+    });
+
+    it('[UI-L2 R10 · ac-verifier] 회차 목록은 role="group" + aria-current — role="tab"은 쓰지 않는다 (의도적 선택)', () => {
+        render(
+            <AttemptTimeline
+                attempts={[ATTEMPT_1, ATTEMPT_2, ATTEMPT_3]}
+                tagCatalog={CATALOG_FX}
+            />,
+        );
+
+        const list = screen.getByRole('group', { name: '회차 목록' });
+        expect(list).toHaveAttribute('role', 'group');
+        expect(screen.queryByRole('tab')).toBeNull();
+        expect(screen.queryByRole('tablist')).toBeNull();
+    });
 });
