@@ -102,11 +102,12 @@ public class AttemptService {
             throw new AttemptException(AttemptErrorCode.ATTEMPT_NOT_FOUND);
         }
 
+        // attempts는 createdAt 오름차순이므로 뒤에서부터 채우면 seq 내림차순(최신순)이
+        // 바로 나온다 — 정렬을 별도로 호출할 필요가 없다.
         List<AttemptHistoryEntry> entries = new ArrayList<>();
-        for (int i = 0; i < attempts.size(); i++) {
+        for (int i = attempts.size() - 1; i >= 0; i--) {
             entries.add(new AttemptHistoryEntry(i + 1, attempts.get(i)));
         }
-        entries.sort(Comparator.comparing(AttemptHistoryEntry::seq).reversed());
 
         Attempt latest = mostRecent(attempts);
         return new AttemptHistoryDetail(problemId, latest.getResult(), attempts.size(),
