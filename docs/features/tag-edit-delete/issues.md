@@ -17,22 +17,23 @@ GitHub 등록:
 `PUT /api/tags/{id}`(이름 수정), `DELETE /api/tags/{id}`(삭제) 두 엔드포인트를
 구현한다. `CUSTOM` 태그만 대상이며, `CORE`/카테고리 태그는 거부한다. 신규 파일:
 `TagException`, `TagErrorCode`, `UpdateTagRequest`(DTO). 수정 파일: `Tag`(엔티티에
-`rename` 메서드 추가), `TagController`, `TagService`, `TagRepository`(in-use 체크
-쿼리 추가), `GlobalExceptionHandler`.
+`rename` 메서드 추가), `TagController`, `TagService`, `AttemptRepository`(in-use
+체크 쿼리 추가 — `Tag`가 `attempts` 역참조를 갖지 않아 `TagRepository`가 아닌
+`AttemptRepository` 쪽에 추가), `GlobalExceptionHandler`.
 
 ### 완료 조건 (Acceptance Criteria)
 
-- [ ] `PUT /api/tags/{id}`로 커스텀 태그 이름을 정상 수정하면 `200 OK` + 갱신된
+- [x] `PUT /api/tags/{id}`로 커스텀 태그 이름을 정상 수정하면 `200 OK` + 갱신된
       태그를 반환한다
-- [ ] 수정하려는 이름이 trim+대소문자 무시 기준으로 다른 태그와 겹치면
+- [x] 수정하려는 이름이 trim+대소문자 무시 기준으로 다른 태그와 겹치면
       `409 TAG_NAME_CONFLICT`를 반환하고 수정하지 않는다
-- [ ] `CORE`/카테고리 태그를 수정하거나 삭제하려 하면 `403 TAG_NOT_EDITABLE`을
+- [x] `CORE`/카테고리 태그를 수정하거나 삭제하려 하면 `403 TAG_NOT_EDITABLE`을
       반환한다
-- [ ] 기록에 연결되지 않은 커스텀 태그를 삭제하면 `204 No Content`를 반환한다
-- [ ] 기록에 하나 이상 연결된 커스텀 태그를 삭제하려 하면 `409 TAG_IN_USE`를
+- [x] 기록에 연결되지 않은 커스텀 태그를 삭제하면 `204 No Content`를 반환한다
+- [x] 기록에 하나 이상 연결된 커스텀 태그를 삭제하려 하면 `409 TAG_IN_USE`를
       반환하고 삭제하지 않는다
-- [ ] 존재하지 않는 태그 id로 수정/삭제 요청 시 `404 TAG_NOT_FOUND`를 반환한다
-- [ ] 이름이 없거나 공백만 있으면 `400 INVALID_REQUEST`를 반환한다 (기존
+- [x] 존재하지 않는 태그 id로 수정/삭제 요청 시 `404 TAG_NOT_FOUND`를 반환한다
+- [x] 이름이 없거나 공백만 있으면 `400 INVALID_REQUEST`를 반환한다 (기존
       `POST /api/tags`와 동일 에러 코드)
 
 ### 시나리오

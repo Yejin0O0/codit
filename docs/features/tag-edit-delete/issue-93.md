@@ -111,15 +111,15 @@ public void deleteTag(Long id)
 
 - [예외] TagService.renameTag — should throw TagException(TAG_NOT_FOUND) when tag id does not exist
 - [예외] TagService.deleteTag — should throw TagException(TAG_NOT_FOUND) when tag id does not exist
-- [예외] TagService.renameTag — should throw TagException(TAG_NOT_EDITABLE) when target tag's category is not CUSTOM
-- [예외] TagService.deleteTag — should throw TagException(TAG_NOT_EDITABLE) when target tag's category is not CUSTOM
-- [예외] TagService.renameTag — should throw InvalidRequestException when name is null or blank
+- [예외] TagService.renameTag — should throw TagException(TAG_NOT_EDITABLE) when target tag's category is not CUSTOM (CORE / 카테고리 태그 각각)
+- [예외] TagService.deleteTag — should throw TagException(TAG_NOT_EDITABLE) when target tag's category is not CUSTOM (CORE / 카테고리 태그 각각)
+- [예외] TagService.renameTag — should throw InvalidRequestException when name is null or blank (null / blank 각각)
 - [예외] TagService.renameTag — should throw TagException(TAG_NAME_CONFLICT) when normalized new name matches a different existing tag
 - [예외] TagService.deleteTag — should throw TagException(TAG_IN_USE) when attemptRepository.existsByTagsContaining returns true
 - [예외] TagController.updateTag — should map TagException(TAG_NOT_FOUND) to 404 response body `{ code: "TAG_NOT_FOUND" }`
 - [예외] TagController.updateTag — should map TagException(TAG_NOT_EDITABLE) to 403 response body `{ code: "TAG_NOT_EDITABLE" }`
 - [예외] TagController.updateTag — should map TagException(TAG_NAME_CONFLICT) to 409 response body `{ code: "TAG_NAME_CONFLICT" }`
-- [예외] TagController.updateTag — should map InvalidRequestException to 400 response body `{ code: "INVALID_REQUEST" }`
+- [예외] TagController.updateTag — should map InvalidRequestException to 400 response body `{ code: "INVALID_REQUEST" }` (name: "   " / name: null / name 필드 자체 누락 각각)
 - [예외] TagController.deleteTag — should map TagException(TAG_NOT_EDITABLE) to 403 response body `{ code: "TAG_NOT_EDITABLE" }`
 - [예외] TagController.deleteTag — should map TagException(TAG_IN_USE) to 409 response body `{ code: "TAG_IN_USE" }`
 - [예외] TagController.deleteTag — should map TagException(TAG_NOT_FOUND) to 404 response body `{ code: "TAG_NOT_FOUND" }`
@@ -132,8 +132,8 @@ public void deleteTag(Long id)
 |----|--------------|
 | 정상 수정 시 200 + 갱신된 태그 | [정상] TagService.renameTag / [정상] TagController.updateTag |
 | 이름 충돌 시 409 TAG_NAME_CONFLICT | [예외] TagService.renameTag(conflict) / [예외] TagController.updateTag(conflict) |
-| CORE/카테고리 태그 수정·삭제 시 403 TAG_NOT_EDITABLE | [예외] TagService.renameTag(not editable) / [예외] TagService.deleteTag(not editable) / [예외] TagController.updateTag(not editable) / [예외] TagController.deleteTag(not editable) |
+| CORE/카테고리 태그 수정·삭제 시 403 TAG_NOT_EDITABLE | [예외] TagService.renameTag(CORE / 카테고리) / [예외] TagService.deleteTag(CORE / 카테고리) / [예외] TagController.updateTag(not editable) / [예외] TagController.deleteTag(not editable) — ac-verifier 지적으로 카테고리 태그 케이스 추가 |
 | 미사용 커스텀 태그 삭제 시 204 | [정상] TagService.deleteTag / [정상] TagController.deleteTag |
 | 사용 중인 커스텀 태그 삭제 시도 시 409 TAG_IN_USE | [예외] TagService.deleteTag(in use) / [예외] TagController.deleteTag(in use) |
 | 존재하지 않는 태그 id 시 404 TAG_NOT_FOUND | [예외] TagService.renameTag(not found) / [예외] TagService.deleteTag(not found) / [예외] TagController.updateTag(not found) / [예외] TagController.deleteTag(not found) |
-| 이름 없음/공백 시 400 INVALID_REQUEST | [예외] TagService.renameTag(blank name) / [예외] TagController.updateTag(blank name) |
+| 이름 없음/공백 시 400 INVALID_REQUEST | [예외] TagService.renameTag(blank / null name) / [예외] TagController.updateTag(blank / null / 필드 누락) — ac-verifier 지적으로 null·필드 누락 케이스 추가 |
