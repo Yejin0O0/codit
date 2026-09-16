@@ -137,8 +137,8 @@
 | `CoditWidget` | Shadow host 래퍼 / 위젯 프레임 (Floating Widget Surface) |
 | `TimerDisplay` | `tabular-nums` 대형 `mm:ss` 표시. 대응 primitive 없음. running 캡션 앞 `LiveDot` |
 | `LiveDot` | "측정 중" 민트 펄스 도트(`animate-ping` 후광 + 중심점). `aria-hidden`. `TimerDisplay`(캡션 앞) · `CollapsedTimer`(시간 뒤) 공유. 첫 사용 Feature: timer (R1) / 추출: collapsed-timer (R6) |
-| `ExtensionPageShell` | Extension Page Surface 프레임 (배경 / 중앙 정렬 컨테이너 / 헤더 슬롯). Auth·Problem History 공유 |
-| `PageHeader` | Extension Page 상단 바 (브랜드 + 현재 사용자(mock) + 로그아웃 자리). 대응 primitive 없음 |
+| `ExtensionPageShell` | Extension Page Surface 프레임 (배경 / 중앙 정렬 컨테이너 / 헤더 슬롯). children을 카드 프레임(`bg-background rounded-lg border shadow-sm`)으로 감싸 위젯 `PanelShell`과 같은 "Codit 패널" 언어 적용(R7 Option C). Auth·Problem History 공유 |
+| `PageHeader` | Extension Page 상단 바 (브랜드 + 현재 사용자(mock) + 로그아웃 자리). `sticky top-0` + `bg-background/95 backdrop-blur-sm` — 스크롤에도 상단 고정(R7 Option C). 대응 primitive 없음 |
 | `BrandHeader` | Codit 로고 마크(인라인 SVG) + 서비스명 + 문구. lucide 미도입 원칙에 따라 인라인 SVG |
 | `AttemptTimeline` | Attempt 회차 내림차순 나열 컨테이너 |
 | `AttemptItem` | 회차 / 결과 / 풀이 시간 / 태그 / 메모 / 날짜 표시. 구분선은 `border-t` 유틸. 대응 primitive 없음 |
