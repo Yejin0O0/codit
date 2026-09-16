@@ -29,6 +29,13 @@ public class GlobalExceptionHandler {
             .body(new ErrorResponse(e.getErrorCode().name(), e.getMessage()));
     }
 
+    @ExceptionHandler(AttemptException.class)
+    public ResponseEntity<ErrorResponse> handleAttemptException(AttemptException e) {
+        return ResponseEntity
+            .status(e.getErrorCode().getHttpStatus())
+            .body(new ErrorResponse(e.getErrorCode().name(), e.getMessage()));
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException e) {
         return ResponseEntity.badRequest()
