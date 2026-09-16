@@ -81,13 +81,13 @@ GitHub 등록:
 
 ### 완료 조건 (Acceptance Criteria)
 
-- [ ] 본인 소유 기록에 `PUT /api/attempts/{id}/tags`로 유효한 `tagIds`를
+- [x] 본인 소유 기록에 `PUT /api/attempts/{id}/tags`로 유효한 `tagIds`를
       보내면 `200 OK` + 갱신된 기록(태그 포함)을 반환한다
-- [ ] 결과적으로 태그가 0개가 되는 요청(`tagIds: []`)은 `409
+- [x] 결과적으로 태그가 0개가 되는 요청(`tagIds: []`)은 `409
       MIN_TAG_REQUIRED`를 반환하고 교체하지 않는다
-- [ ] 존재하지 않는 attempt id, 또는 다른 사용자 소유 attempt에 대한 요청은
+- [x] 존재하지 않는 attempt id, 또는 다른 사용자 소유 attempt에 대한 요청은
       구분 없이 `404 ATTEMPT_NOT_FOUND`를 반환한다
-- [ ] 존재하지 않는 tagId가 `tagIds`에 포함되면 기존 `POST /api/attempts`와
+- [x] 존재하지 않는 tagId가 `tagIds`에 포함되면 기존 `POST /api/attempts`와
       동일하게 `400 INVALID_REQUEST`를 반환한다
 
 ### 시나리오
