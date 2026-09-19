@@ -45,7 +45,7 @@ lib/tag-colors.ts (신규 CUSTOM 유틸)
 | 컴포넌트 | 상태 | 트리거 | 표현 |
 |---------|------|--------|------|
 | TagChipList | CORE 태그 | `tagColorFamily==='core'` | filled `bg-primary text-primary-foreground` |
-| TagChipList | 카테고리 태그 | 7개 카테고리 중 하나 | 파스텔 4색 중 매핑된 hue (`bg-[hex] text-[hex]`) |
+| TagChipList | 카테고리 태그 | 7개 카테고리 중 하나 | 매핑된 hue 패밀리 토큰 (`bg-tag-{blue\|orange\|violet\|magenta} text-tag-{패밀리}-foreground`) |
 | TagChipList | CUSTOM(미매핑) 태그 | 카탈로그에 없는 카테고리 | `bg-secondary text-secondary-foreground` |
 | TagChipList | tagIds 빈 배열 | — | 아무것도 렌더 안 함 (기존과 동일, `null` 반환) |
 

@@ -35,7 +35,7 @@ describe('AttemptItem', () => {
         expect(screen.queryByText('구현')).toBeNull();
     });
 
-    it('[UI-L2 R9] TagChipList 공유로 태그에 색상 클래스가 적용된다 (CORE=filled primary)', () => {
+    it('TagChipList 공유로 태그에 색상 클래스가 적용된다 (CORE=filled primary)', () => {
         render(<AttemptItem attempt={{ ...ATTEMPT_1, tagIds: ['bfs'] }} tagCatalog={CATALOG_FX} />);
 
         expect(screen.getByText('BFS')).toHaveClass('bg-primary', 'text-primary-foreground');

@@ -27,7 +27,7 @@ describe('TagChipList', () => {
         expect(screen.queryByText('ghost-tag')).toBeNull();
     });
 
-    it('[UI-L2 R9] CORE 태그(bfs)는 filled primary 톤, 카테고리 태그는 매핑된 hue 패밀리 클래스를 받는다', () => {
+    it('CORE 태그(bfs)는 filled primary 톤, 카테고리 태그는 매핑된 hue 패밀리 클래스를 받는다', () => {
         const catalog = [
             { id: 'bfs', name: 'BFS' },
             { id: 'linked-list', name: '연결 리스트' },

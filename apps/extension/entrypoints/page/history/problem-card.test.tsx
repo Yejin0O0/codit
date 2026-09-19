@@ -79,7 +79,7 @@ describe('ProblemCard', () => {
         expect(screen.queryByText('BFS')).toBeNull();
     });
 
-    it('[UI-L2 R9] Option 5 — 태그 행이 #문제번호 행보다 DOM상 앞에 온다', () => {
+    it('태그 행이 #문제번호 행보다 DOM상 앞에 온다', () => {
         render(<ProblemCard problem={PROBLEM_WRONG} tagCatalog={CATALOG_FX} onSelect={vi.fn()} />);
 
         const tagNode = screen.getByText('BFS');

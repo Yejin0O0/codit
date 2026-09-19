@@ -49,8 +49,7 @@ interface ProblemCardProps {
 
 ### 비-TS 변경
 
-없음 — 기존 `--primary`/`--secondary` 토큰만 재사용, 새 CSS 변수 없음(칩 파스텔 4색은
-Tailwind 임의값 `bg-[hex]`로 직접 지정 — `/design-system` 정식화 전 후보값, prd.md 참조).
+`styles/tokens.css` — `--tag-blue`·`--tag-orange`·`--tag-violet`·`--tag-magenta`(각 foreground 포함, 총 8개) CSS 변수 신규 추가. 임의 hex(`bg-[#...]`) 대신 이 토큰으로 만들어진 `bg-tag-*`/`text-tag-*-foreground` 클래스를 `tag-colors.ts`에서 조합.
 
 ---
 

@@ -135,6 +135,16 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
+
+    /* v1 다크 미지원 — 라이트 값 그대로 미러링 (다른 semantic 토큰과 동일 패턴) */
+    --tag-blue: oklch(0.9472 0.0207 261.77);
+    --tag-blue-foreground: oklch(0.4941 0.141 258.85);
+    --tag-orange: oklch(0.9443 0.0257 48.43);
+    --tag-orange-foreground: oklch(0.5578 0.1483 43.46);
+    --tag-violet: oklch(0.9448 0.0218 297.42);
+    --tag-violet-foreground: oklch(0.4331 0.1671 283.62);
+    --tag-magenta: oklch(0.9484 0.0231 350.09);
+    --tag-magenta-foreground: oklch(0.5146 0.1603 353.15);
 }
 
 @theme {
