@@ -11,7 +11,7 @@ import { PageHeader } from './page-header';
  */
 const meta: Meta = {
     title: 'Page/ExtensionPageShell',
-    parameters: { layout: 'fullscreen', backgrounds: { value: 'page' } },
+    parameters: { layout: 'fullscreen' },
 };
 
 export default meta;

@@ -117,7 +117,7 @@ describe('ExtensionPageShell', () => {
         expect(container.querySelector('[data-slot="extension-page-shell-header"]')).toBeNull();
     });
 
-    it('[UI-L2 R7] children을 카드 프레임(콘텐츠 슬롯)으로 감싼다', () => {
+    it('children을 카드 프레임(콘텐츠 슬롯)으로 감싼다', () => {
         const { container } = render(
             <ExtensionPageShell maxWidth={400}>
                 <div>child-content</div>
@@ -127,7 +127,7 @@ describe('ExtensionPageShell', () => {
         const contentSlot = container.querySelector('[data-slot="extension-page-shell-content"]');
 
         expect(contentSlot).not.toBeNull();
-        expect(contentSlot).toHaveClass('bg-background', 'rounded-lg', 'border', 'shadow-sm');
+        expect(contentSlot).toHaveClass('bg-background', 'rounded-lg', 'border', 'p-4', 'shadow-sm');
         expect(contentSlot).toHaveTextContent('child-content');
     });
 });

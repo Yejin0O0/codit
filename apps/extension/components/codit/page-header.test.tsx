@@ -59,7 +59,7 @@ describe('PageHeader', () => {
         expect(container.querySelector('button')).toBeNull();
     });
 
-    it('[UI-L2 R7] 스크롤 시 고정되도록 sticky 처리된다', () => {
+    it('스크롤 시 고정되도록 sticky 처리된다', () => {
         const { container } = render(<PageHeader />);
 
         const header = container.querySelector('[data-slot="page-header"]');

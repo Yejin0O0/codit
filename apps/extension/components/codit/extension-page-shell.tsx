@@ -28,8 +28,7 @@ export function ExtensionPageShell({
                 className="mx-auto w-full px-4 py-6"
                 style={{ maxWidth }}
             >
-                {/* [UI-L2 R7] Option C — 콘텐츠를 카드로 한 번 더 감싸 SWEA 흰 페이지식이 아닌
-                    "Codit 패널" 프레임을 준다 (위젯 PanelShell 과 같은 언어). */}
+                {/* 위젯 PanelShell 과 같은 "Codit 패널" 카드 프레임 */}
                 <div
                     data-slot="extension-page-shell-content"
                     className="bg-background rounded-lg border p-4 shadow-sm"
