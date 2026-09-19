@@ -58,4 +58,12 @@ describe('PageHeader', () => {
         expect(logout).not.toBeVisible();
         expect(container.querySelector('button')).toBeNull();
     });
+
+    it('스크롤 시 고정되도록 sticky 처리된다', () => {
+        const { container } = render(<PageHeader />);
+
+        const header = container.querySelector('[data-slot="page-header"]');
+
+        expect(header).toHaveClass('sticky', 'top-0');
+    });
 });

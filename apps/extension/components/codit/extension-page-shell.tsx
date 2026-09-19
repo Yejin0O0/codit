@@ -28,7 +28,13 @@ export function ExtensionPageShell({
                 className="mx-auto w-full px-4 py-6"
                 style={{ maxWidth }}
             >
-                {children}
+                {/* 위젯 PanelShell 과 같은 "Codit 패널" 카드 프레임 */}
+                <div
+                    data-slot="extension-page-shell-content"
+                    className="bg-background rounded-lg border p-4 shadow-sm"
+                >
+                    {children}
+                </div>
             </div>
         </div>
     );
