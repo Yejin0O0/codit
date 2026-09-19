@@ -147,8 +147,8 @@
 | `ExtensionPageShell` | Extension Page Surface 프레임 (배경 / 중앙 정렬 컨테이너 / 헤더 슬롯). children을 카드 프레임(`bg-background rounded-lg border shadow-sm`)으로 감싸 위젯 `PanelShell`과 같은 "Codit 패널" 언어 적용(R7 Option C). Auth·Problem History 공유 |
 | `PageHeader` | Extension Page 상단 바 (브랜드 + 현재 사용자(mock) + 로그아웃 자리). `sticky top-0` + `bg-background/95 backdrop-blur-sm` — 스크롤에도 상단 고정(R7 Option C). 대응 primitive 없음 |
 | `BrandHeader` | Codit 로고 마크(인라인 SVG) + 서비스명 + 문구. lucide 미도입 원칙에 따라 인라인 SVG |
-| `AttemptTimeline` | Attempt 회차 내림차순 나열 컨테이너 |
-| `AttemptItem` | 회차 / 결과 / 풀이 시간 / 태그 / 메모 / 날짜 표시. 구분선은 `border-t` 유틸. 대응 primitive 없음 |
+| `AttemptTimeline` | 회차 2개 이상 — 좌우 분할(Option 5, R10): 왼쪽 회차 목록(seq 내림차순 + 결과색 점, `role="group"`+`aria-current`) / 오른쪽 선택된 회차의 `AttemptItem` 상세. 기본 선택 = 최신 회차. 회차 1개면 목록 없이 `AttemptItem` 단독 |
+| `AttemptItem` | 회차 / 결과 / 풀이 시간 / 태그 / 메모 / 날짜 표시. 구분선은 `border-t` 유틸. 대응 primitive 없음. R10부터 `AttemptTimeline`의 상세 패널 콘텐츠로도 재사용(단독 렌더 시 `first:border-t-0`로 테두리 자동 생략) |
 | `EmptyState` | empty / filtered-empty / 방어 3변형. 문구 + 선택적 액션 버튼 |
 | `CollapsedTimer` | Floating Widget 접힌 상태. Codit 아이콘 + `mm:ss`(`tabular-nums`) + running 시 시간 뒤 `LiveDot` 펄스 / stopped 시 인라인 check 아이콘 + 상시 펼치기 chevron(chevron-up). pill 전체가 펼치기 버튼 — accessible name 은 name-from-contents(sr-only 동작 문구 + 보이는 시간), 장식 아이콘 전부 `aria-hidden`, `aria-live` 미사용. Button 베이스(`h-10`) + 인라인 SVG. 첫 사용 Feature: timer-persistence |
 
