@@ -11,7 +11,7 @@ import { ProblemDetailView } from './problem-detail-view';
  */
 const meta: Meta = {
     title: 'Page/History Detail',
-    parameters: { layout: 'fullscreen', backgrounds: { value: 'page' } },
+    parameters: { layout: 'fullscreen' },
 };
 
 export default meta;

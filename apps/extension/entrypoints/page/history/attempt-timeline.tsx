@@ -18,12 +18,23 @@ const DOT_CLASS: Record<AttemptResult, string> = {
 };
 
 /**
- * [UI-L2 R10] 좌우 분할(Option 5, 이슈 #102) — 왼쪽 회차 목록에서 고르면
- * 오른쪽에 그 회차의 전체 상세(AttemptItem)를 보여준다. 기본 선택 = 최신 회차.
+ * 좌우 분할 — 왼쪽 회차 목록에서 고르면 오른쪽에 선택된 회차의 AttemptItem 전체 상세를 보여준다.
+ * 기본 선택 = 최신 회차. 회차 1개면 목록 없이 AttemptItem 단독 표시.
  */
 export function AttemptTimeline({ attempts, tagCatalog }: AttemptTimelineProps) {
     const ordered = [...attempts].sort((a, b) => b.seq - a.seq);
-    const [selectedSeq, setSelectedSeq] = useState(ordered[0]?.seq);
+    const latestSeq = ordered[0]?.seq;
+    const [selectedSeq, setSelectedSeq] = useState(latestSeq);
+
+    // attempts prop이 갱신돼도 컴포넌트가 리마운트되지 않는 경로(폴링/낙관적 업데이트)에서
+    // "기본 선택 = 최신 회차"가 깨지지 않도록, 최신 seq가 바뀌면 렌더 중에 선택을 다시 맞춘다
+    // (effect가 아니라 렌더 중 state 조정 — react-hooks/set-state-in-effect 회피).
+    const [trackedLatestSeq, setTrackedLatestSeq] = useState(latestSeq);
+    if (latestSeq !== trackedLatestSeq) {
+        setTrackedLatestSeq(latestSeq);
+        setSelectedSeq(latestSeq);
+    }
+
     const selected = ordered.find((a) => a.seq === selectedSeq) ?? ordered[0];
 
     if (!selected) {
@@ -31,7 +42,11 @@ export function AttemptTimeline({ attempts, tagCatalog }: AttemptTimelineProps) 
     }
 
     if (ordered.length === 1) {
-        return <AttemptItem attempt={selected} tagCatalog={tagCatalog} />;
+        return (
+            <div className="flex flex-col">
+                <AttemptItem attempt={selected} tagCatalog={tagCatalog} />
+            </div>
+        );
     }
 
     return (
