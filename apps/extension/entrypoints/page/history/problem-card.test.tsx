@@ -78,4 +78,15 @@ describe('ProblemCard', () => {
         expect(screen.queryByText(/1012/)).not.toBeNull();
         expect(screen.queryByText('BFS')).toBeNull();
     });
+
+    it('태그 행이 #문제번호 행보다 DOM상 앞에 온다', () => {
+        render(<ProblemCard problem={PROBLEM_WRONG} tagCatalog={CATALOG_FX} onSelect={vi.fn()} />);
+
+        const tagNode = screen.getByText('BFS');
+        const idNode = screen.getByText(/2178/);
+
+        expect(
+            tagNode.compareDocumentPosition(idNode) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+    });
 });

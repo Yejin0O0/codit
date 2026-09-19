@@ -49,6 +49,12 @@
 | `--warning` / `-foreground` | `#FFC53D` / `#4F3422` | amber-9 / -12 | 보류 |
 | `--destructive` / `-foreground` | `#D1343D` / `#FFF` | red-9 근사(L↓) | 오답·삭제. red-9(`#E5484D`)는 흰 텍스트와 3.91:1로 WCAG AA 미달(#66) — 같은 hue·chroma에서 L만 낮춰 4.93:1 확보 |
 | `--brand-wordmark-from/to` | `#8FB5FB` / `#A193FA` | — | "Codit" 워드마크 그라데이션 (`@utility brand-wordmark`) |
+| `--tag-blue` / `-foreground` | `#E6EEFC` / `#2A5FB0` | — | 문제유형 태그 — 자료구조. dataviz 팔레트 검증기 통과값(`validate_palette.js`) |
+| `--tag-orange` / `-foreground` | `#FCE8DE` / `#B8501C` | — | 문제유형 태그 — 탐색·완전탐색 / 그래프 |
+| `--tag-violet` / `-foreground` | `#EEEAFA` / `#4A3AA7` | — | 문제유형 태그 — 알고리즘 설계 기법 / 수학 |
+| `--tag-magenta` / `-foreground` | `#FBE8F0` / `#A8356F` | — | 문제유형 태그 — 문자열 알고리즘 / 고급 |
+
+**태그 색 공존**: `--tag-blue`(hue≈259°)가 `--primary` 회피 밴드와 겹치는 SWEA 파랑 근처지만, 태그는 Extension Page(별도 탭) 전용이라 위젯-SWEA 인접 문제와 무관 — `host-audit-swea.md`의 회피 규칙은 위젯(SWEA 페이지 오버레이) 한정. 근거: `docs/features/problem-history/r9-redesign/prd.md`.
 
 **SWEA 공존**: `--primary` hue ~240° — SWEA 파랑(`#4590E3` ~211°) 회피 밴드 밖(경계). 상세 [`host-audit-swea.md`](./host-audit-swea.md).
 
@@ -76,7 +82,7 @@
 | 인라인 텍스트 링크 | `Button` `link` | 문장 안에서만 |
 | 결과 선택/표시 | `ResultToggleGroup` / `ResultBadge` | 정답 success / 오답 destructive / 보류 warning, 채운 배경 |
 | 결과 필터 탭 | `ResultFilterToggleGroup` | **중립색** segmented — 의미색은 배지에만 |
-| 태그 | `TagToggleGroup`(미선택 secondary / 선택 primary) · `TagChipList`(secondary) | |
+| 태그 | `TagToggleGroup`(미선택 secondary / 선택 primary) · `TagChipList`(CORE=primary / 카테고리=`--tag-*` 4색 / CUSTOM=secondary, R9) | |
 | 화면 프레임 | `PanelShell`(위젯) / `ExtensionPageShell`(페이지) | |
 
 **Do / Don't**: 화면당 primary 1개 · 의미색은 결과에만(필터·중립 배지 X) · idle 위젯 저채도(primary는 버튼·링크·마크에만, 큰 표면 X) · 클릭 타깃 ≥ 36px(pill 40).
@@ -122,8 +128,9 @@
 | `ResultToggleGroup` | Toggle Group (single) | 정답/오답/보류 3항목. 의미 토큰(`--success`/`--destructive`/`--warning`) 스타일 |
 | `TagToggleGroup` | Toggle Group (multiple) | chip 형태 렌더. 핵심 태그 + 더보기 태그 + 직접입력 태그를 하나의 선택 집합으로 관리 |
 | `AuthCard` | Card | Extension Page용 인증 카드. 브랜드 슬롯 + 폼 슬롯 + 하단 링크 슬롯 고정 레이아웃 |
-| `ProblemCard` | Card | 클릭 가능 문제 카드. problemId + `ResultBadge` + 제목(조건부) + 메타 라인 + 태그 chip 슬롯 |
+| `ProblemCard` | Card | 클릭 가능 문제 카드. **태그 chip 슬롯(맨 위, Option 5)** + problemId + `ResultBadge` + 제목(조건부) + 메타 라인. 순서는 R9(#100)에서 태그 우선으로 재배치 |
 | `ResultBadge` | Badge | `CORRECT`/`WRONG`/`HOLD` → 의미 토큰 + 한글 라벨 매핑. Problem List / Detail / Attempt 공유 (Codit 공용 조합 승격) |
+| `TagChipList` | Badge | 태그 목록 렌더 + 카테고리별 색상(`tag-colors.ts` → `--tag-*` 토큰) 적용. ProblemCard/ProblemSummary/AttemptItem 공유 — 색상 변경 시 단일 소스. 첫 사용 Feature: timer / 색상 적용: problem-history (R9) |
 | `ResultFilterToggleGroup` | Toggle Group (single) | 전체/정답/오답/보류 4항목 세그먼트 필터. 탭은 중립 색, 의미색은 `ResultBadge`에만 |
 | `TagFilterPanel` | Collapsible + `TagToggleGroup` | 태그 다중 선택 필터. `TagPicker`에서 직접입력 제거한 버전 |
 | `FormAlert` | Alert | 폼 레벨 서버 에러 / 성공 안내 배너. `role="alert"` |

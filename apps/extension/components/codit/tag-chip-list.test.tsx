@@ -26,4 +26,20 @@ describe('TagChipList', () => {
         expect(screen.queryByText('BFS')).not.toBeNull();
         expect(screen.queryByText('ghost-tag')).toBeNull();
     });
+
+    it('CORE 태그(bfs)는 filled primary 톤, 카테고리 태그는 매핑된 hue 패밀리 클래스를 받는다', () => {
+        const catalog = [
+            { id: 'bfs', name: 'BFS' },
+            { id: 'linked-list', name: '연결 리스트' },
+            { id: 'custom-user-tag', name: '내가 만든 태그' },
+        ];
+        render(
+            <TagChipList tagIds={['bfs', 'linked-list', 'custom-user-tag']} catalog={catalog} />,
+        );
+
+        // filled primary — 파스텔 4색(카테고리) 중 어느 것과도 안 헷갈리도록 톤 자체를 다르게.
+        expect(screen.getByText('BFS')).toHaveClass('bg-primary', 'text-primary-foreground');
+        expect(screen.getByText('연결 리스트')).toHaveClass('bg-tag-blue', 'text-tag-blue-foreground');
+        expect(screen.getByText('내가 만든 태그')).toHaveClass('bg-secondary', 'text-secondary-foreground');
+    });
 });
